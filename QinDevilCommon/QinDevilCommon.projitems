@@ -9,5 +9,8 @@
     <Import_RootNamespace>QinDevilCommon</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)SocketClient.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SocketList.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SocketServer.cs" />
   </ItemGroup>
 </Project>
