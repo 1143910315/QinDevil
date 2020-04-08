@@ -3,18 +3,29 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30002.166
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QinDevil", "QinDevil\QinDevil.csproj", "{64A33D37-B07A-4FB8-8EAD-646AD6254D82}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QinDevilClient", "QinDevilClient\QinDevilClient.csproj", "{ACFEB6E3-B973-4473-88F4-22CAAF35B017}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QinDevilServer", "QinDevilServer\QinDevilServer.csproj", "{7B147388-8E2C-4AD3-9ADE-E179A99A1F0F}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "QinDevilCommon", "QinDevilCommon\QinDevilCommon.shproj", "{1E3B6694-0417-4E57-83D9-79DDC7A002AE}"
 EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		QinDevilCommon\QinDevilCommon.projitems*{1e3b6694-0417-4e57-83d9-79ddc7a002ae}*SharedItemsImports = 13
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{64A33D37-B07A-4FB8-8EAD-646AD6254D82}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{64A33D37-B07A-4FB8-8EAD-646AD6254D82}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{64A33D37-B07A-4FB8-8EAD-646AD6254D82}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{64A33D37-B07A-4FB8-8EAD-646AD6254D82}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ACFEB6E3-B973-4473-88F4-22CAAF35B017}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ACFEB6E3-B973-4473-88F4-22CAAF35B017}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ACFEB6E3-B973-4473-88F4-22CAAF35B017}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ACFEB6E3-B973-4473-88F4-22CAAF35B017}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B147388-8E2C-4AD3-9ADE-E179A99A1F0F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B147388-8E2C-4AD3-9ADE-E179A99A1F0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B147388-8E2C-4AD3-9ADE-E179A99A1F0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B147388-8E2C-4AD3-9ADE-E179A99A1F0F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
