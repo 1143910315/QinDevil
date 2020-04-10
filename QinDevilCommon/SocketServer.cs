@@ -10,7 +10,7 @@ using System.Threading;
 namespace QinDevilCommon {
     public class SocketServer {
         public delegate bool OnAcceptEvent(Socket socket);
-        public delegate void OnReceiveEvent(int id, byte[] buffer);
+        public delegate void OnReceiveEvent(int id, int signal, byte[] buffer);
         public delegate void OnLeaveEvent(int id);
         private Socket socket;
         private SocketList socketList = new SocketList();
@@ -33,7 +33,8 @@ namespace QinDevilCommon {
                                     int len = thisSocket.Receive(buffer);
                                     if (thisSocket.Connected && len > 0) {
                                         if (socketList.AddData(id, buffer, 0, len)) {
-                                            onReceiveEvent?.Invoke((int)id, socketList.GetDataAndDelete(id));
+                                            (int signal, byte[] temp) = socketList.GetDataAndDelete(id);
+                                            onReceiveEvent?.Invoke((int)id, signal, temp);
                                         }
                                     } else {
                                         socketList.Delete(id);

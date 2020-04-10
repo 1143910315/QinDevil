@@ -1,4 +1,5 @@
-﻿using System;
+﻿using QinDevilCommon;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,8 +19,16 @@ namespace QinDevilClient {
     /// MainWindow.xaml 的交互逻辑
     /// </summary>
     public partial class MainWindow : Window {
+        SocketClient client;
         public MainWindow() {
             InitializeComponent();
         }
+
+
+        private void Window_Loaded(object sender, RoutedEventArgs e) {
+            client = new SocketClient();
+            client.Connect("170c8e7a.nat123.cc", 38836);
+        }
+
     }
 }
