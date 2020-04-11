@@ -14,9 +14,12 @@ namespace QinDevilCommon {
         public delegate void OnLeaveEvent(int id);
         private Socket socket;
         private SocketList socketList = new SocketList();
-        public SocketServer(int port, OnAcceptEvent onAcceptEvent = null, OnReceiveEvent onReceiveEvent = null, OnLeaveEvent onLeaveEvent = null) {
+        public OnAcceptEvent onAcceptEvent = null;
+        public OnReceiveEvent onReceiveEvent = null;
+        public OnLeaveEvent onLeaveEvent = null;
+        public SocketServer(int port) {
             socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            socket.Bind(new IPEndPoint(IPAddress.Parse("127.0.0.1"), port));
+            socket.Bind(new IPEndPoint(IPAddress.Any, port));
             socket.Listen(10);
             new Task(() => {
                 while (socket != null) {
@@ -34,7 +37,10 @@ namespace QinDevilCommon {
                                     if (thisSocket.Connected && len > 0) {
                                         if (socketList.AddData(id, buffer, 0, len)) {
                                             (int signal, byte[] temp) = socketList.GetDataAndDelete(id);
-                                            onReceiveEvent?.Invoke((int)id, signal, temp);
+                                            do {
+                                                onReceiveEvent?.Invoke((int)id, signal, temp);
+                                                (signal, temp) = socketList.GetDataAndDelete(id);
+                                            } while (temp != null);
                                         }
                                     } else {
                                         socketList.Delete(id);
@@ -50,34 +56,37 @@ namespace QinDevilCommon {
                             }
                         }, socketList.Add(acceptSocket)).Start();
                     }
-
                 }
             }).Start();
-            //new Task(() => {
-            //    while (socket != null) {
-            //        IDictionaryEnumerator enumerator = socketList.GetAll();
-            //        while (enumerator.MoveNext()) {
-            //            try {
-            //                Socket thisSocket = enumerator.Value as Socket;
-            //                byte[] buffer = new byte[512];
-            //                int len = thisSocket.Receive(buffer);
-            //                if (thisSocket.Connected && len > 0) {
-            //                    if (socketList.AddData(enumerator.Key, buffer, 0, len)) {
-            //                        onReceiveEvent?.Invoke((int)enumerator.Key, socketList.GetDataAndDelete(enumerator.Key));
-            //                    }
-            //                } else {
-            //                    socketList.Delete(enumerator.Key);
-            //                    onLeaveEvent((int)enumerator.Key);
-            //                }
-            //            } catch (Exception) {
-            //                socketList.Delete(enumerator.Key);
-            //                onLeaveEvent((int)enumerator.Key);
-            //            }
+        }
+        public void SendPackage(int id, int signal, byte[] data, int offset, int count) {
+            Socket s = socketList.Get(id);
+            if (s != null) {
+                byte[] v = BitConverter.GetBytes(signal);
+                byte[] l = BitConverter.GetBytes(count + v.Length);
+                byte[] package = new byte[count + v.Length + l.Length];
+                int index = 0;
+                for (int i = 0; i < l.Length; i++) {
+                    package[index++] = l[i];
+                }
+                for (int i = 0; i < v.Length; i++) {
+                    package[index++] = v[i];
+                }
+                for (int i = offset; i < count; i++) {
+                    package[index++] = data[i];
+                }
+                s.BeginSend(package, 0, index, SocketFlags.None, new AsyncCallback(SendCallback), id);
+            }
+        }
+        private void SendCallback(IAsyncResult ar) {
+            Socket s = socketList.Get(ar.AsyncState);
+            try {
+                s.EndSend(ar);
+            } catch (Exception) {
+                s.Close();
+                onLeaveEvent?.Invoke((int)ar.AsyncState);
+            }
 
-            //        }
-            //        Thread.Sleep(0);
-            //    }
-            //}).Start();
         }
         ~SocketServer() {
             socket.Close();

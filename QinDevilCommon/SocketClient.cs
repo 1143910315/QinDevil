@@ -23,52 +23,61 @@ namespace QinDevilCommon {
         }
         public void Connect(string host, int port) {
             IPHostEntry entry = Dns.GetHostEntry(host);
-            if (entry != null && entry.AddressList != null && entry.AddressList.Length > 0) {
-                socket?.Close();
-                socket = new Socket(entry.AddressList[0].AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-                SocketAsyncEventArgs connectEventArgs = new SocketAsyncEventArgs {
-                    UserToken = this,
-                    RemoteEndPoint = new IPEndPoint(entry.AddressList[0], port)
-                };
-                connectEventArgs.Completed += (t, e) => {
-                    SocketClient thisclass = e.UserToken as SocketClient;
-                    if (t.Equals(thisclass.socket)) {
-                        Socket s = t as Socket;
-                        onConnectedEvent?.Invoke(s.Connected);
-                        if (s.Connected) {
-                            SocketAsyncEventArgs receiveEventArgs = new SocketAsyncEventArgs {
-                                UserToken = e.UserToken
-                            };
-                            receiveEventArgs.SetBuffer(buffer, 0, 512);
-                            receiveEventArgs.Completed += (t1, e1) => {
-                                SocketClient thisclass1 = e1.UserToken as SocketClient;
-                                if (t1.Equals(thisclass1.socket)) {
-                                    int len = e1.BytesTransferred;
-                                    if (len > 0 && e1.SocketError == SocketError.Success) {
-                                        for (int i = 0; i < len; i++) {
-                                            list.Add(buffer[i]);
-                                        }
-                                        if (list.Count >= 8) {
-                                            byte[] v1 = list.GetRange(0, 4).ToArray();
-                                            int v = BitConverter.ToInt32(v1, 0);
-                                            if (list.Count - 4 >= v) {
-                                                onReceivePackageEvent?.Invoke(BitConverter.ToInt32(v1, 0), list.GetRange(8, v - 4).ToArray());
-                                                list.RemoveRange(0, v + 4);
+            if (entry != null && entry.AddressList != null) {
+                for (int AddressListIndex = 0; AddressListIndex < entry.AddressList.Length; AddressListIndex++) {
+                    if (entry.AddressList[AddressListIndex].AddressFamily == AddressFamily.InterNetwork) {
+                        socket?.Close();
+                        socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                        SocketAsyncEventArgs connectEventArgs = new SocketAsyncEventArgs {
+                            UserToken = this,
+                            RemoteEndPoint = new IPEndPoint(entry.AddressList[AddressListIndex], port)
+                        };
+                        connectEventArgs.Completed += (t, e) => {
+                            SocketClient thisclass = e.UserToken as SocketClient;
+                            if (t.Equals(thisclass.socket)) {
+                                Socket s = t as Socket;
+                                onConnectedEvent?.Invoke(s.Connected);
+                                if (s.Connected) {
+                                    SocketAsyncEventArgs receiveEventArgs = new SocketAsyncEventArgs {
+                                        UserToken = e.UserToken
+                                    };
+                                    receiveEventArgs.SetBuffer(buffer, 0, 512);
+                                    receiveEventArgs.Completed += (t1, e1) => {
+                                        SocketClient thisclass1 = e1.UserToken as SocketClient;
+                                        if (t1.Equals(thisclass1.socket)) {
+                                            int len = e1.BytesTransferred;
+                                            if (len > 0 && e1.SocketError == SocketError.Success) {
+                                                for (int i = 0; i < len; i++) {
+                                                    list.Add(buffer[i]);
+                                                }
+                                                while (list.Count >= 8) {
+                                                    byte[] v1 = list.GetRange(0, 8).ToArray();
+                                                    int v = BitConverter.ToInt32(v1, 0);
+                                                    if (list.Count - 4 >= v) {
+                                                        onReceivePackageEvent?.Invoke(BitConverter.ToInt32(v1, 4), list.GetRange(8, v - 4).ToArray());
+                                                        list.RemoveRange(0, v + 4);
+                                                    } else {
+                                                        break;
+                                                    }
+                                                }
+                                                ((Socket)t1).ReceiveAsync(receiveEventArgs);
+                                            } else {
+                                                onConnectionBreakEvent?.Invoke();
+                                                thisclass1.socket.Close();
                                             }
                                         }
-                                        ((Socket)t1).ReceiveAsync(receiveEventArgs);
-                                    } else {
-                                        onConnectionBreakEvent?.Invoke();
-                                        thisclass1.socket.Close();
-                                    }
+                                    };
+                                    socket.ReceiveAsync(receiveEventArgs);
                                 }
-                            };
-                            socket.ReceiveAsync(receiveEventArgs);
-                        }
+                            }
+                        };
+                        socket.ConnectAsync(connectEventArgs);
+                        break;
                     }
-                };
-                socket.ConnectAsync(connectEventArgs);
+                }
             }
+
+
         }
         /*public void Send(byte [] data) {
 
@@ -77,12 +86,12 @@ namespace QinDevilCommon {
             byte[] v = BitConverter.GetBytes(signal);
             byte[] l = BitConverter.GetBytes(count + v.Length);
             if (SendAsyncEventArgs == null) {
-                byte[] package = new byte[count + v.Length+l.Length];
+                byte[] package = new byte[count + v.Length + l.Length];
                 int index = 0;
-                for (int i=0; i < l.Length; i++) {
+                for (int i = 0; i < l.Length; i++) {
                     package[index++] = l[i];
                 }
-                for (int i=0; i < v.Length; i++) {
+                for (int i = 0; i < v.Length; i++) {
                     package[index++] = v[i];
                 }
                 for (int i = offset; i < count; i++) {

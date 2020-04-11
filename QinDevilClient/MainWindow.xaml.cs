@@ -23,12 +23,19 @@ namespace QinDevilClient {
         public MainWindow() {
             InitializeComponent();
         }
-
-
         private void Window_Loaded(object sender, RoutedEventArgs e) {
             client = new SocketClient();
-            client.Connect("170c8e7a.nat123.cc", 38836);
+            client.onReceivePackageEvent += OnReceivePackage;
+            client.Connect("127.0.0.1", 13748);
         }
-
+        private void OnReceivePackage(int signal, byte[] buffer) {
+            msgContent.Dispatcher.Invoke(() => {
+                msgContent.Content += string.Format("信号值：{0}\n消息内容：{1}\n", signal, Encoding.ASCII.GetString(buffer));
+            });
+        }
+        private void Button_Click(object sender, RoutedEventArgs e) {
+            byte[] v = Encoding.ASCII.GetBytes(msgEdit.Text);
+            client.SendPackage(int.Parse(singalEdit.Text), v, 0, v.Length);
+        }
     }
 }

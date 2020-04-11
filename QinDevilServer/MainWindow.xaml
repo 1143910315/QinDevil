@@ -7,7 +7,9 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800" Loaded="Window_Loaded">
     <Grid>
-        <Label Name="shouConnectNumber" Content="Label" HorizontalAlignment="Left" Height="26" Margin="82,56,0,0" VerticalAlignment="Top" Width="173"/>
-
+        <Label Name="shouConnectNumber" Content="Label" HorizontalAlignment="Left" Height="100" Margin="82,56,0,0" VerticalAlignment="Top" Width="278"/>
+        <TextBox Name="signalEdit" HorizontalAlignment="Left" Height="23" Margin="150,161,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
+        <TextBox Name="magEdit" HorizontalAlignment="Left" Height="23" Margin="436,161,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
+        <Button Content="Button" HorizontalAlignment="Left" Margin="396,244,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click"/>
     </Grid>
 </Window>
