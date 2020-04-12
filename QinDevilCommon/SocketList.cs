@@ -7,8 +7,8 @@ using System.Text;
 namespace QinDevilCommon {
     internal class SocketList {
         private int connectNum = 0;
-        private Hashtable hashtable = new Hashtable();
-        private Hashtable data = new Hashtable();
+        private readonly Hashtable hashtable = new Hashtable();
+        private readonly Hashtable data = new Hashtable();
         internal int Add(Socket socket) {
             hashtable.Add(connectNum, socket);
             data.Add(connectNum, new List<byte>());
@@ -32,16 +32,13 @@ namespace QinDevilCommon {
         internal Socket Get(object id) {
             return hashtable[id] as Socket;
         }
-
         internal IDictionaryEnumerator GetAll() {
             return hashtable.GetEnumerator();
         }
-
         internal void Delete(object id) {
             hashtable.Remove(id);
             data.Remove(id);
         }
-
         internal (int, byte[]) GetDataAndDelete(object id) {
             byte[] buffer = null;
             int i = 0;

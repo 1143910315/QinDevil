@@ -25,25 +25,28 @@ namespace QinDevilServer {
         public MainWindow() {
             InitializeComponent();
         }
-
         private void Window_Loaded(object sender, RoutedEventArgs e) {
             server = new SocketServer(13748) {
-                onAcceptEvent = OnAccept,
-                onReceiveEvent = OnReceive,
+                onAcceptSuccessEvent = OnAcceptSuccess,
+                onReceiveOriginalDataEvent = OnReceiveOriginalData,
+                onReceivePackageEvent = OnReceivePackage,
                 onLeaveEvent = OnLeave
             };
         }
-        private bool OnAccept(Socket socket) {
+        private void OnAcceptSuccess(int id) {
             connectNum++;
             shouConnectNumber.Dispatcher.Invoke(() => {
                 shouConnectNumber.Content = connectNum.ToString();
             });
-            return true;
         }
-        private void OnReceive(int id, int signal, byte[] buffer) {
-            shouConnectNumber.Dispatcher.Invoke(() => {
+        private bool OnReceiveOriginalData(int id, byte[] buffer, int offest, int count) {
+            return false;
+        }
+        private void OnReceivePackage(int id, int signal, byte[] buffer) {
+
+            /*shouConnectNumber.Dispatcher.Invoke(() => {
                 shouConnectNumber.Content = string.Format("信号值：{0}\n消息内容：{1}", signal, Encoding.ASCII.GetString(buffer));
-            });
+            });*/
         }
         private void OnLeave(int id) {
             connectNum--;

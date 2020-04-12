@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:QinDevilServer"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800" Loaded="Window_Loaded">
+        Title="琴魔副本工具服务器" Height="450" Width="800" Loaded="Window_Loaded">
     <Grid>
         <Label Name="shouConnectNumber" Content="Label" HorizontalAlignment="Left" Height="100" Margin="82,56,0,0" VerticalAlignment="Top" Width="278"/>
         <TextBox Name="signalEdit" HorizontalAlignment="Left" Height="23" Margin="150,161,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>

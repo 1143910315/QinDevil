@@ -9,13 +9,17 @@ using System.Threading;
 
 namespace QinDevilCommon {
     public class SocketServer {
-        public delegate bool OnAcceptEvent(Socket socket);
-        public delegate void OnReceiveEvent(int id, int signal, byte[] buffer);
+        public delegate bool OnAcceptFilterEvent(Socket socket);
+        public delegate void OnAcceptSuccessEvent(int id);
+        public delegate bool OnReceiveOriginalDataEvent(int id, byte[] buffer, int offest, int count);
+        public delegate void OnReceivePackageEvent(int id, int signal, byte[] buffer);
         public delegate void OnLeaveEvent(int id);
         private Socket socket;
-        private SocketList socketList = new SocketList();
-        public OnAcceptEvent onAcceptEvent = null;
-        public OnReceiveEvent onReceiveEvent = null;
+        private readonly SocketList socketList = new SocketList();
+        public OnAcceptFilterEvent onAcceptFilterEvent = null;
+        public OnAcceptSuccessEvent onAcceptSuccessEvent = null;
+        public OnReceiveOriginalDataEvent onReceiveOriginalDataEvent = null;
+        public OnReceivePackageEvent onReceivePackageEvent = null;
         public OnLeaveEvent onLeaveEvent = null;
         public SocketServer(int port) {
             socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -24,35 +28,38 @@ namespace QinDevilCommon {
             new Task(() => {
                 while (socket != null) {
                     Socket acceptSocket = socket.Accept();
-                    bool? b = onAcceptEvent?.Invoke(acceptSocket);
+                    bool? b = onAcceptFilterEvent?.Invoke(acceptSocket);
                     if (b.HasValue && b.Value == false) {
                         acceptSocket.Close();
                     } else {
                         new Task((id) => {
+                            onAcceptSuccessEvent?.Invoke((int)id);
                             Socket thisSocket = socketList.Get(id);
                             byte[] buffer = new byte[512];
                             while (true) {
                                 try {
                                     int len = thisSocket.Receive(buffer);
                                     if (thisSocket.Connected && len > 0) {
-                                        if (socketList.AddData(id, buffer, 0, len)) {
+                                        bool? deal = onReceiveOriginalDataEvent?.Invoke((int)id, buffer, 0, len);
+                                        if (!(deal.HasValue && deal.Value) && socketList.AddData(id, buffer, 0, len)) {
                                             (int signal, byte[] temp) = socketList.GetDataAndDelete(id);
                                             do {
-                                                onReceiveEvent?.Invoke((int)id, signal, temp);
+                                                onReceivePackageEvent?.Invoke((int)id, signal, temp);
                                                 (signal, temp) = socketList.GetDataAndDelete(id);
                                             } while (temp != null);
                                         }
                                     } else {
                                         socketList.Delete(id);
                                         onLeaveEvent((int)id);
+                                        thisSocket.Close();
                                         break;
                                     }
                                 } catch (Exception) {
                                     socketList.Delete(id);
                                     onLeaveEvent((int)id);
+                                    thisSocket.Close();
                                     break;
                                 }
-
                             }
                         }, socketList.Add(acceptSocket)).Start();
                     }
@@ -86,7 +93,6 @@ namespace QinDevilCommon {
                 s.Close();
                 onLeaveEvent?.Invoke((int)ar.AsyncState);
             }
-
         }
         ~SocketServer() {
             socket.Close();
