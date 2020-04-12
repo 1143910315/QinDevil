@@ -13,7 +13,7 @@ namespace QinDevilCommon {
         private byte[] buffer = new byte[512];
         private readonly List<byte> list = new List<byte>();
         private readonly List<byte> sendData = new List<byte>();
-        public delegate bool OnConnectedEvent(bool connected);
+        public delegate void OnConnectedEvent(bool connected);
         public delegate void OnReceivePackageEvent(int signal, byte[] buffer);
         public delegate void OnConnectionBreakEvent();
         public OnConnectedEvent onConnectedEvent;

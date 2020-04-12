@@ -91,7 +91,8 @@ namespace QinDevilCommon {
                 s.EndSend(ar);
             } catch (Exception) {
                 s.Close();
-                onLeaveEvent?.Invoke((int)ar.AsyncState, null);//!!TODO 这里的userToken没办法传递 
+                //目测Close会引发onLeaveEvent事件，这里应该不需要触发第二次
+                //onLeaveEvent?.Invoke((int)ar.AsyncState, null);//!!TODO 这里的userToken没办法传递 
             }
         }
         ~SocketServer() {

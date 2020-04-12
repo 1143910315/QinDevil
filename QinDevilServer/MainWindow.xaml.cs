@@ -99,7 +99,10 @@ namespace QinDevilServer {
             return false;
         }
         private void OnReceivePackage(int id, int signal, byte[] buffer, object userToken) {
-
+            switch (signal) {
+                default:
+                    break;
+            }
             /*shouConnectNumber.Dispatcher.Invoke(() => {
                 shouConnectNumber.Content = string.Format("信号值：{0}\n消息内容：{1}", signal, Encoding.ASCII.GetString(buffer));
             });*/

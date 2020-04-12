@@ -12,6 +12,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Data structure\DoubleLinkList.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Data structure\LinkList.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Data structure\SafeLinkList.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)FileIO\IniFile.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Keyboard\KeyboardHook.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Keyboard\KeyCode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SerializeTool.cs" />
