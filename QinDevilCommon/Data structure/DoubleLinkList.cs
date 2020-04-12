@@ -161,7 +161,7 @@ namespace QinDevilCommon.Data_structure {
         }
 
         public IEnumerator GetEnumerator() {
-            throw new NotImplementedException();
+            return new DoubleLinkListEnumerator(this);
         }
     }
 }

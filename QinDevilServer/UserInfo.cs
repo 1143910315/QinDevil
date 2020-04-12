@@ -17,5 +17,10 @@ namespace QinDevilServer {
             get => _lastReceiveTime;
             set => Set(ref _lastReceiveTime, value);
         }
+        private string _ipAndPort;
+        public string IpAndPort {
+            get => _ipAndPort;
+            set => Set(ref _ipAndPort, value);
+        }
     }
 }

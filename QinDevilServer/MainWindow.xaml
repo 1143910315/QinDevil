@@ -6,10 +6,30 @@
         xmlns:local="clr-namespace:QinDevilServer"
         mc:Ignorable="d"
         Title="琴魔副本工具服务器" Height="450" Width="800" Loaded="Window_Loaded">
-    <Grid>
-        <Label Name="shouConnectNumber" Content="Label" HorizontalAlignment="Left" Height="100" Margin="82,56,0,0" VerticalAlignment="Top" Width="278"/>
-        <TextBox Name="signalEdit" HorizontalAlignment="Left" Height="23" Margin="150,161,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
-        <TextBox Name="magEdit" HorizontalAlignment="Left" Height="23" Margin="436,161,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
-        <Button Content="Button" HorizontalAlignment="Left" Margin="396,244,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click"/>
+    <Grid x:Name="GamePanel" d:DataContext="{d:DesignInstance local:GameData}">
+        <Label Name="shouConnectNumber" Content="Label" HorizontalAlignment="Left" Height="32" Margin="82,377,0,0" VerticalAlignment="Top" Width="278"/>
+        <TextBox Name="signalEdit" HorizontalAlignment="Left" Height="23" Margin="360,364,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
+        <TextBox Name="magEdit" HorizontalAlignment="Left" Height="23" Margin="485,364,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
+        <Button Content="Button" HorizontalAlignment="Left" Margin="610,363,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click"/>
+        <ListView HorizontalAlignment="Left" Height="348" Margin="10,10,0,0" VerticalAlignment="Top" Width="772" ItemsSource="{Binding ClientInfo}">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="ID" Width="20" x:Name="column1">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Id}"  TextAlignment="Center" Width="{Binding Path=ActualWidth,ElementName=column1}"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="最后接收时间" Width="200" x:Name="column2">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding LastReceiveTime,StringFormat={}{0:mm:ss}}" TextAlignment="Center" Width="{Binding Path=ActualWidth,ElementName=column2}"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                </GridView>
+            </ListView.View>
+        </ListView>
     </Grid>
 </Window>

@@ -12,10 +12,15 @@
     <Compile Include="$(MSBuildThisFileDirectory)Data structure\DoubleLinkList.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Data structure\LinkList.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Data structure\SafeLinkList.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Keyboard\KeyboardHook.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Keyboard\KeyCode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SerializeTool.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SocketClient.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SocketList.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SocketServer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ViewModelBase.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="$(MSBuildThisFileDirectory)Keyboard\" />
   </ItemGroup>
 </Project>
