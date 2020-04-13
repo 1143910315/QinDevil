@@ -22,5 +22,15 @@ namespace QinDevilServer {
             get => _ipAndPort;
             set => Set(ref _ipAndPort, value);
         }
+        private string _machineIdentity;
+        public string MachineIdentity {
+            get => _machineIdentity;
+            set => Set(ref _machineIdentity, value);
+        }
+        private string _gamePath;
+        public string GamePath {
+            get => _gamePath;
+            set => Set(ref _gamePath, value);
+        }
     }
 }

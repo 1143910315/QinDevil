@@ -6,8 +6,8 @@
         xmlns:local="clr-namespace:QinDevilClient"
         mc:Ignorable="d"
         Title="琴魔副本工具" Height="450" Width="800" Loaded="Window_Loaded">
-    <Grid>
-        <Label Name="ping" Content="正在积极通讯，请不要关闭！" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="198" Height="28"/>
+    <Grid x:Name="GamePanel" d:DataContext="{d:DesignInstance local:GameData}">
+        <Label Name="ping" Content="{Binding ContentName,StringFormat=Ping：\{0\}}" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="198" Height="28"/>
         <Button Content="Button" HorizontalAlignment="Left" Margin="483,310,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click"/>
         <Label Content="Label" HorizontalAlignment="Left" Margin="94,204,0,0" VerticalAlignment="Top"/>
         <TextBox Name="singalEdit"  HorizontalAlignment="Left" Height="23" Margin="167,204,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>

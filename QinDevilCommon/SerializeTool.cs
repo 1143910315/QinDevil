@@ -31,6 +31,27 @@ namespace MusicPlayer3.Serialize {
             startIndex += rawsize;
             return retobj;
         }
+        //专为字符串序列化
+        public static byte[] RawSerializeForUTF8String(string str) {
+            byte[] stringBytes = Encoding.UTF8.GetBytes(str);
+            byte[] rawdatas = new byte[4 + stringBytes.Length];
+            rawdatas[0] = (byte)(stringBytes.Length & 0xFF);
+            rawdatas[1] = (byte)((stringBytes.Length >> 8) & 0xFF);
+            rawdatas[2] = (byte)((stringBytes.Length >> 16) & 0xFF);
+            rawdatas[3] = (byte)((stringBytes.Length >> 24) & 0xFF);
+            stringBytes.CopyTo(rawdatas, 4);
+            return rawdatas;
+        }
+        //专为字符串反序列化
+        public static string RawDeserializeForUTF8String(byte[] rawdatas, ref int startIndex) {
+            int length = rawdatas[startIndex++]
+                | (rawdatas[startIndex++] >> 8)
+                | (rawdatas[startIndex++] >> 16)
+                | (rawdatas[startIndex++] >> 24);
+            string str = Encoding.UTF8.GetString(rawdatas, startIndex, length);
+            startIndex += length;
+            return str;
+        }
         //从文件流当前位置反序列化一个对象
         public static T RawDeserializeFromFileStream<T>(FileStream fileStream) {
             int rawsize = Marshal.SizeOf<T>();

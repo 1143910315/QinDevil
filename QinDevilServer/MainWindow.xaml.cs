@@ -1,9 +1,13 @@
-﻿using QinDevilCommon;
+﻿using MusicPlayer3.Serialize;
+using QinDevilCommon;
 using QinDevilCommon.Keyboard;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -30,6 +34,10 @@ namespace QinDevilServer {
             InitializeComponent();
         }
         private void Window_Loaded(object sender, RoutedEventArgs e) {
+            /*RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
+            Debug.WriteLine(rsa.ToXmlString(true));
+            Debug.WriteLine(rsa.ToXmlString(false));*/
+            //rsa.FromXmlString("");
             server = new SocketServer(13748) {
                 onAcceptSuccessEvent = OnAcceptSuccess,
                 onReceiveOriginalDataEvent = OnReceiveOriginalData,
@@ -83,6 +91,7 @@ namespace QinDevilServer {
             return userInfo;
         }
         private bool OnReceiveOriginalData(int id, byte[] buffer, int offest, int count, object userToken) {
+            /*
             if (userToken is UserInfo userInfo) {
                 if (userInfo.IpAndPort == null) {
                     try {
@@ -91,15 +100,41 @@ namespace QinDevilServer {
                         Regex regex = new Regex("^\\d{1,3}.\\d{1,3}.\\d{1,3}.\\d{1,3}:\\d+$");
                         if (regex.IsMatch(s)) {
                             userInfo.IpAndPort = s;
+                            return true;
                         }
                     } catch (Exception) {
                     }
                 }
             }
+            */
             return false;
         }
         private void OnReceivePackage(int id, int signal, byte[] buffer, object userToken) {
+            UserInfo userInfo = userToken as UserInfo;
+            if (userInfo == null) {
+                for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
+                    if (gameData.ClientInfo.Get(i).Id == id) {
+                        userInfo = gameData.ClientInfo.Get(i);
+                        break;
+                    }
+                }
+            }
             switch (signal) {
+                case 0: {
+                        int length = BitConverter.ToInt32(buffer, 0);
+                        userInfo.MachineIdentity = Encoding.UTF8.GetString(buffer, 4, length);
+                        RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
+                        rsa.FromXmlString("<RSAKeyValue><Modulus>2FMpblMWJ5JomZbaj8Y+VYkzviSGpEJn3q5EtSYorN6sbsgSKS8UeJ0AEk8lmNcbgF6F8KzdP7z93EhZRUeqOlPQh+VmrMQ0kUpUdngO0mlJUU6jAhuQd4Hw+NTnZZknKjhWSQFD8e5V3nFYSjsZXlXdGtvukJxsG8RcyLB2Kd0=</Modulus><Exponent>AQAB</Exponent><P>41r456T359znQHgvztfTEZ5xe1Kz6xgkSDC1IpwMDY+dGCd00vhzp0eD6rvRMJQpkVxu+JmVvqFmL8oCX/ybrw==</P><Q>85RqfNiyKhhpeg4XPwRlFSwjNO+I2u3Wc4Qg7JIw9vVnuMsIPeYu0FtNuUu2KrAaANqQ2w2xmR56Cf4WG9q6Mw==</Q><DP>1R8gGDUiVm1TMbH4TtMt/mQiSNJb6dM1n55ZDdptygCH6G6EKofQEk0Nserhy8H3vVWCiPOf1ZUCb2XUGBp57Q==</DP><DQ>fX1lL1Tk1VMmZD+GMm0tNq86pDcUJtaJuZHE9JyMpW7hNQ9E+77vN2EStfgPrgZ0HyR7pJ91dBGDhkplUYxqiQ==</DQ><InverseQ>efPy4erlPKo9yMoUfQvcbCqRUPeSgt0hTCb880Oh+sjd5ILz9kn6lxOUkHVBc7xFTvQKu6XL15vppUtncaIt3Q==</InverseQ><D>skefPoAVIxnDQMkVaSYtWxsO3KaHnDnqFpgyocRIA2gkXcxfQze8vEZPt8coqhSlYp8D7bzZPl1ILlIl2DXesF0iw43F+uXhwRiDCYqRF5azkklIYXlE/93z04h2N15/XyodEgcVx26A040mAOStYTha3a5t6ZFCDHQCZFGJkBU=</D></RSAKeyValue>");
+                        int ciphertextLength = BitConverter.ToInt32(buffer, 4 + length);
+                        byte[] temp = new byte[ciphertextLength];
+                        for (int i = 0; i < ciphertextLength; i++) {
+                            temp[i] = buffer[8 + length + i];
+                        }
+                        byte[] plaintext = rsa.Decrypt(temp, true);
+                        userInfo.GamePath = Encoding.UTF8.GetString(plaintext);
+                        server.SendPackage(id, 0, null, 0, 0);
+                        break;
+                    }
                 default:
                     break;
             }

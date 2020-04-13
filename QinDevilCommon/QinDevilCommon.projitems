@@ -13,12 +13,15 @@
     <Compile Include="$(MSBuildThisFileDirectory)Data structure\LinkList.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Data structure\SafeLinkList.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)FileIO\IniFile.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Image\ImageFormatConverser.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Keyboard\KeyboardHook.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Keyboard\KeyCode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SerializeTool.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SocketClient.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SocketList.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SocketServer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SystemLay\SystemScreen.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SystemLay\SystemInfo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ViewModelBase.cs" />
   </ItemGroup>
   <ItemGroup>
