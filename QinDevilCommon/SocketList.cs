@@ -6,7 +6,7 @@ using System.Text;
 
 namespace QinDevilCommon {
     internal class SocketList {
-        private int connectNum = 0;
+        private int connectNum = 1;
         private readonly Hashtable hashtable = new Hashtable();
         private readonly Hashtable data = new Hashtable();
         internal int Add(Socket socket) {

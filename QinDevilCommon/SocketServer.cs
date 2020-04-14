@@ -66,6 +66,13 @@ namespace QinDevilCommon {
                 }
             }).Start();
         }
+        public void SendPackage(int id, int signal, byte[] data) {
+            if (data != null) {
+                SendPackage(id, signal, data, 0, data.Length);
+            } else {
+                SendPackage(id, signal, null, 0, 0);
+            }
+        }
         public void SendPackage(int id, int signal, byte[] data, int offset, int count) {
             Socket s = socketList.Get(id);
             if (s != null) {

@@ -92,9 +92,13 @@ namespace QinDevilCommon {
                 }
             }
         }
-        /*public void Send(byte [] data) {
-
-        }*/
+        public void SendPackage(int signal, byte[] data) {
+            if (data != null) {
+                SendPackage(signal, data, 0, data.Length);
+            } else {
+                SendPackage(signal, null, 0, 0);
+            }
+        }
         public void SendPackage(int signal, byte[] data, int offset, int count) {
             byte[] v = BitConverter.GetBytes(signal);
             byte[] l = BitConverter.GetBytes(count + v.Length);

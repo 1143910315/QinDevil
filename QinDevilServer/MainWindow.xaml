@@ -14,17 +14,17 @@
         <ListView HorizontalAlignment="Left" Height="348" Margin="10,10,0,0" VerticalAlignment="Top" Width="772" ItemsSource="{Binding ClientInfo}">
             <ListView.View>
                 <GridView>
-                    <GridViewColumn Header="ID" Width="20" x:Name="column1">
+                    <GridViewColumn Header="ID" Width="40" x:Name="column1">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Id}"  TextAlignment="Center" Width="{Binding Path=ActualWidth,ElementName=column1}"/>
+                                <TextBlock Text="{Binding Id}" TextAlignment="Center" Width="{Binding Path=ActualWidth,ElementName=column1}"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn Header="最后接收时间" Width="200" x:Name="column2">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding LastReceiveTime,StringFormat={}{0:mm:ss}}" TextAlignment="Center" Width="{Binding Path=ActualWidth,ElementName=column2}"/>
+                                <TextBlock Text="{Binding LastReceiveTime,StringFormat={}{0:HH:mm:ss}}" TextAlignment="Center" Width="{Binding Path=ActualWidth,ElementName=column2}"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>

@@ -4,7 +4,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace MusicPlayer3.Serialize {
+namespace QinDevilCommon.Data {
     public class SerializeTool {
         private SerializeTool() {
         }
