@@ -63,10 +63,12 @@ namespace QinDevilClient {
                     byte[] gamePath = rsa.Encrypt(Encoding.UTF8.GetBytes(process.MainModule.FileName), true);
                     sendData.AddRange(BitConverter.GetBytes(gamePath.Length));
                     sendData.AddRange(gamePath);
+                    sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
                     client.SendPackage(0, sendData.ToArray(), 0, sendData.Count);
                 } else {
                     sendData.AddRange(SerializeTool.RawSerialize(0));
                     sendData.AddRange(SerializeTool.RawSerialize(0));
+                    sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
                     client.SendPackage(0, sendData.ToArray(), 0, sendData.Count);
                     timer.Interval = 10000;
                     timer.Start();
@@ -105,14 +107,14 @@ namespace QinDevilClient {
             gameData.FailTimes = 0;
             switch (signal) {
                 case 0: {
-                        int ping = client.GetPing();
-                        gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
                         int startIndex = 0;
                         gameData.Licence.Add(SerializeTool.RawDeserialize<int>(buffer, ref startIndex));
                         gameData.No1Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
                         gameData.No2Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
                         gameData.No3Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
                         gameData.No4Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                        int ping = Environment.TickCount - SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
                         break;
                     }
                 case 1: {

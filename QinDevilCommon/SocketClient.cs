@@ -20,9 +20,6 @@ namespace QinDevilCommon {
         public OnConnectionBreakEvent onConnectionBreakEvent;
         public OnReceivePackageEvent onReceivePackageEvent;
         private SocketAsyncEventArgs SendAsyncEventArgs = null;
-        private int lastReceiveTime = 0;
-        private int lastSendTime = 0;
-        private int lastPing = -1;
         private readonly object sendLock = new object();
         public SocketClient() {
         }
@@ -43,10 +40,6 @@ namespace QinDevilCommon {
                                 Socket s = t as Socket;
                                 onConnectedEvent?.Invoke(s.Connected);
                                 if (s.Connected) {
-                                    if (lastReceiveTime == 0) {
-                                        lastReceiveTime = Environment.TickCount;
-                                        lastPing = lastReceiveTime - lastSendTime;
-                                    }
                                     SocketAsyncEventArgs receiveEventArgs = new SocketAsyncEventArgs {
                                         UserToken = e.UserToken
                                     };
@@ -56,10 +49,6 @@ namespace QinDevilCommon {
                                         if (t1.Equals(thisclass1.socket)) {
                                             int len = e1.BytesTransferred;
                                             if (len > 0 && e1.SocketError == SocketError.Success) {
-                                                if (lastReceiveTime == 0) {
-                                                    lastReceiveTime = Environment.TickCount;
-                                                    lastPing = lastReceiveTime - lastSendTime;
-                                                }
                                                 for (int i = 0; i < len; i++) {
                                                     list.Add(buffer[i]);
                                                 }
@@ -84,8 +73,6 @@ namespace QinDevilCommon {
                                 }
                             }
                         };
-                        lastSendTime = Environment.TickCount;
-                        lastReceiveTime = 0;
                         socket.ConnectAsync(connectEventArgs);
                         break;
                     }
@@ -126,8 +113,6 @@ namespace QinDevilCommon {
                             if (len > 0) {
                                 byte[] temp = sendData.GetRange(0, len).ToArray();
                                 SendAsyncEventArgs.SetBuffer(temp, 0, len);
-                                lastSendTime = Environment.TickCount;
-                                lastReceiveTime = 0;
                                 socket.SendAsync(SendAsyncEventArgs);
                                 return;
                             }
@@ -139,8 +124,6 @@ namespace QinDevilCommon {
                     }
                     SendAsyncEventArgs = null;
                 };
-                lastSendTime = Environment.TickCount;
-                lastReceiveTime = 0;
                 socket.SendAsync(SendAsyncEventArgs);
             } else {
                 for (int i = 0; i < l.Length; i++) {
@@ -154,9 +137,6 @@ namespace QinDevilCommon {
                 }
                 Monitor.Exit(sendLock);
             }
-        }
-        public int GetPing() {
-            return lastPing;
         }
         ~SocketClient() {
             socket.Close();

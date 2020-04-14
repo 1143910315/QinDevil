@@ -140,12 +140,14 @@ namespace QinDevilServer {
                             byte[] plaintext = rsa.Decrypt(temp, true);
                             userInfo.GamePath = Encoding.UTF8.GetString(plaintext);
                         }
+                        int ping = BitConverter.ToInt32(buffer, 8 + length + ciphertextLength);
                         List<byte> sendData = new List<byte>();
                         sendData.AddRange(SerializeTool.RawSerialize(userInfo.Id));
                         sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.No1Qin));
                         sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.No2Qin));
                         sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.No3Qin));
                         sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.No4Qin));
+                        sendData.AddRange(SerializeTool.RawSerialize(ping));
                         server.SendPackage(id, 0, sendData.ToArray(), 0, sendData.Count);
                         break;
                     }
