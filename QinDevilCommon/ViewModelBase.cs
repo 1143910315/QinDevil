@@ -15,6 +15,10 @@ namespace AudioPlayer.ViewModel {
             OnPropertyChanged(propertyName);
             return true;
         }
+        protected bool Update([CallerMemberName] string propertyName = null) {
+            OnPropertyChanged(propertyName);
+            return true;
+        }
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null) {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }

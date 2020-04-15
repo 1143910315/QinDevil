@@ -4,8 +4,39 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:QinDevilClient"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
-        Title="琴魔副本工具" Height="181" Width="386" Loaded="Window_Loaded">
+        Title="琴魔副本工具" Height="181" Width="386" Loaded="Window_Loaded" Topmost="True">
+    <Window.Resources>
+        <local:QinKeyConverter x:Key="QinKey"/>
+        <sys:Int32 x:Key="one">1</sys:Int32>
+        <sys:Int32 x:Key="two">2</sys:Int32>
+        <sys:Int32 x:Key="three">3</sys:Int32>
+        <sys:Int32 x:Key="four">4</sys:Int32>
+        <sys:Int32 x:Key="five">5</sys:Int32>
+        <sys:Int32 x:Key="six">6</sys:Int32>
+        <sys:Int32 x:Key="seven">7</sys:Int32>
+        <sys:Int32 x:Key="eight">8</sys:Int32>
+        <sys:Int32 x:Key="nine">9</sys:Int32>
+        <sys:Int32 x:Key="ten">10</sys:Int32>
+        <sys:Int32 x:Key="eleven">11</sys:Int32>
+        <sys:Int32 x:Key="twelve">12</sys:Int32>
+        <Storyboard x:Key="Storyboard1" RepeatBehavior="00:00:00.8000000">
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[3].(TranslateTransform.X)" Storyboard.TargetName="label" RepeatBehavior="00:00:00.8">
+                <DiscreteDoubleKeyFrame KeyTime="0" Value="-2"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.1" Value="2"/>
+            </DoubleAnimationUsingKeyFrames>
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[3].(TranslateTransform.Y)" Storyboard.TargetName="label" RepeatBehavior="00:00:00.8">
+                <DiscreteDoubleKeyFrame KeyTime="0" Value="-2"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:0.066" Value="2"/>
+            </DoubleAnimationUsingKeyFrames>
+        </Storyboard>
+    </Window.Resources>
+    <Window.Triggers>
+        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+            <BeginStoryboard Storyboard="{StaticResource Storyboard1}"/>
+        </EventTrigger>
+    </Window.Triggers>
     <Grid x:Name="GamePanel" d:DataContext="{d:DesignInstance local:GameData}" >
         <Viewbox Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Top">
             <Canvas Width="378" Height="150">
@@ -18,18 +49,194 @@
                 <TextBox Text="{Binding No3Qin,UpdateSourceTrigger=PropertyChanged,NotifyOnSourceUpdated=True}" Width="82" Canvas.Left="194" Canvas.Top="50" InputMethod.IsInputMethodEnabled="False" PreviewTextInput="TextBox_PreviewTextInput" SourceUpdated="TextBox_SourceUpdated_2"/>
                 <Label Content="四号琴" Canvas.Left="286" Canvas.Top="30" Padding="0" Width="82" HorizontalContentAlignment="Center"/>
                 <TextBox Text="{Binding No4Qin,UpdateSourceTrigger=PropertyChanged,NotifyOnSourceUpdated=True}" Width="82" Canvas.Left="286" Canvas.Top="50" InputMethod.IsInputMethodEnabled="False" PreviewTextInput="TextBox_PreviewTextInput" SourceUpdated="TextBox_SourceUpdated_3"/>
-                <Label Content="宫" Canvas.Left="10" Canvas.Top="72" Background="Red" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" />
-                <Label Content="宫" Canvas.Left="39" Canvas.Top="72" Background="Red" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" />
-                <Label Content="宫" Canvas.Left="68" Canvas.Top="72" Background="Red" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" />
-                <Label Content="宫" Canvas.Left="102" Canvas.Top="72" Background="Red" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" />
-                <Label Content="宫" Canvas.Left="131" Canvas.Top="72" Background="Red" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" />
-                <Label Content="宫" Canvas.Left="160" Canvas.Top="72" Background="Red" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" />
-                <Label Content="宫" Canvas.Left="194" Canvas.Top="72" Background="Red" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" />
-                <Label Content="宫" Canvas.Left="223" Canvas.Top="72" Background="Red" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" />
-                <Label Content="宫" Canvas.Left="252" Canvas.Top="72" Background="Red" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" />
-                <Label Content="宫" Canvas.Left="286" Canvas.Top="72" Background="Red" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" />
-                <Label Content="宫" Canvas.Left="315" Canvas.Top="72" Background="Red" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" />
-                <Label Content="宫" Canvas.Left="344" Canvas.Top="72" Background="Red" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" />
+                <Label x:Name="label" Canvas.Left="10" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown" RenderTransformOrigin="0.5,0.5" >
+                    <Label.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </Label.RenderTransform>
+                    <Label.Content>
+                        <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
+                            <Binding Path="No1Qin"/>
+                            <Binding Source="{StaticResource ResourceKey=one}"/>
+                        </MultiBinding>
+                    </Label.Content>
+                    <Label.Background>
+                        <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
+                            <Binding Path="QinKey"/>
+                            <Binding Source="{StaticResource ResourceKey=one}"/>
+                            <Binding Path="Licence"/>
+                        </MultiBinding>
+                    </Label.Background>
+                </Label>
+                <Label Canvas.Left="39" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_1" >
+                    <Label.Content>
+                        <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
+                            <Binding Path="No1Qin"/>
+                            <Binding Source="{StaticResource ResourceKey=two}"/>
+                        </MultiBinding>
+                    </Label.Content>
+                    <Label.Background>
+                        <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
+                            <Binding Path="QinKey"/>
+                            <Binding Source="{StaticResource ResourceKey=two}"/>
+                            <Binding Path="Licence"/>
+                        </MultiBinding>
+                    </Label.Background>
+                </Label>
+                <Label Canvas.Left="68" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_2" >
+                    <Label.Content>
+                        <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
+                            <Binding Path="No1Qin"/>
+                            <Binding Source="{StaticResource ResourceKey=three}"/>
+                        </MultiBinding>
+                    </Label.Content>
+                    <Label.Background>
+                        <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
+                            <Binding Path="QinKey"/>
+                            <Binding Source="{StaticResource ResourceKey=three}"/>
+                            <Binding Path="Licence"/>
+                        </MultiBinding>
+                    </Label.Background>
+                </Label>
+                <Label Canvas.Left="102" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_3" >
+                    <Label.Content>
+                        <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
+                            <Binding Path="No2Qin"/>
+                            <Binding Source="{StaticResource ResourceKey=one}"/>
+                        </MultiBinding>
+                    </Label.Content>
+                    <Label.Background>
+                        <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
+                            <Binding Path="QinKey"/>
+                            <Binding Source="{StaticResource ResourceKey=four}"/>
+                            <Binding Path="Licence"/>
+                        </MultiBinding>
+                    </Label.Background>
+                </Label>
+                <Label Canvas.Left="131" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_4" >
+                    <Label.Content>
+                        <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
+                            <Binding Path="No2Qin"/>
+                            <Binding Source="{StaticResource ResourceKey=two}"/>
+                        </MultiBinding>
+                    </Label.Content>
+                    <Label.Background>
+                        <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
+                            <Binding Path="QinKey"/>
+                            <Binding Source="{StaticResource ResourceKey=five}"/>
+                            <Binding Path="Licence"/>
+                        </MultiBinding>
+                    </Label.Background>
+                </Label>
+                <Label Canvas.Left="160" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_5" >
+                    <Label.Content>
+                        <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
+                            <Binding Path="No2Qin"/>
+                            <Binding Source="{StaticResource ResourceKey=three}"/>
+                        </MultiBinding>
+                    </Label.Content>
+                    <Label.Background>
+                        <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
+                            <Binding Path="QinKey"/>
+                            <Binding Source="{StaticResource ResourceKey=six}"/>
+                            <Binding Path="Licence"/>
+                        </MultiBinding>
+                    </Label.Background>
+                </Label>
+                <Label Canvas.Left="194" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_6" >
+                    <Label.Content>
+                        <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
+                            <Binding Path="No3Qin"/>
+                            <Binding Source="{StaticResource ResourceKey=one}"/>
+                        </MultiBinding>
+                    </Label.Content>
+                    <Label.Background>
+                        <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
+                            <Binding Path="QinKey"/>
+                            <Binding Source="{StaticResource ResourceKey=seven}"/>
+                            <Binding Path="Licence"/>
+                        </MultiBinding>
+                    </Label.Background>
+                </Label>
+                <Label Canvas.Left="223" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_7" >
+                    <Label.Content>
+                        <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
+                            <Binding Path="No3Qin"/>
+                            <Binding Source="{StaticResource ResourceKey=two}"/>
+                        </MultiBinding>
+                    </Label.Content>
+                    <Label.Background>
+                        <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
+                            <Binding Path="QinKey"/>
+                            <Binding Source="{StaticResource ResourceKey=eight}"/>
+                            <Binding Path="Licence"/>
+                        </MultiBinding>
+                    </Label.Background>
+                </Label>
+                <Label Canvas.Left="252" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_8" >
+                    <Label.Content>
+                        <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
+                            <Binding Path="No3Qin"/>
+                            <Binding Source="{StaticResource ResourceKey=three}"/>
+                        </MultiBinding>
+                    </Label.Content>
+                    <Label.Background>
+                        <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
+                            <Binding Path="QinKey"/>
+                            <Binding Source="{StaticResource ResourceKey=nine}"/>
+                            <Binding Path="Licence"/>
+                        </MultiBinding>
+                    </Label.Background>
+                </Label>
+                <Label Canvas.Left="286" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_9" >
+                    <Label.Content>
+                        <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
+                            <Binding Path="No4Qin"/>
+                            <Binding Source="{StaticResource ResourceKey=one}"/>
+                        </MultiBinding>
+                    </Label.Content>
+                    <Label.Background>
+                        <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
+                            <Binding Path="QinKey"/>
+                            <Binding Source="{StaticResource ResourceKey=ten}"/>
+                            <Binding Path="Licence"/>
+                        </MultiBinding>
+                    </Label.Background>
+                </Label>
+                <Label Canvas.Left="315" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_10" >
+                    <Label.Content>
+                        <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
+                            <Binding Path="No4Qin"/>
+                            <Binding Source="{StaticResource ResourceKey=two}"/>
+                        </MultiBinding>
+                    </Label.Content>
+                    <Label.Background>
+                        <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
+                            <Binding Path="QinKey"/>
+                            <Binding Source="{StaticResource ResourceKey=eleven}"/>
+                            <Binding Path="Licence"/>
+                        </MultiBinding>
+                    </Label.Background>
+                </Label>
+                <Label Canvas.Left="344" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_11" >
+                    <Label.Content>
+                        <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
+                            <Binding Path="No4Qin"/>
+                            <Binding Source="{StaticResource ResourceKey=three}"/>
+                        </MultiBinding>
+                    </Label.Content>
+                    <Label.Background>
+                        <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
+                            <Binding Path="QinKey"/>
+                            <Binding Source="{StaticResource ResourceKey=twelve}"/>
+                            <Binding Path="Licence"/>
+                        </MultiBinding>
+                    </Label.Background>
+                </Label>
             </Canvas>
         </Viewbox>
     </Grid>

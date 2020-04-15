@@ -10,7 +10,7 @@ using System.Threading;
 namespace QinDevilCommon {
     public class SocketClient {
         private Socket socket;
-        private byte[] buffer = new byte[512];
+        private readonly byte[] buffer = new byte[512];
         private readonly List<byte> list = new List<byte>();
         private readonly List<byte> sendData = new List<byte>();
         public delegate void OnConnectedEvent(bool connected);
@@ -20,6 +20,7 @@ namespace QinDevilCommon {
         public OnConnectionBreakEvent onConnectionBreakEvent;
         public OnReceivePackageEvent onReceivePackageEvent;
         private SocketAsyncEventArgs SendAsyncEventArgs = null;
+        private bool socketIsOnline = false;
         private readonly object sendLock = new object();
         public SocketClient() {
         }
@@ -28,6 +29,7 @@ namespace QinDevilCommon {
             if (entry != null && entry.AddressList != null) {
                 for (int AddressListIndex = 0; AddressListIndex < entry.AddressList.Length; AddressListIndex++) {
                     if (entry.AddressList[AddressListIndex].AddressFamily == AddressFamily.InterNetwork) {
+                        socketIsOnline = false;
                         socket?.Close();
                         socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                         SocketAsyncEventArgs connectEventArgs = new SocketAsyncEventArgs {
@@ -40,6 +42,7 @@ namespace QinDevilCommon {
                                 Socket s = t as Socket;
                                 onConnectedEvent?.Invoke(s.Connected);
                                 if (s.Connected) {
+                                    socketIsOnline = true;
                                     SocketAsyncEventArgs receiveEventArgs = new SocketAsyncEventArgs {
                                         UserToken = e.UserToken
                                     };
@@ -64,12 +67,15 @@ namespace QinDevilCommon {
                                                 }
                                                 ((Socket)t1).ReceiveAsync(receiveEventArgs);
                                             } else {
+                                                socketIsOnline = false;
                                                 onConnectionBreakEvent?.Invoke();
                                                 thisclass1.socket.Close();
                                             }
                                         }
                                     };
                                     socket.ReceiveAsync(receiveEventArgs);
+                                } else {
+                                    socketIsOnline = false;
                                 }
                             }
                         };
@@ -111,10 +117,12 @@ namespace QinDevilCommon {
                             Monitor.Enter(sendLock);
                             int len = sendData.Count;
                             if (len > 0) {
-                                byte[] temp = sendData.GetRange(0, len).ToArray();
+                                byte[] temp = sendData.ToArray();
+                                sendData.Clear();
                                 SendAsyncEventArgs.SetBuffer(temp, 0, len);
-                                socket.SendAsync(SendAsyncEventArgs);
-                                return;
+                                if (socketIsOnline) {
+                                    socket.SendAsync(SendAsyncEventArgs);
+                                }
                             }
                             Monitor.Exit(sendLock);
                         } else {
@@ -124,7 +132,9 @@ namespace QinDevilCommon {
                     }
                     SendAsyncEventArgs = null;
                 };
-                socket.SendAsync(SendAsyncEventArgs);
+                if (socketIsOnline) {
+                    socket.SendAsync(SendAsyncEventArgs);
+                }
             } else {
                 for (int i = 0; i < l.Length; i++) {
                     sendData.Add(l[i]);

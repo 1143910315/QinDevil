@@ -8,17 +8,10 @@ using System.Threading.Tasks;
 
 namespace QinDevilServer {
     public class GameData : ViewModelBase {
-        public const int State_LeakHunting = 0;
-        public const int State_HitKey = 1;
         private DoubleLinkList<UserInfo> _clientInfo = new DoubleLinkList<UserInfo>();
         public DoubleLinkList<UserInfo> ClientInfo {
             get => _clientInfo;
             set => Set(ref _clientInfo, value);
-        }
-        private int _state;
-        public int State {
-            get => _state;
-            set => Set(ref _state, value);
         }
         private string _no1Qin = "";
         public string No1Qin {
@@ -40,6 +33,10 @@ namespace QinDevilServer {
             get => _no4Qin;
             set => Set(ref _no4Qin, value);
         }
-        public List<int> QinKey { get; } = new List<int>(12);
+        private readonly List<int> _qinKey = new List<int>(new int[12]);
+        public List<int> QinKey {
+            get => _qinKey;
+            set => Update();
+        }
     }
 }

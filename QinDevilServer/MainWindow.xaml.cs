@@ -58,12 +58,14 @@ namespace QinDevilServer {
                     break;
                 case KeyCode.Numeric7:
                     if (ctrlState) {
-                        gameData.State = GameData.State_LeakHunting;
-                    }
-                    break;
-                case KeyCode.Numeric8:
-                    if (ctrlState) {
-                        gameData.State = GameData.State_HitKey;
+                        gameData.No1Qin = gameData.No2Qin = gameData.No3Qin = gameData.No4Qin = "";
+                        for (int i = 0; i < 12; i++) {
+                            gameData.QinKey[i] = 0;
+                        }
+                        for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
+                            UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
+                            server.SendPackage(tempUserInfo.Id, 5, SerializeTool.RawSerialize(tempUserInfo.Id));
+                        }
                     }
                     break;
                 default:
@@ -113,94 +115,126 @@ namespace QinDevilServer {
             return false;
         }
         private void OnReceivePackage(int id, int signal, byte[] buffer, object userToken) {
-            UserInfo userInfo = userToken as UserInfo;
-            if (userInfo == null) {
-                for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
-                    if (gameData.ClientInfo.Get(i).Id == id) {
-                        userInfo = gameData.ClientInfo.Get(i);
-                        break;
+            try {
+                UserInfo userInfo = userToken as UserInfo;
+                if (userInfo == null) {
+                    for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
+                        if (gameData.ClientInfo.Get(i).Id == id) {
+                            userInfo = gameData.ClientInfo.Get(i);
+                            break;
+                        }
                     }
                 }
+                userInfo.LastReceiveTime = DateTime.Now;
+                int startIndex = 0;
+                switch (signal) {
+                    case 0: {
+                            int length = BitConverter.ToInt32(buffer, 0);
+                            if (length > 0) {
+                                userInfo.MachineIdentity = Encoding.UTF8.GetString(buffer, 4, length);
+                            }
+                            int ciphertextLength = BitConverter.ToInt32(buffer, 4 + length);
+                            if (ciphertextLength > 0) {
+                                RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
+                                rsa.FromXmlString("<RSAKeyValue><Modulus>2FMpblMWJ5JomZbaj8Y+VYkzviSGpEJn3q5EtSYorN6sbsgSKS8UeJ0AEk8lmNcbgF6F8KzdP7z93EhZRUeqOlPQh+VmrMQ0kUpUdngO0mlJUU6jAhuQd4Hw+NTnZZknKjhWSQFD8e5V3nFYSjsZXlXdGtvukJxsG8RcyLB2Kd0=</Modulus><Exponent>AQAB</Exponent><P>41r456T359znQHgvztfTEZ5xe1Kz6xgkSDC1IpwMDY+dGCd00vhzp0eD6rvRMJQpkVxu+JmVvqFmL8oCX/ybrw==</P><Q>85RqfNiyKhhpeg4XPwRlFSwjNO+I2u3Wc4Qg7JIw9vVnuMsIPeYu0FtNuUu2KrAaANqQ2w2xmR56Cf4WG9q6Mw==</Q><DP>1R8gGDUiVm1TMbH4TtMt/mQiSNJb6dM1n55ZDdptygCH6G6EKofQEk0Nserhy8H3vVWCiPOf1ZUCb2XUGBp57Q==</DP><DQ>fX1lL1Tk1VMmZD+GMm0tNq86pDcUJtaJuZHE9JyMpW7hNQ9E+77vN2EStfgPrgZ0HyR7pJ91dBGDhkplUYxqiQ==</DQ><InverseQ>efPy4erlPKo9yMoUfQvcbCqRUPeSgt0hTCb880Oh+sjd5ILz9kn6lxOUkHVBc7xFTvQKu6XL15vppUtncaIt3Q==</InverseQ><D>skefPoAVIxnDQMkVaSYtWxsO3KaHnDnqFpgyocRIA2gkXcxfQze8vEZPt8coqhSlYp8D7bzZPl1ILlIl2DXesF0iw43F+uXhwRiDCYqRF5azkklIYXlE/93z04h2N15/XyodEgcVx26A040mAOStYTha3a5t6ZFCDHQCZFGJkBU=</D></RSAKeyValue>");
+                                byte[] temp = new byte[ciphertextLength];
+                                for (int i = 0; i < ciphertextLength; i++) {
+                                    temp[i] = buffer[8 + length + i];
+                                }
+                                byte[] plaintext = rsa.Decrypt(temp, true);
+                                userInfo.GamePath = Encoding.UTF8.GetString(plaintext);
+                            }
+                            int ping = BitConverter.ToInt32(buffer, 8 + length + ciphertextLength);
+                            List<byte> sendData = new List<byte>();
+                            sendData.AddRange(SerializeTool.RawSerialize(userInfo.Id));
+                            sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.No1Qin));
+                            sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.No2Qin));
+                            sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.No3Qin));
+                            sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.No4Qin));
+                            sendData.AddRange(SerializeTool.RawSerialize(ping));
+                            server.SendPackage(id, 0, sendData.ToArray(), 0, sendData.Count);
+                            break;
+                        }
+                    case 1: {
+                            gameData.No1Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                            byte[] QinStrByte = SerializeTool.RawSerializeForUTF8String(gameData.No1Qin);
+                            for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
+                                UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
+                                if (tempUserInfo.Id != userInfo.Id) {
+                                    server.SendPackage(tempUserInfo.Id, 1, QinStrByte);
+                                }
+                            }
+                            break;
+                        }
+                    case 2: {
+                            gameData.No2Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                            byte[] QinStrByte = SerializeTool.RawSerializeForUTF8String(gameData.No2Qin);
+                            for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
+                                UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
+                                if (tempUserInfo.Id != userInfo.Id) {
+                                    server.SendPackage(tempUserInfo.Id, 2, QinStrByte);
+                                }
+                            }
+                            break;
+                        }
+                    case 3: {
+                            gameData.No3Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                            byte[] QinStrByte = SerializeTool.RawSerializeForUTF8String(gameData.No3Qin);
+                            for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
+                                UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
+                                if (tempUserInfo.Id != userInfo.Id) {
+                                    server.SendPackage(tempUserInfo.Id, 3, QinStrByte);
+                                }
+                            }
+                            break;
+                        }
+                    case 4: {
+                            gameData.No4Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                            byte[] QinStrByte = SerializeTool.RawSerializeForUTF8String(gameData.No4Qin);
+                            for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
+                                UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
+                                if (tempUserInfo.Id != userInfo.Id) {
+                                    server.SendPackage(tempUserInfo.Id, 4, QinStrByte);
+                                }
+                            }
+                            break;
+                        }
+                    case 5: {
+                            int keyIndex = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                            int ping = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                            for (int i = 0; i < gameData.QinKey.Count; i++) {
+                                if (i != keyIndex) {
+                                    if (gameData.QinKey[keyIndex] == userInfo.Id) {
+                                        gameData.QinKey[keyIndex] = 0;
+                                    }
+                                } else {
+                                    if (gameData.QinKey[keyIndex] == 0) {
+                                        gameData.QinKey[keyIndex] = userInfo.Id;
+                                    } else if (gameData.QinKey[keyIndex] == userInfo.Id) {
+                                        gameData.QinKey[keyIndex] = 0;
+                                    }
+                                }
+                            }
+                            List<byte> sendData = new List<byte>(8);
+                            sendData.AddRange(SerializeTool.RawSerialize(keyIndex));
+                            sendData.AddRange(SerializeTool.RawSerialize(gameData.QinKey[keyIndex]));
+                            sendData.AddRange(SerializeTool.RawSerialize(ping));
+                            byte[] data = sendData.ToArray();
+                            for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
+                                UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
+                                if (tempUserInfo.Id != userInfo.Id) {
+                                    server.SendPackage(tempUserInfo.Id, 6, data, 0, 8);
+                                } else {
+                                    server.SendPackage(tempUserInfo.Id, 7, data);
+                                }
+                            }
+                            break;
+                        }
+                    default:
+                        break;
+                }
+            } catch (Exception) {
             }
-            userInfo.LastReceiveTime = DateTime.Now;
-            switch (signal) {
-                case 0: {
-                        int length = BitConverter.ToInt32(buffer, 0);
-                        if (length > 0) {
-                            userInfo.MachineIdentity = Encoding.UTF8.GetString(buffer, 4, length);
-                        }
-                        int ciphertextLength = BitConverter.ToInt32(buffer, 4 + length);
-                        if (ciphertextLength > 0) {
-                            RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
-                            rsa.FromXmlString("<RSAKeyValue><Modulus>2FMpblMWJ5JomZbaj8Y+VYkzviSGpEJn3q5EtSYorN6sbsgSKS8UeJ0AEk8lmNcbgF6F8KzdP7z93EhZRUeqOlPQh+VmrMQ0kUpUdngO0mlJUU6jAhuQd4Hw+NTnZZknKjhWSQFD8e5V3nFYSjsZXlXdGtvukJxsG8RcyLB2Kd0=</Modulus><Exponent>AQAB</Exponent><P>41r456T359znQHgvztfTEZ5xe1Kz6xgkSDC1IpwMDY+dGCd00vhzp0eD6rvRMJQpkVxu+JmVvqFmL8oCX/ybrw==</P><Q>85RqfNiyKhhpeg4XPwRlFSwjNO+I2u3Wc4Qg7JIw9vVnuMsIPeYu0FtNuUu2KrAaANqQ2w2xmR56Cf4WG9q6Mw==</Q><DP>1R8gGDUiVm1TMbH4TtMt/mQiSNJb6dM1n55ZDdptygCH6G6EKofQEk0Nserhy8H3vVWCiPOf1ZUCb2XUGBp57Q==</DP><DQ>fX1lL1Tk1VMmZD+GMm0tNq86pDcUJtaJuZHE9JyMpW7hNQ9E+77vN2EStfgPrgZ0HyR7pJ91dBGDhkplUYxqiQ==</DQ><InverseQ>efPy4erlPKo9yMoUfQvcbCqRUPeSgt0hTCb880Oh+sjd5ILz9kn6lxOUkHVBc7xFTvQKu6XL15vppUtncaIt3Q==</InverseQ><D>skefPoAVIxnDQMkVaSYtWxsO3KaHnDnqFpgyocRIA2gkXcxfQze8vEZPt8coqhSlYp8D7bzZPl1ILlIl2DXesF0iw43F+uXhwRiDCYqRF5azkklIYXlE/93z04h2N15/XyodEgcVx26A040mAOStYTha3a5t6ZFCDHQCZFGJkBU=</D></RSAKeyValue>");
-                            byte[] temp = new byte[ciphertextLength];
-                            for (int i = 0; i < ciphertextLength; i++) {
-                                temp[i] = buffer[8 + length + i];
-                            }
-                            byte[] plaintext = rsa.Decrypt(temp, true);
-                            userInfo.GamePath = Encoding.UTF8.GetString(plaintext);
-                        }
-                        int ping = BitConverter.ToInt32(buffer, 8 + length + ciphertextLength);
-                        List<byte> sendData = new List<byte>();
-                        sendData.AddRange(SerializeTool.RawSerialize(userInfo.Id));
-                        sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.No1Qin));
-                        sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.No2Qin));
-                        sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.No3Qin));
-                        sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.No4Qin));
-                        sendData.AddRange(SerializeTool.RawSerialize(ping));
-                        server.SendPackage(id, 0, sendData.ToArray(), 0, sendData.Count);
-                        break;
-                    }
-                case 1: {
-                        int startIndex = 0;
-                        gameData.No1Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
-                        for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
-                            UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
-                            if (tempUserInfo.Id != userInfo.Id) {
-                                server.SendPackage(tempUserInfo.Id, 1, SerializeTool.RawSerializeForUTF8String(gameData.No1Qin));
-                            }
-                        }
-                        break;
-                    }
-                case 2: {
-                        int startIndex = 0;
-                        gameData.No2Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
-                        for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
-                            UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
-                            if (tempUserInfo.Id != userInfo.Id) {
-                                server.SendPackage(tempUserInfo.Id, 2, SerializeTool.RawSerializeForUTF8String(gameData.No2Qin));
-                            }
-                        }
-                        break;
-                    }
-                case 3: {
-                        int startIndex = 0;
-                        gameData.No3Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
-                        for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
-                            UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
-                            if (tempUserInfo.Id != userInfo.Id) {
-                                server.SendPackage(tempUserInfo.Id, 3, SerializeTool.RawSerializeForUTF8String(gameData.No3Qin));
-                            }
-                        }
-                        break;
-                    }
-                case 4: {
-                        int startIndex = 0;
-                        gameData.No4Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
-                        for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
-                            UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
-                            if (tempUserInfo.Id != userInfo.Id) {
-                                server.SendPackage(tempUserInfo.Id, 4, SerializeTool.RawSerializeForUTF8String(gameData.No4Qin));
-                            }
-                        }
-                        break;
-                    }
-                default:
-                    break;
-            }
-            /*shouConnectNumber.Dispatcher.Invoke(() => {
-                shouConnectNumber.Content = string.Format("信号值：{0}\n消息内容：{1}", signal, Encoding.ASCII.GetString(buffer));
-            });*/
         }
         private void OnLeave(int id, object userToken) {
             /*connectNum--;

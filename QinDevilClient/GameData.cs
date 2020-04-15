@@ -1,12 +1,15 @@
 ﻿using AudioPlayer.ViewModel;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace QinDevilClient {
     public class GameData : ViewModelBase {
+        public GameData() {
+        }
         private int _failTimes;
         public int FailTimes {
             get => _failTimes;
@@ -41,6 +44,11 @@ namespace QinDevilClient {
         public string No4Qin {
             get => _no4Qin;
             set => Set(ref _no4Qin, value);
+        }
+        private readonly List<int> _qinKey = new List<int>(new int[12]);
+        public List<int> QinKey {
+            get => _qinKey;
+            set => Update();
         }
     }
 }

@@ -16,6 +16,7 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
@@ -47,17 +48,17 @@ namespace QinDevilClient {
         private void Timer_Elapsed(object sender, ElapsedEventArgs e) {
             if (Connecting) {
                 List<byte> sendData = new List<byte>(64);
+                MD5 md5 = MD5.Create();
+                byte[] hash = md5.ComputeHash(Encoding.UTF8.GetBytes(SystemInfo.GetMacAddress() + SystemInfo.GetCpuID()));
+                StringBuilder sb = new StringBuilder();
+                foreach (byte b in hash) {
+                    sb.Append(b.ToString("X2"));
+                }
+                byte[] machineIdentity = Encoding.UTF8.GetBytes(sb.ToString());
+                sendData.AddRange(BitConverter.GetBytes(machineIdentity.Length));
+                sendData.AddRange(machineIdentity);
                 Process process = GetWuXiaProcess();
                 if (process != null) {
-                    MD5 md5 = MD5.Create();
-                    byte[] hash = md5.ComputeHash(Encoding.UTF8.GetBytes(SystemInfo.GetMacAddress() + SystemInfo.GetCpuID()));
-                    StringBuilder sb = new StringBuilder();
-                    foreach (byte b in hash) {
-                        sb.Append(b.ToString("X2"));
-                    }
-                    byte[] machineIdentity = Encoding.UTF8.GetBytes(sb.ToString());
-                    sendData.AddRange(BitConverter.GetBytes(machineIdentity.Length));
-                    sendData.AddRange(machineIdentity);
                     RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
                     rsa.FromXmlString("<RSAKeyValue><Modulus>2FMpblMWJ5JomZbaj8Y+VYkzviSGpEJn3q5EtSYorN6sbsgSKS8UeJ0AEk8lmNcbgF6F8KzdP7z93EhZRUeqOlPQh+VmrMQ0kUpUdngO0mlJUU6jAhuQd4Hw+NTnZZknKjhWSQFD8e5V3nFYSjsZXlXdGtvukJxsG8RcyLB2Kd0=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>");
                     byte[] gamePath = rsa.Encrypt(Encoding.UTF8.GetBytes(process.MainModule.FileName), true);
@@ -66,7 +67,6 @@ namespace QinDevilClient {
                     sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
                     client.SendPackage(0, sendData.ToArray(), 0, sendData.Count);
                 } else {
-                    sendData.AddRange(SerializeTool.RawSerialize(0));
                     sendData.AddRange(SerializeTool.RawSerialize(0));
                     sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
                     client.SendPackage(0, sendData.ToArray(), 0, sendData.Count);
@@ -105,10 +105,13 @@ namespace QinDevilClient {
             timer.Stop();
             timer.Start();
             gameData.FailTimes = 0;
+            int startIndex = 0;
             switch (signal) {
                 case 0: {
-                        int startIndex = 0;
-                        gameData.Licence.Add(SerializeTool.RawDeserialize<int>(buffer, ref startIndex));
+                        int licence = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        if (!gameData.Licence.Contains(licence)) {
+                            gameData.Licence.Add(licence);
+                        }
                         gameData.No1Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
                         gameData.No2Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
                         gameData.No3Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
@@ -118,23 +121,44 @@ namespace QinDevilClient {
                         break;
                     }
                 case 1: {
-                        int startIndex = 0;
                         gameData.No1Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
                         break;
                     }
                 case 2: {
-                        int startIndex = 0;
                         gameData.No2Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
                         break;
                     }
                 case 3: {
-                        int startIndex = 0;
                         gameData.No3Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
                         break;
                     }
                 case 4: {
-                        int startIndex = 0;
                         gameData.No4Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                        break;
+                    }
+                case 5: {
+                        gameData.Licence.Clear();
+                        gameData.Licence.Add(SerializeTool.RawDeserialize<int>(buffer, ref startIndex));
+                        gameData.No1Qin = gameData.No2Qin = gameData.No3Qin = gameData.No4Qin = "";
+                        for (int i = 0; i < 12; i++) {
+                            gameData.QinKey[i] = 0;
+                        }
+                        break;
+                    }
+                case 6: {
+                        int keyIndex = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        int licence = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        gameData.QinKey[keyIndex] = licence;
+                        gameData.QinKey = gameData.QinKey;
+                        break;
+                    }
+                case 7: {
+                        int keyIndex = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        int licence = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        int ping = Environment.TickCount - SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
+                        gameData.QinKey[keyIndex] = licence;
+                        gameData.QinKey = gameData.QinKey;
                         break;
                     }
                 default:
@@ -167,22 +191,6 @@ namespace QinDevilClient {
             //bool v5 = new Regex("^(?![1-5]*?([1-5])[1-5]*?\\1)[1-5]{0,3}$").IsMatch("121");//false
             //bool v6 = new Regex("^(?![1-5]*?([1-5])[1-5]*?\\1)[1-5]{0,3}$").IsMatch("6");//false
         }
-        private void TextBox_TargetUpdated(object sender, DataTransferEventArgs e) {
-            string str = e.Source as string;
-            client.SendPackage(1, SerializeTool.RawSerializeForUTF8String(str));
-        }
-        private void TextBox_TargetUpdated_1(object sender, DataTransferEventArgs e) {
-            string str = e.Source as string;
-            client.SendPackage(2, SerializeTool.RawSerializeForUTF8String(str));
-        }
-        private void TextBox_TargetUpdated_2(object sender, DataTransferEventArgs e) {
-            string str = e.Source as string;
-            client.SendPackage(3, SerializeTool.RawSerializeForUTF8String(str));
-        }
-        private void TextBox_TargetUpdated_3(object sender, DataTransferEventArgs e) {
-            string str = e.Source as string;
-            client.SendPackage(4, SerializeTool.RawSerializeForUTF8String(str));
-        }
         private void TextBox_SourceUpdated(object sender, DataTransferEventArgs e) {
             client.SendPackage(1, SerializeTool.RawSerializeForUTF8String(gameData.No1Qin));
         }
@@ -194,6 +202,78 @@ namespace QinDevilClient {
         }
         private void TextBox_SourceUpdated_3(object sender, DataTransferEventArgs e) {
             client.SendPackage(4, SerializeTool.RawSerializeForUTF8String(gameData.No4Qin));
+        }
+        private void Label_MouseDown(object sender, MouseButtonEventArgs e) {
+            List<byte> sendData = new List<byte>(8);
+            sendData.AddRange(SerializeTool.RawSerialize(0));
+            sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            client.SendPackage(5, sendData.ToArray());
+        }
+        private void Label_MouseDown_1(object sender, MouseButtonEventArgs e) {
+            List<byte> sendData = new List<byte>(8);
+            sendData.AddRange(SerializeTool.RawSerialize(1));
+            sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            client.SendPackage(5, sendData.ToArray());
+        }
+        private void Label_MouseDown_2(object sender, MouseButtonEventArgs e) {
+            List<byte> sendData = new List<byte>(8);
+            sendData.AddRange(SerializeTool.RawSerialize(2));
+            sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            client.SendPackage(5, sendData.ToArray());
+        }
+        private void Label_MouseDown_3(object sender, MouseButtonEventArgs e) {
+            List<byte> sendData = new List<byte>(8);
+            sendData.AddRange(SerializeTool.RawSerialize(3));
+            sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            client.SendPackage(5, sendData.ToArray());
+        }
+        private void Label_MouseDown_4(object sender, MouseButtonEventArgs e) {
+            List<byte> sendData = new List<byte>(8);
+            sendData.AddRange(SerializeTool.RawSerialize(4));
+            sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            client.SendPackage(5, sendData.ToArray());
+        }
+        private void Label_MouseDown_5(object sender, MouseButtonEventArgs e) {
+            List<byte> sendData = new List<byte>(8);
+            sendData.AddRange(SerializeTool.RawSerialize(5));
+            sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            client.SendPackage(5, sendData.ToArray());
+        }
+        private void Label_MouseDown_6(object sender, MouseButtonEventArgs e) {
+            List<byte> sendData = new List<byte>(8);
+            sendData.AddRange(SerializeTool.RawSerialize(6));
+            sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            client.SendPackage(5, sendData.ToArray());
+        }
+        private void Label_MouseDown_7(object sender, MouseButtonEventArgs e) {
+            List<byte> sendData = new List<byte>(8);
+            sendData.AddRange(SerializeTool.RawSerialize(7));
+            sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            client.SendPackage(5, sendData.ToArray());
+        }
+        private void Label_MouseDown_8(object sender, MouseButtonEventArgs e) {
+            List<byte> sendData = new List<byte>(8);
+            sendData.AddRange(SerializeTool.RawSerialize(8));
+            sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            client.SendPackage(5, sendData.ToArray());
+        }
+        private void Label_MouseDown_9(object sender, MouseButtonEventArgs e) {
+            List<byte> sendData = new List<byte>(8);
+            sendData.AddRange(SerializeTool.RawSerialize(9));
+            sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            client.SendPackage(5, sendData.ToArray());
+        }
+        private void Label_MouseDown_10(object sender, MouseButtonEventArgs e) {
+            List<byte> sendData = new List<byte>(8);
+            sendData.AddRange(SerializeTool.RawSerialize(10));
+            sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            client.SendPackage(5, sendData.ToArray());
+        }
+        private void Label_MouseDown_11(object sender, MouseButtonEventArgs e) {
+            List<byte> sendData = new List<byte>(8);
+            sendData.AddRange(SerializeTool.RawSerialize(11));
+            sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            client.SendPackage(5, sendData.ToArray());
         }
     }
 }
