@@ -38,5 +38,10 @@ namespace QinDevilServer {
             get => _qinKey;
             set => Update();
         }
+        private string _hitQinKey = "";
+        public string HitQinKey {
+            get => _hitQinKey;
+            set => Set(ref _hitQinKey, value);
+        }
     }
 }

@@ -8,6 +8,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using System.Windows;
@@ -27,12 +28,15 @@ namespace QinDevilClient {
     /// </summary>
     public partial class MainWindow : Window {
         private SocketClient client;
-        private readonly Timer timer = new Timer();
+        private readonly System.Timers.Timer timer = new System.Timers.Timer();
         private bool Connecting = false;
         private readonly GameData gameData = new GameData();
         private readonly Regex QinKeyLessMatch = new Regex("^(?![1-5]*?([1-5])[1-5]*?\\1)[1-5]{0,3}$");
         public MainWindow() {
             InitializeComponent();
+        }
+        ~MainWindow() {
+            timer.Stop();
         }
         private void Window_Loaded(object sender, RoutedEventArgs e) {
             GamePanel.DataContext = gameData;
@@ -116,6 +120,9 @@ namespace QinDevilClient {
                         gameData.No2Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
                         gameData.No3Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
                         gameData.No4Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                        for (int i = 0; i < 12; i++) {
+                            gameData.QinKey[i] = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        }
                         int ping = Environment.TickCount - SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
                         gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
                         break;
@@ -139,26 +146,41 @@ namespace QinDevilClient {
                 case 5: {
                         gameData.Licence.Clear();
                         gameData.Licence.Add(SerializeTool.RawDeserialize<int>(buffer, ref startIndex));
-                        gameData.No1Qin = gameData.No2Qin = gameData.No3Qin = gameData.No4Qin = "";
+                        gameData.No1Qin = gameData.No2Qin = gameData.No3Qin = gameData.No4Qin = gameData.HitQinKey = "";
                         for (int i = 0; i < 12; i++) {
                             gameData.QinKey[i] = 0;
                         }
                         break;
                     }
                 case 6: {
-                        int keyIndex = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
-                        int licence = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
-                        gameData.QinKey[keyIndex] = licence;
+                        for (int i = 0; i < 12; i++) {
+                            gameData.QinKey[i] = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        }
                         gameData.QinKey = gameData.QinKey;
                         break;
                     }
                 case 7: {
+                        for (int i = 0; i < 12; i++) {
+                            gameData.QinKey[i] = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        }
+                        gameData.QinKey = gameData.QinKey;
                         int keyIndex = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
-                        int licence = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
                         int ping = Environment.TickCount - SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
                         gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
-                        gameData.QinKey[keyIndex] = licence;
-                        gameData.QinKey = gameData.QinKey;
+                        if (!gameData.Licence.Contains(gameData.QinKey[keyIndex])) {
+                            _ = ThreadPool.QueueUserWorkItem(delegate {
+                                Dispatcher.Invoke(() => {
+                                    Storyboard Storyboard1 = FindResource("Storyboard1") as Storyboard;
+                                    Storyboard1.Stop();
+                                    Storyboard.SetTargetName(Storyboard1, "OneKey" + keyIndex.ToString());
+                                    Storyboard1.Begin();
+                                });
+                            });
+                        }
+                        break;
+                    }
+                case 8: {
+                        gameData.HitQinKey = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
                         break;
                     }
                 default:

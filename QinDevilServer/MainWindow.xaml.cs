@@ -53,21 +53,78 @@ namespace QinDevilServer {
         }
         private void KeyDownCallbak(KeyCode keyCode) {
             switch (keyCode) {
-                case KeyCode.VK_LCONTROL:
-                    ctrlState = true;
-                    break;
-                case KeyCode.Numeric7:
-                    if (ctrlState) {
-                        gameData.No1Qin = gameData.No2Qin = gameData.No3Qin = gameData.No4Qin = "";
-                        for (int i = 0; i < 12; i++) {
-                            gameData.QinKey[i] = 0;
-                        }
-                        for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
-                            UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
-                            server.SendPackage(tempUserInfo.Id, 5, SerializeTool.RawSerialize(tempUserInfo.Id));
-                        }
+                case KeyCode.VK_LCONTROL: {
+                        ctrlState = true;
+                        break;
                     }
-                    break;
+                case KeyCode.Numeric1: {
+                        if (ctrlState) {
+                            gameData.HitQinKey += "1 ";
+                            byte[] sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey);
+                            for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
+                                UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
+                                server.SendPackage(tempUserInfo.Id, 8, sendData);
+                            }
+                        }
+                        break;
+                    }
+                case KeyCode.Numeric2: {
+                        if (ctrlState) {
+                            gameData.HitQinKey += "2 ";
+                            byte[] sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey);
+                            for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
+                                UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
+                                server.SendPackage(tempUserInfo.Id, 8, sendData);
+                            }
+                        }
+                        break;
+                    }
+                case KeyCode.Numeric3: {
+                        if (ctrlState) {
+                            gameData.HitQinKey += "3 ";
+                            byte[] sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey);
+                            for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
+                                UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
+                                server.SendPackage(tempUserInfo.Id, 8, sendData);
+                            }
+                        }
+                        break;
+                    }
+                case KeyCode.Numeric4: {
+                        if (ctrlState) {
+                            gameData.HitQinKey += "4 ";
+                            byte[] sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey);
+                            for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
+                                UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
+                                server.SendPackage(tempUserInfo.Id, 8, sendData);
+                            }
+                        }
+                        break;
+                    }
+                case KeyCode.Numeric5: {
+                        if (ctrlState) {
+                            gameData.HitQinKey += "5 ";
+                            byte[] sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey);
+                            for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
+                                UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
+                                server.SendPackage(tempUserInfo.Id, 8, sendData);
+                            }
+                        }
+                        break;
+                    }
+                case KeyCode.Numeric7: {
+                        if (ctrlState) {
+                            gameData.No1Qin = gameData.No2Qin = gameData.No3Qin = gameData.No4Qin = gameData.HitQinKey = "";
+                            for (int i = 0; i < 12; i++) {
+                                gameData.QinKey[i] = 0;
+                            }
+                            for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
+                                UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
+                                server.SendPackage(tempUserInfo.Id, 5, SerializeTool.RawSerialize(tempUserInfo.Id));
+                            }
+                        }
+                        break;
+                    }
                 default:
                     break;
             }
@@ -151,6 +208,9 @@ namespace QinDevilServer {
                             sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.No2Qin));
                             sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.No3Qin));
                             sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.No4Qin));
+                            for (int i = 0; i < gameData.QinKey.Count; i++) {
+                                sendData.AddRange(SerializeTool.RawSerialize(gameData.QinKey[i]));
+                            }
                             sendData.AddRange(SerializeTool.RawSerialize(ping));
                             server.SendPackage(id, 0, sendData.ToArray(), 0, sendData.Count);
                             break;
@@ -200,30 +260,30 @@ namespace QinDevilServer {
                             break;
                         }
                     case 5: {
+                            List<byte> sendData = new List<byte>(52);
                             int keyIndex = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
                             int ping = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
                             for (int i = 0; i < gameData.QinKey.Count; i++) {
                                 if (i != keyIndex) {
-                                    if (gameData.QinKey[keyIndex] == userInfo.Id) {
-                                        gameData.QinKey[keyIndex] = 0;
+                                    if (gameData.QinKey[i] == userInfo.Id) {
+                                        gameData.QinKey[i] = 0;
                                     }
                                 } else {
-                                    if (gameData.QinKey[keyIndex] == 0) {
-                                        gameData.QinKey[keyIndex] = userInfo.Id;
-                                    } else if (gameData.QinKey[keyIndex] == userInfo.Id) {
-                                        gameData.QinKey[keyIndex] = 0;
+                                    if (gameData.QinKey[i] == 0) {
+                                        gameData.QinKey[i] = userInfo.Id;
+                                    } else if (gameData.QinKey[i] == userInfo.Id) {
+                                        gameData.QinKey[i] = 0;
                                     }
                                 }
+                                sendData.AddRange(SerializeTool.RawSerialize(gameData.QinKey[i]));
                             }
-                            List<byte> sendData = new List<byte>(8);
                             sendData.AddRange(SerializeTool.RawSerialize(keyIndex));
-                            sendData.AddRange(SerializeTool.RawSerialize(gameData.QinKey[keyIndex]));
                             sendData.AddRange(SerializeTool.RawSerialize(ping));
                             byte[] data = sendData.ToArray();
                             for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
                                 UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
                                 if (tempUserInfo.Id != userInfo.Id) {
-                                    server.SendPackage(tempUserInfo.Id, 6, data, 0, 8);
+                                    server.SendPackage(tempUserInfo.Id, 6, data, 0, 48);
                                 } else {
                                     server.SendPackage(tempUserInfo.Id, 7, data);
                                 }

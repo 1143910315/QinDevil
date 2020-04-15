@@ -16,9 +16,11 @@ namespace QinDevilCommon {
         public delegate void OnConnectedEvent(bool connected);
         public delegate void OnReceivePackageEvent(int signal, byte[] buffer);
         public delegate void OnConnectionBreakEvent();
+        public delegate void OnSendCompletedEvent();
         public OnConnectedEvent onConnectedEvent;
         public OnConnectionBreakEvent onConnectionBreakEvent;
         public OnReceivePackageEvent onReceivePackageEvent;
+        public OnSendCompletedEvent onSendCompletedEvent;
         private SocketAsyncEventArgs SendAsyncEventArgs = null;
         private bool socketIsOnline = false;
         private readonly object sendLock = new object();
@@ -123,6 +125,8 @@ namespace QinDevilCommon {
                                 if (socketIsOnline) {
                                     socket.SendAsync(SendAsyncEventArgs);
                                 }
+                            } else {
+                                onSendCompletedEvent?.Invoke();
                             }
                             Monitor.Exit(sendLock);
                         } else {

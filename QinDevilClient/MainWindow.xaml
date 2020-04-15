@@ -21,22 +21,22 @@
         <sys:Int32 x:Key="ten">10</sys:Int32>
         <sys:Int32 x:Key="eleven">11</sys:Int32>
         <sys:Int32 x:Key="twelve">12</sys:Int32>
-        <Storyboard x:Key="Storyboard1" RepeatBehavior="00:00:00.8000000">
-            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[3].(TranslateTransform.X)" Storyboard.TargetName="label" RepeatBehavior="00:00:00.8">
+        <Storyboard x:Key="Storyboard1" RepeatBehavior="00:00:00.8000000" FillBehavior="Stop">
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[3].(TranslateTransform.X)" Name="horizontalAnimation" RepeatBehavior="00:00:00.8">
                 <DiscreteDoubleKeyFrame KeyTime="0" Value="-2"/>
                 <EasingDoubleKeyFrame KeyTime="0:0:0.1" Value="2"/>
             </DoubleAnimationUsingKeyFrames>
-            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[3].(TranslateTransform.Y)" Storyboard.TargetName="label" RepeatBehavior="00:00:00.8">
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[3].(TranslateTransform.Y)" Name="verticalAnimation" RepeatBehavior="00:00:00.8">
                 <DiscreteDoubleKeyFrame KeyTime="0" Value="-2"/>
                 <EasingDoubleKeyFrame KeyTime="0:0:0.066" Value="2"/>
             </DoubleAnimationUsingKeyFrames>
         </Storyboard>
     </Window.Resources>
-    <Window.Triggers>
+    <!--<Window.Triggers>
         <EventTrigger RoutedEvent="FrameworkElement.Loaded">
             <BeginStoryboard Storyboard="{StaticResource Storyboard1}"/>
         </EventTrigger>
-    </Window.Triggers>
+    </Window.Triggers>-->
     <Grid x:Name="GamePanel" d:DataContext="{d:DesignInstance local:GameData}" >
         <Viewbox Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Top">
             <Canvas Width="378" Height="150">
@@ -49,7 +49,7 @@
                 <TextBox Text="{Binding No3Qin,UpdateSourceTrigger=PropertyChanged,NotifyOnSourceUpdated=True}" Width="82" Canvas.Left="194" Canvas.Top="50" InputMethod.IsInputMethodEnabled="False" PreviewTextInput="TextBox_PreviewTextInput" SourceUpdated="TextBox_SourceUpdated_2"/>
                 <Label Content="四号琴" Canvas.Left="286" Canvas.Top="30" Padding="0" Width="82" HorizontalContentAlignment="Center"/>
                 <TextBox Text="{Binding No4Qin,UpdateSourceTrigger=PropertyChanged,NotifyOnSourceUpdated=True}" Width="82" Canvas.Left="286" Canvas.Top="50" InputMethod.IsInputMethodEnabled="False" PreviewTextInput="TextBox_PreviewTextInput" SourceUpdated="TextBox_SourceUpdated_3"/>
-                <Label x:Name="label" Canvas.Left="10" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown" RenderTransformOrigin="0.5,0.5" >
+                <Label x:Name="OneKey0" Canvas.Left="10" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown" RenderTransformOrigin="0.5,0.5" >
                     <Label.RenderTransform>
                         <TransformGroup>
                             <ScaleTransform/>
@@ -72,7 +72,15 @@
                         </MultiBinding>
                     </Label.Background>
                 </Label>
-                <Label Canvas.Left="39" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_1" >
+                <Label x:Name="OneKey1" Canvas.Left="39" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_1" >
+                    <Label.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </Label.RenderTransform>
                     <Label.Content>
                         <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
                             <Binding Path="No1Qin"/>
@@ -87,7 +95,15 @@
                         </MultiBinding>
                     </Label.Background>
                 </Label>
-                <Label Canvas.Left="68" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_2" >
+                <Label x:Name="OneKey2" Canvas.Left="68" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_2" >
+                    <Label.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </Label.RenderTransform>
                     <Label.Content>
                         <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
                             <Binding Path="No1Qin"/>
@@ -102,7 +118,15 @@
                         </MultiBinding>
                     </Label.Background>
                 </Label>
-                <Label Canvas.Left="102" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_3" >
+                <Label x:Name="OneKey3" Canvas.Left="102" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_3" >
+                    <Label.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </Label.RenderTransform>
                     <Label.Content>
                         <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
                             <Binding Path="No2Qin"/>
@@ -117,7 +141,15 @@
                         </MultiBinding>
                     </Label.Background>
                 </Label>
-                <Label Canvas.Left="131" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_4" >
+                <Label x:Name="OneKey4" Canvas.Left="131" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_4" >
+                    <Label.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </Label.RenderTransform>
                     <Label.Content>
                         <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
                             <Binding Path="No2Qin"/>
@@ -132,7 +164,15 @@
                         </MultiBinding>
                     </Label.Background>
                 </Label>
-                <Label Canvas.Left="160" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_5" >
+                <Label x:Name="OneKey5" Canvas.Left="160" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_5" >
+                    <Label.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </Label.RenderTransform>
                     <Label.Content>
                         <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
                             <Binding Path="No2Qin"/>
@@ -147,7 +187,15 @@
                         </MultiBinding>
                     </Label.Background>
                 </Label>
-                <Label Canvas.Left="194" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_6" >
+                <Label x:Name="OneKey6" Canvas.Left="194" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_6" >
+                    <Label.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </Label.RenderTransform>
                     <Label.Content>
                         <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
                             <Binding Path="No3Qin"/>
@@ -162,7 +210,15 @@
                         </MultiBinding>
                     </Label.Background>
                 </Label>
-                <Label Canvas.Left="223" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_7" >
+                <Label x:Name="OneKey7" Canvas.Left="223" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_7" >
+                    <Label.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </Label.RenderTransform>
                     <Label.Content>
                         <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
                             <Binding Path="No3Qin"/>
@@ -177,7 +233,15 @@
                         </MultiBinding>
                     </Label.Background>
                 </Label>
-                <Label Canvas.Left="252" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_8" >
+                <Label x:Name="OneKey8" Canvas.Left="252" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_8" >
+                    <Label.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </Label.RenderTransform>
                     <Label.Content>
                         <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
                             <Binding Path="No3Qin"/>
@@ -192,7 +256,15 @@
                         </MultiBinding>
                     </Label.Background>
                 </Label>
-                <Label Canvas.Left="286" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_9" >
+                <Label x:Name="OneKey9" Canvas.Left="286" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_9" >
+                    <Label.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </Label.RenderTransform>
                     <Label.Content>
                         <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
                             <Binding Path="No4Qin"/>
@@ -207,7 +279,15 @@
                         </MultiBinding>
                     </Label.Background>
                 </Label>
-                <Label Canvas.Left="315" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_10" >
+                <Label x:Name="OneKey10" Canvas.Left="315" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_10" >
+                    <Label.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </Label.RenderTransform>
                     <Label.Content>
                         <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
                             <Binding Path="No4Qin"/>
@@ -222,7 +302,15 @@
                         </MultiBinding>
                     </Label.Background>
                 </Label>
-                <Label Canvas.Left="344" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_11" >
+                <Label x:Name="OneKey11" Canvas.Left="344" Canvas.Top="72" Padding="2" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="16" MouseDown="Label_MouseDown_11" >
+                    <Label.RenderTransform>
+                        <TransformGroup>
+                            <ScaleTransform/>
+                            <SkewTransform/>
+                            <RotateTransform/>
+                            <TranslateTransform/>
+                        </TransformGroup>
+                    </Label.RenderTransform>
                     <Label.Content>
                         <MultiBinding Converter="{StaticResource QinKey}" Mode="OneWay">
                             <Binding Path="No4Qin"/>
@@ -237,6 +325,8 @@
                         </MultiBinding>
                     </Label.Background>
                 </Label>
+                <Label Content="琴上剩余对比：9 8 7 6 5 4 3 2 1" Canvas.Left="10" Canvas.Top="101" Padding="0"/>
+                <Label Content="{Binding HitQinKey}" ContentStringFormat="需要弹琴数字：{0}" Canvas.Left="10" Canvas.Top="121" Padding="0"/>
             </Canvas>
         </Viewbox>
     </Grid>
