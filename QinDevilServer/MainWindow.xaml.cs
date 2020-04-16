@@ -43,6 +43,12 @@ namespace QinDevilServer {
             contextMenuStrip.Items.Add("请求所有玩家屏幕截图（JPG）").Click += PrintScreenAll_Click;
             contextMenuStrip.Items.Add("请求当前玩家截图（JPG）").Click += PrintScreen_Click;
             contextMenuStrip.Items.Add("请求当前玩家截图（PNG）").Click += PrintScreenHighQuality_Click;
+            contextMenuStrip.Items.Add("查看当前玩家截图").Click += PictureViewer_Click;
+        }
+        private void PictureViewer_Click(object sender, EventArgs e) {
+            if (menuUser != null) {
+                new PictureViewerWindow(menuUser).Show();
+            }
         }
         private void PrintScreenAll_Click(object sender, RoutedEventArgs e) {
             for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {

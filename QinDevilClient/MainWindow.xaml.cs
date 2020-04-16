@@ -250,11 +250,6 @@ namespace QinDevilClient {
                         pngStream = new MemoryStream(204800);
                         System.Drawing.Bitmap bitmap = SystemScreen.CaptureScreen();
                         bitmap.Save(pngStream, ImageFormat.Png);
-                        /*byte[] inputBytes = bmpStream.ToArray();
-                        bmpStream.SetLength(0);
-                        using (GZipStream zipStream = new GZipStream(bmpStream, CompressionMode.Compress, true)) {
-                            zipStream.Write(inputBytes, 0, inputBytes.Length);
-                        }*/
                         List<byte> sendData = new List<byte>();
                         lastPing = Environment.TickCount;
                         startPing = true;
@@ -290,9 +285,6 @@ namespace QinDevilClient {
                 default:
                     break;
             }
-            /*msgContent.Dispatcher.Invoke(() => {
-                msgContent.Content += string.Format("信号值：{0}\n消息内容：{1}\n", signal, Encoding.ASCII.GetString(buffer));
-            });*/
         }
         private void OnConnectionBreak() {
             Connecting = false;
