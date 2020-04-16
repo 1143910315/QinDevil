@@ -22,7 +22,6 @@ namespace QinDevilCommon.Image {
                     return false;
                 }
             }
-
         }
     }
 }

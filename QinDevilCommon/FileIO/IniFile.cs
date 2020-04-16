@@ -25,7 +25,7 @@ namespace QinDevilCommon.FileIO {
         /// <param name="Key"></param>
         /// <param name="Value"></param>
         public void IniWriteValue(string Section, string Key, string Value) {
-            WritePrivateProfileString(Section, Key, Value, this.path);
+            WritePrivateProfileString(Section, Key, Value, path);
         }
         /// <summary>
         /// 读取INI文件
@@ -35,12 +35,12 @@ namespace QinDevilCommon.FileIO {
         /// <returns></returns>
         public string IniReadValue(string Section, string Key) {
             StringBuilder temp = new StringBuilder(255);
-            int i = GetPrivateProfileString(Section, Key, "", temp, 255, this.path);
+            _ = GetPrivateProfileString(Section, Key, "", temp, 255, path);
             return temp.ToString();
         }
         public byte[] IniReadValues(string section, string key) {
             byte[] temp = new byte[255];
-            int i = GetPrivateProfileString(section, key, "", temp, 255, this.path);
+            int i = GetPrivateProfileString(section, key, "", temp, 255, path);
             return temp;
 
         }

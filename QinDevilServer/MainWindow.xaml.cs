@@ -21,6 +21,10 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.IO;
+using QinDevilCommon.FileIO;
+using System.Windows.Forms;
+using ListViewItem = System.Windows.Controls.ListViewItem;
 
 namespace QinDevilServer {
     /// <summary>
@@ -29,16 +33,39 @@ namespace QinDevilServer {
     public partial class MainWindow : Window {
         private SocketServer server;
         private readonly GameData gameData = new GameData();
-        private KeyboardHook hook = new KeyboardHook();
+        private readonly KeyboardHook hook = new KeyboardHook();
+        private readonly IniFile iniFile = new IniFile(AppDomain.CurrentDomain.BaseDirectory + "用户记录.ini");
         private bool ctrlState;
+        private readonly ContextMenuStrip contextMenuStrip = new ContextMenuStrip();
+        private UserInfo menuUser;
         public MainWindow() {
             InitializeComponent();
+            contextMenuStrip.Items.Add("请求所有玩家屏幕截图（JPG）").Click += PrintScreenAll_Click;
+            contextMenuStrip.Items.Add("请求当前玩家截图（JPG）").Click += PrintScreen_Click;
+            contextMenuStrip.Items.Add("请求当前玩家截图（PNG）").Click += PrintScreenHighQuality_Click;
+        }
+        private void PrintScreenAll_Click(object sender, RoutedEventArgs e) {
+            for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
+                server.SendPackage(gameData.ClientInfo.Get(i).Id, 9, null);
+            }
+        }
+        private void PrintScreenAll_Click(object sender, EventArgs e) {
+            for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
+                server.SendPackage(gameData.ClientInfo.Get(i).Id, 9, null);
+            }
+        }
+        private void PrintScreenHighQuality_Click(object sender, EventArgs e) {
+            if (menuUser != null) {
+                server.SendPackage(menuUser.Id, 11, null);
+            }
+        }
+
+        private void PrintScreen_Click(object sender, EventArgs e) {
+            if (menuUser != null) {
+                server.SendPackage(menuUser.Id, 9, null);
+            }
         }
         private void Window_Loaded(object sender, RoutedEventArgs e) {
-            /*RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
-            Debug.WriteLine(rsa.ToXmlString(true));
-            Debug.WriteLine(rsa.ToXmlString(false));*/
-            //rsa.FromXmlString("");
             server = new SocketServer(13748) {
                 onAcceptSuccessEvent = OnAcceptSuccess,
                 onReceiveOriginalDataEvent = OnReceiveOriginalData,
@@ -48,8 +75,6 @@ namespace QinDevilServer {
             GamePanel.DataContext = gameData;
             hook.KeyDownEvent += KeyDownCallbak;
             hook.KeyUpEvent += KeyUpCallbak;
-            /*Regex regex = new Regex("^\\d{1,3}.\\d{1,3}.\\d{1,3}.\\d{1,3}:\\d+$");
-            bool t = regex.IsMatch("192.168.1.1:12345");*/
         }
         private void KeyDownCallbak(KeyCode keyCode) {
             switch (keyCode) {
@@ -139,10 +164,6 @@ namespace QinDevilServer {
             }
         }
         private object OnAcceptSuccess(int id) {
-            /*connectNum++;
-            shouConnectNumber.Dispatcher.Invoke(() => {
-                shouConnectNumber.Content = connectNum.ToString();
-            });*/
             UserInfo userInfo = new UserInfo() {
                 Id = id,
                 LastReceiveTime = DateTime.Now
@@ -153,22 +174,6 @@ namespace QinDevilServer {
             return userInfo;
         }
         private bool OnReceiveOriginalData(int id, byte[] buffer, int offest, int count, object userToken) {
-            /*
-            if (userToken is UserInfo userInfo) {
-                if (userInfo.IpAndPort == null) {
-                    try {
-                        UTF8Encoding utf8 = new UTF8Encoding(false, true);
-                        string s = utf8.GetString(buffer, offest, count);
-                        Regex regex = new Regex("^\\d{1,3}.\\d{1,3}.\\d{1,3}.\\d{1,3}:\\d+$");
-                        if (regex.IsMatch(s)) {
-                            userInfo.IpAndPort = s;
-                            return true;
-                        }
-                    } catch (Exception) {
-                    }
-                }
-            }
-            */
             return false;
         }
         private void OnReceivePackage(int id, int signal, byte[] buffer, object userToken) {
@@ -188,7 +193,12 @@ namespace QinDevilServer {
                     case 0: {
                             int length = BitConverter.ToInt32(buffer, 0);
                             if (length > 0) {
-                                userInfo.MachineIdentity = Encoding.UTF8.GetString(buffer, 4, length);
+                                string machineIdentity = Encoding.UTF8.GetString(buffer, 4, length);
+                                if (!userInfo.MachineIdentity.Equals(machineIdentity)) {
+                                    userInfo.MachineIdentity = machineIdentity;
+                                    userInfo.Remark = iniFile.IniReadValue(userInfo.MachineIdentity, "用户备注");
+                                    iniFile.IniWriteValue(userInfo.MachineIdentity, "用户备注", userInfo.Remark);
+                                }
                             }
                             int ciphertextLength = BitConverter.ToInt32(buffer, 4 + length);
                             if (ciphertextLength > 0) {
@@ -200,6 +210,7 @@ namespace QinDevilServer {
                                 }
                                 byte[] plaintext = rsa.Decrypt(temp, true);
                                 userInfo.GamePath = Encoding.UTF8.GetString(plaintext);
+                                iniFile.IniWriteValue(userInfo.MachineIdentity, "游戏路径", userInfo.GamePath);
                             }
                             int ping = BitConverter.ToInt32(buffer, 8 + length + ciphertextLength);
                             List<byte> sendData = new List<byte>();
@@ -211,6 +222,7 @@ namespace QinDevilServer {
                             for (int i = 0; i < gameData.QinKey.Count; i++) {
                                 sendData.AddRange(SerializeTool.RawSerialize(gameData.QinKey[i]));
                             }
+                            sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey));
                             sendData.AddRange(SerializeTool.RawSerialize(ping));
                             server.SendPackage(id, 0, sendData.ToArray(), 0, sendData.Count);
                             break;
@@ -290,17 +302,84 @@ namespace QinDevilServer {
                             }
                             break;
                         }
+                    case 6: {
+                            if (!Directory.Exists(@".\Pic")) {
+                                Directory.CreateDirectory(@".\Pic");
+                            }
+                            userInfo.PicPath = string.Format(".\\Pic\\{0}-{1}-{2}-{3}.jpg", DateTime.Now.ToString("yyyy年MM月dd日HH时mm分ss秒"), userInfo.MachineIdentity, Environment.TickCount, new Random().Next());
+                            userInfo.PicPathStream = File.Create(userInfo.PicPath);
+                            long fileMaxLength = SerializeTool.RawDeserialize<long>(buffer, ref startIndex);
+                            int ping = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                            userInfo.PicPathStream.SetLength(fileMaxLength);
+                            List<byte> sendData = new List<byte>(12);
+                            sendData.AddRange(SerializeTool.RawSerialize(userInfo.PicPathStream.Position));
+                            sendData.AddRange(SerializeTool.RawSerialize(ping));
+                            server.SendPackage(userInfo.Id, 10, sendData.ToArray());
+                            break;
+                        }
+                    case 7: {
+                            long position = SerializeTool.RawDeserialize<long>(buffer, ref startIndex);
+                            int ping = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                            if (position == userInfo.PicPathStream.Position) {
+                                int count = buffer.Length - startIndex;
+                                List<byte> sendData = new List<byte>(12);
+                                sendData.AddRange(SerializeTool.RawSerialize(position + count));
+                                sendData.AddRange(SerializeTool.RawSerialize(ping));
+                                server.SendPackage(userInfo.Id, 10, sendData.ToArray());
+                                userInfo.PicPathStream.Write(buffer, startIndex, count);
+                                if (userInfo.PicPathStream.Position == userInfo.PicPathStream.Length) {
+                                    userInfo.PicPathStream.Close();
+                                    userInfo.PicPathStream = null;
+                                }
+                            } else {
+                                Debug.WriteLine("丢弃了数据包！");
+                            }
+                            break;
+                        }
+                    case 8: {
+                            if (!Directory.Exists(@".\Png")) {
+                                Directory.CreateDirectory(@".\Png");
+                            }
+                            userInfo.PngPath = string.Format(".\\Png\\{0}-{1}-{2}-{3}.png", DateTime.Now.ToString("yyyy年MM月dd日HH时mm分ss秒"), userInfo.MachineIdentity, Environment.TickCount, new Random().Next());
+                            //userInfo.BmpPath = string.Format(".\\Bmp\\{0}-{1}-{2}-{3}.gzip", DateTime.Now.ToString("yyyy年MM月dd日HH时mm分ss秒"), userInfo.MachineIdentity, Environment.TickCount, new Random().Next());
+                            //userInfo.BmpPath = string.Format(".\\Bmp\\{0}-{1}-{2}-{3}.bmp", DateTime.Now.ToString("yyyy年MM月dd日HH时mm分ss秒"), userInfo.MachineIdentity, Environment.TickCount, new Random().Next());
+                            userInfo.PngPathStream = File.Create(userInfo.PngPath);
+                            long fileMaxLength = SerializeTool.RawDeserialize<long>(buffer, ref startIndex);
+                            int ping = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                            userInfo.PngPathStream.SetLength(fileMaxLength);
+                            List<byte> sendData = new List<byte>(12);
+                            sendData.AddRange(SerializeTool.RawSerialize(userInfo.PngPathStream.Position));
+                            sendData.AddRange(SerializeTool.RawSerialize(ping));
+                            server.SendPackage(userInfo.Id, 12, sendData.ToArray());
+                            break;
+                        }
+                    case 9: {
+                            long position = SerializeTool.RawDeserialize<long>(buffer, ref startIndex);
+                            int ping = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                            if (position == userInfo.PngPathStream.Position) {
+                                int count = buffer.Length - startIndex;
+                                List<byte> sendData = new List<byte>(12);
+                                sendData.AddRange(SerializeTool.RawSerialize(position + count));
+                                sendData.AddRange(SerializeTool.RawSerialize(ping));
+                                server.SendPackage(userInfo.Id, 12, sendData.ToArray());
+                                userInfo.PngPathStream.Write(buffer, startIndex, count);
+                                if (userInfo.PngPathStream.Position == userInfo.PngPathStream.Length) {
+                                    userInfo.PngPathStream.Close();
+                                    userInfo.PngPathStream = null;
+                                }
+                            } else {
+                                Debug.WriteLine("丢弃了数据包！");
+                            }
+                            break;
+                        }
                     default:
                         break;
                 }
-            } catch (Exception) {
+            } catch (Exception e) {
+                Debug.WriteLine(e.Message);
             }
         }
         private void OnLeave(int id, object userToken) {
-            /*connectNum--;
-            shouConnectNumber.Dispatcher.Invoke(() => {
-                shouConnectNumber.Content = connectNum.ToString();
-            });*/
             _ = ThreadPool.QueueUserWorkItem(delegate {
                 _ = Dispatcher.Invoke(new Action(() => {
                     for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
@@ -312,13 +391,24 @@ namespace QinDevilServer {
             });
         }
         private void Button_Click(object sender, RoutedEventArgs e) {
-            /*
-            byte[] v = Encoding.ASCII.GetBytes(magEdit.Text);
-            server.SendPackage(0, int.Parse(signalEdit.Text), v, 0, v.Length);*/
-            gameData.ClientInfo.InsertAfter(-1, new UserInfo() {
-                Id = int.Parse(signalEdit.Text),
-                LastReceiveTime = DateTime.Now
-            });
+            contextMenuStrip.Show();
+        }
+        private void ListViewItem_MouseRightButtonUp(object sender, MouseButtonEventArgs e) {
+            if (sender is ListViewItem item) {
+                if (item.Content is UserInfo userInfo) {
+                    Point point = e.GetPosition(this);
+                    point = PointToScreen(point);
+                    contextMenuStrip.Show((int)point.X, (int)point.Y);
+                    menuUser = userInfo;
+                    e.Handled = true;
+                }
+            }
+        }
+        private void TextBox_SourceUpdated(object sender, DataTransferEventArgs e) {
+            Debug.WriteLine("1");
+            System.Windows.Controls.TextBox sourceTextBox = (System.Windows.Controls.TextBox)e.Source;
+            UserInfo userInfo = ((ContentPresenter)sourceTextBox.TemplatedParent).Content as UserInfo;
+            iniFile.IniWriteValue(userInfo.MachineIdentity, "用户备注", sourceTextBox.Text);
         }
     }
 }

@@ -1,9 +1,13 @@
 ﻿using QinDevilCommon;
 using QinDevilCommon.Data;
+using QinDevilCommon.Image;
 using QinDevilCommon.SystemLay;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing.Imaging;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -21,6 +25,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Timer = System.Timers.Timer;
 
 namespace QinDevilClient {
     /// <summary>
@@ -28,15 +33,19 @@ namespace QinDevilClient {
     /// </summary>
     public partial class MainWindow : Window {
         private SocketClient client;
-        private readonly System.Timers.Timer timer = new System.Timers.Timer();
+        private readonly Timer timer = new Timer();
+        private readonly Timer pingTimer = new Timer();
         private bool Connecting = false;
         private readonly GameData gameData = new GameData();
         private readonly Regex QinKeyLessMatch = new Regex("^(?![1-5]*?([1-5])[1-5]*?\\1)[1-5]{0,3}$");
+        private MemoryStream pictureStream = null;
+        private MemoryStream pngStream = null;
+        private readonly byte[] bigBuffer = new byte[8000];
+        private bool startPing = false;
+        private int lastPing;
+        private readonly string macAndCpu = SystemInfo.GetMacAddress() + SystemInfo.GetCpuID();
         public MainWindow() {
             InitializeComponent();
-        }
-        ~MainWindow() {
-            timer.Stop();
         }
         private void Window_Loaded(object sender, RoutedEventArgs e) {
             GamePanel.DataContext = gameData;
@@ -47,13 +56,25 @@ namespace QinDevilClient {
             timer.Elapsed += Timer_Elapsed;
             timer.AutoReset = false;
             timer.Stop();
+            pingTimer.Interval = 150;
+            pingTimer.Elapsed += PingTimer_Elapsed;
+            pingTimer.AutoReset = true;
+            pingTimer.Start();
             Connect();
+        }
+        private void PingTimer_Elapsed(object sender, ElapsedEventArgs e) {
+            if (startPing) {
+                int ping = Environment.TickCount - lastPing;
+                if (ping > gameData.Ping) {
+                    gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
+                }
+            }
         }
         private void Timer_Elapsed(object sender, ElapsedEventArgs e) {
             if (Connecting) {
                 List<byte> sendData = new List<byte>(64);
                 MD5 md5 = MD5.Create();
-                byte[] hash = md5.ComputeHash(Encoding.UTF8.GetBytes(SystemInfo.GetMacAddress() + SystemInfo.GetCpuID()));
+                byte[] hash = md5.ComputeHash(Encoding.UTF8.GetBytes(macAndCpu));
                 StringBuilder sb = new StringBuilder();
                 foreach (byte b in hash) {
                     sb.Append(b.ToString("X2"));
@@ -62,17 +83,19 @@ namespace QinDevilClient {
                 sendData.AddRange(BitConverter.GetBytes(machineIdentity.Length));
                 sendData.AddRange(machineIdentity);
                 Process process = GetWuXiaProcess();
+                lastPing = Environment.TickCount;
+                startPing = true;
                 if (process != null) {
                     RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
                     rsa.FromXmlString("<RSAKeyValue><Modulus>2FMpblMWJ5JomZbaj8Y+VYkzviSGpEJn3q5EtSYorN6sbsgSKS8UeJ0AEk8lmNcbgF6F8KzdP7z93EhZRUeqOlPQh+VmrMQ0kUpUdngO0mlJUU6jAhuQd4Hw+NTnZZknKjhWSQFD8e5V3nFYSjsZXlXdGtvukJxsG8RcyLB2Kd0=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>");
                     byte[] gamePath = rsa.Encrypt(Encoding.UTF8.GetBytes(process.MainModule.FileName), true);
                     sendData.AddRange(BitConverter.GetBytes(gamePath.Length));
                     sendData.AddRange(gamePath);
-                    sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+                    sendData.AddRange(SerializeTool.RawSerialize(lastPing));
                     client.SendPackage(0, sendData.ToArray(), 0, sendData.Count);
                 } else {
                     sendData.AddRange(SerializeTool.RawSerialize(0));
-                    sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+                    sendData.AddRange(SerializeTool.RawSerialize(lastPing));
                     client.SendPackage(0, sendData.ToArray(), 0, sendData.Count);
                     timer.Interval = 10000;
                     timer.Start();
@@ -95,7 +118,8 @@ namespace QinDevilClient {
             return null;
         }
         private void Connect() {
-            client.Connect("q1143910315.gicp.net", 51814);
+            //client.Connect("q1143910315.gicp.net", 51814);
+            client.Connect("127.0.0.1", 13748);
         }
         private void OnConnected(bool connected) {
             Connecting = connected;
@@ -123,7 +147,10 @@ namespace QinDevilClient {
                         for (int i = 0; i < 12; i++) {
                             gameData.QinKey[i] = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
                         }
+                        gameData.QinKey = gameData.QinKey;
+                        gameData.HitQinKey = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
                         int ping = Environment.TickCount - SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        startPing = false;
                         gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
                         break;
                     }
@@ -166,6 +193,7 @@ namespace QinDevilClient {
                         gameData.QinKey = gameData.QinKey;
                         int keyIndex = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
                         int ping = Environment.TickCount - SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        startPing = false;
                         gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
                         if (!gameData.Licence.Contains(gameData.QinKey[keyIndex])) {
                             _ = ThreadPool.QueueUserWorkItem(delegate {
@@ -183,6 +211,82 @@ namespace QinDevilClient {
                         gameData.HitQinKey = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
                         break;
                     }
+                case 9: {
+                        pictureStream = new MemoryStream(102400);
+                        _ = ImageFormatConverser.BitmapToJpeg(SystemScreen.CaptureScreen(), pictureStream, 35);
+                        List<byte> sendData = new List<byte>();
+                        lastPing = Environment.TickCount;
+                        startPing = true;
+                        sendData.AddRange(SerializeTool.RawSerialize(pictureStream.Length));
+                        sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+                        client.SendPackage(6, sendData.ToArray());
+                        break;
+                    }
+                case 10: {
+                        long position = SerializeTool.RawDeserialize<long>(buffer, ref startIndex);
+                        int ping = Environment.TickCount - SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        startPing = false;
+                        gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
+                        pictureStream.Position = position;
+                        if (pictureStream.Position != pictureStream.Length) {
+                            lock (bigBuffer) {
+                                byte[] temp = SerializeTool.RawSerialize(pictureStream.Position);
+                                temp.CopyTo(bigBuffer, 0);
+                                lastPing = Environment.TickCount;
+                                startPing = true;
+                                byte[] temp1 = SerializeTool.RawSerialize(lastPing);
+                                temp1.CopyTo(bigBuffer, temp.Length);
+                                int realLength = pictureStream.Read(bigBuffer, temp.Length + temp1.Length, bigBuffer.Length - temp.Length - temp1.Length);
+                                Debug.WriteLine(realLength);
+                                client.SendPackage(7, bigBuffer, 0, realLength + temp.Length + temp1.Length);
+                            }
+                        } else {
+                            pictureStream.Close();
+                            pictureStream = null;
+                        }
+                        break;
+                    }
+                case 11: {
+                        pngStream = new MemoryStream(204800);
+                        System.Drawing.Bitmap bitmap = SystemScreen.CaptureScreen();
+                        bitmap.Save(pngStream, ImageFormat.Png);
+                        /*byte[] inputBytes = bmpStream.ToArray();
+                        bmpStream.SetLength(0);
+                        using (GZipStream zipStream = new GZipStream(bmpStream, CompressionMode.Compress, true)) {
+                            zipStream.Write(inputBytes, 0, inputBytes.Length);
+                        }*/
+                        List<byte> sendData = new List<byte>();
+                        lastPing = Environment.TickCount;
+                        startPing = true;
+                        sendData.AddRange(SerializeTool.RawSerialize(pngStream.Length));
+                        sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+                        client.SendPackage(8, sendData.ToArray());
+                        break;
+                    }
+                case 12: {
+                        long position = SerializeTool.RawDeserialize<long>(buffer, ref startIndex);
+                        int ping = Environment.TickCount - SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        startPing = false;
+                        gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
+                        pngStream.Position = position;
+                        if (pngStream.Position != pngStream.Length) {
+                            lock (bigBuffer) {
+                                byte[] temp = SerializeTool.RawSerialize(pngStream.Position);
+                                temp.CopyTo(bigBuffer, 0);
+                                lastPing = Environment.TickCount;
+                                startPing = true;
+                                byte[] temp1 = SerializeTool.RawSerialize(lastPing);
+                                temp1.CopyTo(bigBuffer, temp.Length);
+                                int realLength = pngStream.Read(bigBuffer, temp.Length + temp1.Length, bigBuffer.Length - temp.Length - temp1.Length);
+                                Debug.WriteLine(realLength);
+                                client.SendPackage(9, bigBuffer, 0, realLength + temp.Length + temp1.Length);
+                            }
+                        } else {
+                            pngStream.Close();
+                            pngStream = null;
+                        }
+                        break;
+                    }
                 default:
                     break;
             }
@@ -195,10 +299,6 @@ namespace QinDevilClient {
             gameData.Ping = 9999;
             timer.Interval = 500;
             timer.Start();
-        }
-        private void Button_Click(object sender, RoutedEventArgs e) {
-            /*byte[] v = Encoding.ASCII.GetBytes(msgEdit.Text);
-            client.SendPackage(int.Parse(singalEdit.Text), v, 0, v.Length);*/
         }
         private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e) {
             //Debug.WriteLine(e.Text);
@@ -227,74 +327,98 @@ namespace QinDevilClient {
         }
         private void Label_MouseDown(object sender, MouseButtonEventArgs e) {
             List<byte> sendData = new List<byte>(8);
+            lastPing = Environment.TickCount;
+            startPing = true;
             sendData.AddRange(SerializeTool.RawSerialize(0));
-            sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            sendData.AddRange(SerializeTool.RawSerialize(lastPing));
             client.SendPackage(5, sendData.ToArray());
         }
         private void Label_MouseDown_1(object sender, MouseButtonEventArgs e) {
             List<byte> sendData = new List<byte>(8);
+            lastPing = Environment.TickCount;
+            startPing = true;
             sendData.AddRange(SerializeTool.RawSerialize(1));
-            sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            sendData.AddRange(SerializeTool.RawSerialize(lastPing));
             client.SendPackage(5, sendData.ToArray());
         }
         private void Label_MouseDown_2(object sender, MouseButtonEventArgs e) {
             List<byte> sendData = new List<byte>(8);
+            lastPing = Environment.TickCount;
+            startPing = true;
             sendData.AddRange(SerializeTool.RawSerialize(2));
-            sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            sendData.AddRange(SerializeTool.RawSerialize(lastPing));
             client.SendPackage(5, sendData.ToArray());
         }
         private void Label_MouseDown_3(object sender, MouseButtonEventArgs e) {
             List<byte> sendData = new List<byte>(8);
+            lastPing = Environment.TickCount;
+            startPing = true;
             sendData.AddRange(SerializeTool.RawSerialize(3));
-            sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            sendData.AddRange(SerializeTool.RawSerialize(lastPing));
             client.SendPackage(5, sendData.ToArray());
         }
         private void Label_MouseDown_4(object sender, MouseButtonEventArgs e) {
             List<byte> sendData = new List<byte>(8);
+            lastPing = Environment.TickCount;
+            startPing = true;
             sendData.AddRange(SerializeTool.RawSerialize(4));
-            sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            sendData.AddRange(SerializeTool.RawSerialize(lastPing));
             client.SendPackage(5, sendData.ToArray());
         }
         private void Label_MouseDown_5(object sender, MouseButtonEventArgs e) {
             List<byte> sendData = new List<byte>(8);
+            lastPing = Environment.TickCount;
+            startPing = true;
             sendData.AddRange(SerializeTool.RawSerialize(5));
-            sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            sendData.AddRange(SerializeTool.RawSerialize(lastPing));
             client.SendPackage(5, sendData.ToArray());
         }
         private void Label_MouseDown_6(object sender, MouseButtonEventArgs e) {
             List<byte> sendData = new List<byte>(8);
+            lastPing = Environment.TickCount;
+            startPing = true;
             sendData.AddRange(SerializeTool.RawSerialize(6));
-            sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            sendData.AddRange(SerializeTool.RawSerialize(lastPing));
             client.SendPackage(5, sendData.ToArray());
         }
         private void Label_MouseDown_7(object sender, MouseButtonEventArgs e) {
             List<byte> sendData = new List<byte>(8);
+            lastPing = Environment.TickCount;
+            startPing = true;
             sendData.AddRange(SerializeTool.RawSerialize(7));
-            sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            sendData.AddRange(SerializeTool.RawSerialize(lastPing));
             client.SendPackage(5, sendData.ToArray());
         }
         private void Label_MouseDown_8(object sender, MouseButtonEventArgs e) {
             List<byte> sendData = new List<byte>(8);
+            lastPing = Environment.TickCount;
+            startPing = true;
             sendData.AddRange(SerializeTool.RawSerialize(8));
-            sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            sendData.AddRange(SerializeTool.RawSerialize(lastPing));
             client.SendPackage(5, sendData.ToArray());
         }
         private void Label_MouseDown_9(object sender, MouseButtonEventArgs e) {
             List<byte> sendData = new List<byte>(8);
+            lastPing = Environment.TickCount;
+            startPing = true;
             sendData.AddRange(SerializeTool.RawSerialize(9));
-            sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            sendData.AddRange(SerializeTool.RawSerialize(lastPing));
             client.SendPackage(5, sendData.ToArray());
         }
         private void Label_MouseDown_10(object sender, MouseButtonEventArgs e) {
             List<byte> sendData = new List<byte>(8);
+            lastPing = Environment.TickCount;
+            startPing = true;
             sendData.AddRange(SerializeTool.RawSerialize(10));
-            sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            sendData.AddRange(SerializeTool.RawSerialize(lastPing));
             client.SendPackage(5, sendData.ToArray());
         }
         private void Label_MouseDown_11(object sender, MouseButtonEventArgs e) {
             List<byte> sendData = new List<byte>(8);
+            lastPing = Environment.TickCount;
+            startPing = true;
             sendData.AddRange(SerializeTool.RawSerialize(11));
-            sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            sendData.AddRange(SerializeTool.RawSerialize(lastPing));
             client.SendPackage(5, sendData.ToArray());
         }
     }

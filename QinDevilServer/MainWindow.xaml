@@ -11,34 +11,52 @@
         <TextBox Name="signalEdit" HorizontalAlignment="Left" Height="23" Margin="360,364,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
         <TextBox Name="magEdit" HorizontalAlignment="Left" Height="23" Margin="485,364,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
         <Button Content="Button" HorizontalAlignment="Left" Margin="610,363,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click"/>
-        <ListView HorizontalAlignment="Left" Height="348" Margin="10,10,0,0" VerticalAlignment="Top" Width="772" ItemsSource="{Binding ClientInfo}">
+        <ListView x:Name="clientListView" Height="348" Margin="10,10,0,0" Width="772" ItemsSource="{Binding ClientInfo}" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="{x:Type ListViewItem}">
+                    <EventSetter Event="MouseRightButtonUp" Handler="ListViewItem_MouseRightButtonUp"/>
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                </Style>
+            </ListView.ItemContainerStyle>
+            <ListView.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="请求所有玩家屏幕截图（JPG）" Click="PrintScreenAll_Click"></MenuItem>
+                </ContextMenu>
+            </ListView.ContextMenu>
             <ListView.View>
                 <GridView>
                     <GridViewColumn Header="ID" Width="40">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Id}" TextAlignment="Center" Width="{Binding Path=ActualWidth,ElementName=column1}"/>
+                                <TextBlock Text="{Binding Id}"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    <GridViewColumn Header="用户标志" Width="150">
+                    <GridViewColumn Header="用户标志" Width="255">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding MachineIdentity}" TextAlignment="Center" Width="{Binding Path=ActualWidth,ElementName=column2}"/>
+                                <TextBlock Text="{Binding MachineIdentity}"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    <GridViewColumn Header="最后接收时间" Width="200">
+                    <GridViewColumn Header="用户备注" Width="150">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding LastReceiveTime,StringFormat={}{0:HH:mm:ss}}" TextAlignment="Center" Width="{Binding Path=ActualWidth,ElementName=column2}"/>
+                                <TextBox Text="{Binding Remark,Mode=TwoWay,NotifyOnSourceUpdated=True}" SourceUpdated="TextBox_SourceUpdated"></TextBox>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="最后接收时间" Width="85">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding LastReceiveTime,StringFormat={}{0:HH:mm:ss}}"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
                     <GridViewColumn Header="天刀安装目录" Width="150">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding GamePath}" TextAlignment="Center" Width="{Binding Path=ActualWidth,ElementName=column2}"/>
+                                <TextBlock Text="{Binding GamePath}"/>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
