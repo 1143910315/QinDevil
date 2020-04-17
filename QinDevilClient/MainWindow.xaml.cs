@@ -118,8 +118,8 @@ namespace QinDevilClient {
             return null;
         }
         private void Connect() {
-            //client.Connect("q1143910315.gicp.net", 51814);
-            client.Connect("127.0.0.1", 13748);
+            client.Connect("q1143910315.gicp.net", 51814);
+            //client.Connect("127.0.0.1", 13748);
         }
         private void OnConnected(bool connected) {
             Connecting = connected;
@@ -177,6 +177,7 @@ namespace QinDevilClient {
                         for (int i = 0; i < 12; i++) {
                             gameData.QinKey[i] = 0;
                         }
+                        gameData.QinKey = gameData.QinKey;
                         break;
                     }
                 case 6: {
