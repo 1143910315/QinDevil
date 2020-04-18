@@ -47,7 +47,7 @@ namespace QinDevilServer {
         }
         private void PictureViewer_Click(object sender, EventArgs e) {
             if (menuUser != null) {
-                new PictureViewerWindow(menuUser).Show();
+                _ = new PictureViewerWindow(menuUser);
             }
         }
         private void PrintScreenAll_Click(object sender, RoutedEventArgs e) {
@@ -65,11 +65,13 @@ namespace QinDevilServer {
                 server.SendPackage(menuUser.Id, 11, null);
             }
         }
-
         private void PrintScreen_Click(object sender, EventArgs e) {
             if (menuUser != null) {
                 server.SendPackage(menuUser.Id, 9, null);
             }
+        }
+        private void LogViewer_Click(object sender, RoutedEventArgs e) {
+            new LogViewerWindow(gameData).Show();
         }
         private void Window_Loaded(object sender, RoutedEventArgs e) {
             server = new SocketServer(13748) {
@@ -89,6 +91,10 @@ namespace QinDevilServer {
                         break;
                     }
                 case KeyCode.Numeric1: {
+                        gameData.Log.Add(new LogDetail() {
+                            Content = "数字键 1被按下，" + (ctrlState ? "按下了ctrl。" : "没按ctrl。"),
+                            Time = Environment.TickCount
+                        });
                         if (ctrlState) {
                             gameData.HitQinKey += "1 ";
                             byte[] sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey);
@@ -100,6 +106,10 @@ namespace QinDevilServer {
                         break;
                     }
                 case KeyCode.Numeric2: {
+                        gameData.Log.Add(new LogDetail() {
+                            Content = "数字键 2被按下，" + (ctrlState ? "按下了ctrl。" : "没按ctrl。"),
+                            Time = Environment.TickCount
+                        });
                         if (ctrlState) {
                             gameData.HitQinKey += "2 ";
                             byte[] sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey);
@@ -111,6 +121,10 @@ namespace QinDevilServer {
                         break;
                     }
                 case KeyCode.Numeric3: {
+                        gameData.Log.Add(new LogDetail() {
+                            Content = "数字键 3被按下，" + (ctrlState ? "按下了ctrl。" : "没按ctrl。"),
+                            Time = Environment.TickCount
+                        });
                         if (ctrlState) {
                             gameData.HitQinKey += "3 ";
                             byte[] sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey);
@@ -122,6 +136,10 @@ namespace QinDevilServer {
                         break;
                     }
                 case KeyCode.Numeric4: {
+                        gameData.Log.Add(new LogDetail() {
+                            Content = "数字键 4被按下，" + (ctrlState ? "按下了ctrl。" : "没按ctrl。"),
+                            Time = Environment.TickCount
+                        });
                         if (ctrlState) {
                             gameData.HitQinKey += "4 ";
                             byte[] sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey);
@@ -133,6 +151,10 @@ namespace QinDevilServer {
                         break;
                     }
                 case KeyCode.Numeric5: {
+                        gameData.Log.Add(new LogDetail() {
+                            Content = "数字键 5被按下，" + (ctrlState ? "按下了ctrl。" : "没按ctrl。"),
+                            Time = Environment.TickCount
+                        });
                         if (ctrlState) {
                             gameData.HitQinKey += "5 ";
                             byte[] sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey);
@@ -145,6 +167,10 @@ namespace QinDevilServer {
                     }
                 case KeyCode.Numeric7: {
                         if (ctrlState) {
+                            gameData.Log.Add(new LogDetail() {
+                                Content = "补弦清屏---------------------",
+                                Time = Environment.TickCount
+                            });
                             gameData.No1Qin = gameData.No2Qin = gameData.No3Qin = gameData.No4Qin = gameData.HitQinKey = "";
                             for (int i = 0; i < 12; i++) {
                                 gameData.QinKey[i] = 0;
@@ -170,6 +196,10 @@ namespace QinDevilServer {
             }
         }
         private object OnAcceptSuccess(int id) {
+            gameData.Log.Add(new LogDetail() {
+                Content = "客户 " + id.ToString() + "进入。",
+                Time = Environment.TickCount
+            });
             UserInfo userInfo = new UserInfo() {
                 Id = id,
                 LastReceiveTime = DateTime.Now
@@ -230,7 +260,11 @@ namespace QinDevilServer {
                             }
                             sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey));
                             sendData.AddRange(SerializeTool.RawSerialize(ping));
-                            server.SendPackage(id, 0, sendData.ToArray(), 0, sendData.Count);
+                            if (userInfo.MachineIdentity.Length > 0 && userInfo.GamePath.Length > 0) {
+                                server.SendPackage(id, 13, sendData.ToArray(), 0, sendData.Count);
+                            } else {
+                                server.SendPackage(id, 0, sendData.ToArray(), 0, sendData.Count);
+                            }
                             break;
                         }
                     case 1: {
@@ -242,6 +276,10 @@ namespace QinDevilServer {
                                     server.SendPackage(tempUserInfo.Id, 1, QinStrByte);
                                 }
                             }
+                            gameData.Log.Add(new LogDetail() {
+                                Content = userInfo.Remark + " 修改一号琴缺弦为：" + gameData.No1Qin,
+                                Time = Environment.TickCount
+                            });
                             break;
                         }
                     case 2: {
@@ -253,6 +291,10 @@ namespace QinDevilServer {
                                     server.SendPackage(tempUserInfo.Id, 2, QinStrByte);
                                 }
                             }
+                            gameData.Log.Add(new LogDetail() {
+                                Content = userInfo.Remark + " 修改二号琴缺弦为：" + gameData.No2Qin,
+                                Time = Environment.TickCount
+                            });
                             break;
                         }
                     case 3: {
@@ -264,6 +306,10 @@ namespace QinDevilServer {
                                     server.SendPackage(tempUserInfo.Id, 3, QinStrByte);
                                 }
                             }
+                            gameData.Log.Add(new LogDetail() {
+                                Content = userInfo.Remark + " 修改三号琴缺弦为：" + gameData.No3Qin,
+                                Time = Environment.TickCount
+                            });
                             break;
                         }
                     case 4: {
@@ -275,6 +321,10 @@ namespace QinDevilServer {
                                     server.SendPackage(tempUserInfo.Id, 4, QinStrByte);
                                 }
                             }
+                            gameData.Log.Add(new LogDetail() {
+                                Content = userInfo.Remark + " 修改四号琴缺弦为：" + gameData.No4Qin,
+                                Time = Environment.TickCount
+                            });
                             break;
                         }
                     case 5: {
@@ -289,8 +339,21 @@ namespace QinDevilServer {
                                 } else {
                                     if (gameData.QinKey[i] == 0) {
                                         gameData.QinKey[i] = userInfo.Id;
+                                        gameData.Log.Add(new LogDetail() {
+                                            Content = userInfo.Remark + " 补 " + keyIndex.ToString() + " 琴弦。",
+                                            Time = Environment.TickCount
+                                        });
                                     } else if (gameData.QinKey[i] == userInfo.Id) {
                                         gameData.QinKey[i] = 0;
+                                        gameData.Log.Add(new LogDetail() {
+                                            Content = userInfo.Remark + " 放弃补 " + keyIndex.ToString() + " 琴弦。",
+                                            Time = Environment.TickCount
+                                        });
+                                    } else {
+                                        gameData.Log.Add(new LogDetail() {
+                                            Content = userInfo.Remark + " 尝试补 " + keyIndex.ToString() + " 琴弦但冲突。",
+                                            Time = Environment.TickCount
+                                        });
                                     }
                                 }
                                 sendData.AddRange(SerializeTool.RawSerialize(gameData.QinKey[i]));
@@ -378,6 +441,15 @@ namespace QinDevilServer {
                             }
                             break;
                         }
+                    case 10: {
+                            int color = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                            _ = ThreadPool.QueueUserWorkItem(delegate {
+                                _ = Dispatcher.Invoke(new Action(() => {
+                                    colorTextBox.Text += userInfo.Id.ToString() + ":" + color.ToString() + "|";
+                                }), null);
+                            });
+                            break;
+                        }
                     default:
                         break;
                 }
@@ -387,13 +459,17 @@ namespace QinDevilServer {
         }
         private void OnLeave(int id, object userToken) {
             _ = ThreadPool.QueueUserWorkItem(delegate {
-                _ = Dispatcher.Invoke(new Action(() => {
+                Dispatcher.Invoke(() => {
                     for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
                         if (gameData.ClientInfo.Get(i).Id == id) {
+                            gameData.Log.Add(new LogDetail() {
+                                Content = "客户 " + id.ToString() + "离开。备注：" + gameData.ClientInfo.Get(i).Remark,
+                                Time = Environment.TickCount
+                            });
                             gameData.ClientInfo.Del(i);
                         }
                     }
-                }), null);
+                });
             });
         }
         private void Button_Click(object sender, RoutedEventArgs e) {
@@ -411,7 +487,6 @@ namespace QinDevilServer {
             }
         }
         private void TextBox_SourceUpdated(object sender, DataTransferEventArgs e) {
-            Debug.WriteLine("1");
             System.Windows.Controls.TextBox sourceTextBox = (System.Windows.Controls.TextBox)e.Source;
             UserInfo userInfo = ((ContentPresenter)sourceTextBox.TemplatedParent).Content as UserInfo;
             iniFile.IniWriteValue(userInfo.MachineIdentity, "用户备注", sourceTextBox.Text);

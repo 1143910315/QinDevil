@@ -26,8 +26,13 @@ namespace QinDevilServer {
         }
         public PictureViewerWindow(UserInfo userInfo) {
             InitializeComponent();
-            Uri baseUri = new Uri(System.Reflection.Assembly.GetEntryAssembly().Location);
-            IMG1.Source = new BitmapImage(new Uri(baseUri, userInfo.PicPath));
+            try {
+                Uri baseUri = new Uri(System.Reflection.Assembly.GetEntryAssembly().Location);
+                IMG1.Source = new BitmapImage(new Uri(baseUri, userInfo.PicPath));
+                Show();
+            } catch (Exception) {
+                Close();
+            }
         }
         private void IMG1_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
             ContentControl img = sender as ContentControl;

@@ -1,4 +1,4 @@
-﻿using AudioPlayer.ViewModel;
+﻿using QinDevilCommon.ViewModel;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -57,6 +57,11 @@ namespace QinDevilServer {
         public string Remark {
             get => _remark;
             set => Set(ref _remark, value);
+        }
+        private string _pickColor = "未就绪";
+        public string PickColor {
+            get => _pickColor;
+            set => Set(ref _pickColor, value);
         }
     }
 }

@@ -4,7 +4,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace AudioPlayer.ViewModel {
+namespace QinDevilCommon.ViewModel {
     public class ViewModelBase : INotifyPropertyChanged {
         public event PropertyChangedEventHandler PropertyChanged;
         protected bool Set<T>(ref T field, T newValue = default, [CallerMemberName] string propertyName = null) {

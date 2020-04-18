@@ -9,6 +9,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -26,15 +27,19 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Timer = System.Timers.Timer;
+using Color = System.Drawing.Color;
 
 namespace QinDevilClient {
     /// <summary>
     /// MainWindow.xaml 的交互逻辑
     /// </summary>
     public partial class MainWindow : Window {
+        [DllImport("Psapi.dll", EntryPoint = "GetModuleFileNameEx")]
+        public static extern int GetModuleFileNameEx(IntPtr handle, IntPtr hModule, [Out] StringBuilder lpszFileName, int nSize);
         private SocketClient client;
         private readonly Timer timer = new Timer();
         private readonly Timer pingTimer = new Timer();
+        private readonly Timer discernTimer = new Timer();
         private bool Connecting = false;
         private readonly GameData gameData = new GameData();
         private readonly Regex QinKeyLessMatch = new Regex("^(?![1-5]*?([1-5])[1-5]*?\\1)[1-5]{0,3}$");
@@ -44,6 +49,7 @@ namespace QinDevilClient {
         private bool startPing = false;
         private int lastPing;
         private readonly string macAndCpu = SystemInfo.GetMacAddress() + SystemInfo.GetCpuID();
+        private bool sendInfoSuccess = false;
         public MainWindow() {
             InitializeComponent();
         }
@@ -60,64 +66,171 @@ namespace QinDevilClient {
             pingTimer.Elapsed += PingTimer_Elapsed;
             pingTimer.AutoReset = true;
             pingTimer.Start();
+            discernTimer.Interval = 1000;
+            discernTimer.Elapsed += DiscernTimer_Elapsed;
+            discernTimer.AutoReset = true;
             Connect();
+        }
+        private void DiscernTimer_Elapsed(object sender, ElapsedEventArgs e) {
+            if (Connecting) {
+                try {
+                    Process process = GetWuXiaProcess();
+                    if (process != null) {
+                        WindowInfo.Rect rect = WindowInfo.GetWindowClientRect(process.MainWindowHandle);
+                        if (rect.right > 100 & rect.bottom > 100) {
+                            int discernColor = 0;
+                            //普通UI
+                            //宫
+                            WindowInfo.Point point = new WindowInfo.Point() {
+                                x = rect.right / 2 - 287,
+                                y = rect.bottom - 45
+                            };
+                            WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point);
+                            Color color = SystemScreen.GetScreenPointColor(point.x, point.y);
+                            if (color.Equals(Color.FromArgb(245, 245, 245))) {
+                                discernColor |= 0b1;
+                            }
+                            //商
+                            point = new WindowInfo.Point() {
+                                x = rect.right / 2 - 246,
+                                y = rect.bottom - 45
+                            };
+                            WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point);
+                            color = SystemScreen.GetScreenPointColor(point.x, point.y);
+                            if (color.Equals(Color.FromArgb(39, 47, 22))) {
+                                discernColor |= 0b10;
+                            }
+                            //角
+                            point = new WindowInfo.Point() {
+                                x = rect.right / 2 - 209,
+                                y = rect.bottom - 45
+                            };
+                            WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point);
+                            color = SystemScreen.GetScreenPointColor(point.x, point.y);
+                            if (color.Equals(Color.FromArgb(32, 25, 41)) || color.Equals(Color.FromArgb(32, 25, 40))) {
+                                discernColor |= 0b100;
+                            }
+                            //徵
+                            point = new WindowInfo.Point() {
+                                x = rect.right / 2 - 172,
+                                y = rect.bottom - 45
+                            };
+                            WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point);
+                            color = SystemScreen.GetScreenPointColor(point.x, point.y);
+                            if (color.Equals(Color.FromArgb(245, 245, 245))) {
+                                discernColor |= 0b1000;
+                            }
+                            //羽
+                            point = new WindowInfo.Point() {
+                                x = rect.right / 2 - 134,
+                                y = rect.bottom - 45
+                            };
+                            _ = WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point);
+                            color = SystemScreen.GetScreenPointColor(point.x, point.y);
+                            if (color.Equals(Color.FromArgb(62, 37, 18))) {
+                                discernColor |= 0b10000;
+                            }
+                            if (discernColor != 0) {
+                                discernTimer.Stop();
+                                List<byte> sendData = new List<byte>();
+                                sendData.AddRange(SerializeTool.RawSerialize(discernColor));
+                                client.SendPackage(10, sendData.ToArray());
+                            }
+                        }
+                    }
+                } catch (Exception) {
+                    discernTimer.Stop();
+                }
+            }
         }
         private void PingTimer_Elapsed(object sender, ElapsedEventArgs e) {
             if (startPing) {
                 int ping = Environment.TickCount - lastPing;
                 if (ping > gameData.Ping) {
                     gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
+                    if (gameData.Ping == 9999) {
+                        startPing = false;
+                        Connect();
+                    }
                 }
             }
         }
         private void Timer_Elapsed(object sender, ElapsedEventArgs e) {
             if (Connecting) {
-                List<byte> sendData = new List<byte>(64);
-                MD5 md5 = MD5.Create();
-                byte[] hash = md5.ComputeHash(Encoding.UTF8.GetBytes(macAndCpu));
-                StringBuilder sb = new StringBuilder();
-                foreach (byte b in hash) {
-                    sb.Append(b.ToString("X2"));
-                }
-                byte[] machineIdentity = Encoding.UTF8.GetBytes(sb.ToString());
-                sendData.AddRange(BitConverter.GetBytes(machineIdentity.Length));
-                sendData.AddRange(machineIdentity);
-                Process process = GetWuXiaProcess();
-                lastPing = Environment.TickCount;
-                startPing = true;
-                if (process != null) {
-                    RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
-                    rsa.FromXmlString("<RSAKeyValue><Modulus>2FMpblMWJ5JomZbaj8Y+VYkzviSGpEJn3q5EtSYorN6sbsgSKS8UeJ0AEk8lmNcbgF6F8KzdP7z93EhZRUeqOlPQh+VmrMQ0kUpUdngO0mlJUU6jAhuQd4Hw+NTnZZknKjhWSQFD8e5V3nFYSjsZXlXdGtvukJxsG8RcyLB2Kd0=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>");
-                    byte[] gamePath = rsa.Encrypt(Encoding.UTF8.GetBytes(process.MainModule.FileName), true);
-                    sendData.AddRange(BitConverter.GetBytes(gamePath.Length));
-                    sendData.AddRange(gamePath);
-                    sendData.AddRange(SerializeTool.RawSerialize(lastPing));
-                    client.SendPackage(0, sendData.ToArray(), 0, sendData.Count);
-                } else {
+                if (sendInfoSuccess) {
+                    List<byte> sendData = new List<byte>(64);
+                    lastPing = Environment.TickCount;
+                    startPing = true;
+                    sendData.AddRange(SerializeTool.RawSerialize(0));
                     sendData.AddRange(SerializeTool.RawSerialize(0));
                     sendData.AddRange(SerializeTool.RawSerialize(lastPing));
                     client.SendPackage(0, sendData.ToArray(), 0, sendData.Count);
-                    timer.Interval = 10000;
-                    timer.Start();
+                } else {
+                    List<byte> sendData = new List<byte>(64);
+                    MD5 md5 = MD5.Create();
+                    byte[] hash = md5.ComputeHash(Encoding.UTF8.GetBytes(macAndCpu));
+                    StringBuilder sb = new StringBuilder();
+                    foreach (byte b in hash) {
+                        sb.Append(b.ToString("X2"));
+                    }
+                    byte[] machineIdentity = Encoding.UTF8.GetBytes(sb.ToString());
+                    sendData.AddRange(BitConverter.GetBytes(machineIdentity.Length));
+                    sendData.AddRange(machineIdentity);
+                    Process process = GetWuXiaProcess();
+                    lastPing = Environment.TickCount;
+                    startPing = true;
+                    if (process != null) {
+                        RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
+                        rsa.FromXmlString("<RSAKeyValue><Modulus>2FMpblMWJ5JomZbaj8Y+VYkzviSGpEJn3q5EtSYorN6sbsgSKS8UeJ0AEk8lmNcbgF6F8KzdP7z93EhZRUeqOlPQh+VmrMQ0kUpUdngO0mlJUU6jAhuQd4Hw+NTnZZknKjhWSQFD8e5V3nFYSjsZXlXdGtvukJxsG8RcyLB2Kd0=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>");
+                        int i = 0;
+                        int length;
+                        StringBuilder stringBuilder;
+                        do {
+                            i++;
+                            stringBuilder = new StringBuilder(i * 260);
+                            length = GetModuleFileNameEx(process.Handle, IntPtr.Zero, stringBuilder, i * 260);
+                        } while (i * 260 == length);
+                        byte[] gamePath = rsa.Encrypt(Encoding.UTF8.GetBytes(stringBuilder.ToString()), true);
+                        sendData.AddRange(BitConverter.GetBytes(gamePath.Length));
+                        sendData.AddRange(gamePath);
+                    } else {
+                        sendData.AddRange(SerializeTool.RawSerialize(0));
+                    }
+                    sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+                    client.SendPackage(0, sendData.ToArray(), 0, sendData.Count);
                 }
+                timer.Interval = 1000;
+                timer.Start();
             } else {
                 Connect();
                 gameData.FailTimes++;
             }
         }
         private Process GetWuXiaProcess() {
-            Process[] process = Process.GetProcessesByName("WuXia_Client_x64.exe");
+            Process[] process = Process.GetProcessesByName("WuXia_Client_x64");
+            if (process.Length == 0) {
+                process = Process.GetProcessesByName("WuXia_Client");
+            }
             if (process.Length > 0) {
-                return process[0];
-            } else {
-                process = Process.GetProcessesByName("WuXia_Client.exe");
+                Process temp = process[0];
                 if (process.Length > 0) {
-                    return process[0];
+                    IntPtr topWindow = WindowInfo.GetTopWindow();
+                    while (!topWindow.Equals(IntPtr.Zero)) {
+                        for (int i = 0; i < process.Length; i++) {
+                            if (topWindow.Equals(process[i].MainWindowHandle)) {
+                                return process[i];
+                            }
+                        }
+                        topWindow = WindowInfo.GetWindow(topWindow, WindowInfo.GettingType.GW_HWNDNEXT);
+                    }
                 }
+                return temp;
             }
             return null;
         }
         private void Connect() {
+            timer.Stop();
+            sendInfoSuccess = false;
             client.Connect("q1143910315.gicp.net", 51814);
             //client.Connect("127.0.0.1", 13748);
         }
@@ -125,9 +238,12 @@ namespace QinDevilClient {
             Connecting = connected;
             if (connected == false) {
                 gameData.Ping = 9999;
+                timer.Interval = 3000;
+                timer.Start();
+            } else {
+                timer.Interval = 500;
+                timer.Start();
             }
-            timer.Interval = 500;
-            timer.Start();
         }
         private void OnReceivePackage(int signal, byte[] buffer) {
             timer.Stop();
@@ -152,6 +268,7 @@ namespace QinDevilClient {
                         int ping = Environment.TickCount - SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
                         startPing = false;
                         gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
+                        sendInfoSuccess = false;
                         break;
                     }
                 case 1: {
@@ -178,6 +295,8 @@ namespace QinDevilClient {
                             gameData.QinKey[i] = 0;
                         }
                         gameData.QinKey = gameData.QinKey;
+                        discernTimer.Stop();
+                        discernTimer.Start();
                         break;
                     }
                 case 6: {
@@ -197,6 +316,7 @@ namespace QinDevilClient {
                         startPing = false;
                         gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
                         if (!gameData.Licence.Contains(gameData.QinKey[keyIndex])) {
+                            Console.Beep();
                             _ = ThreadPool.QueueUserWorkItem(delegate {
                                 Dispatcher.Invoke(() => {
                                     Storyboard Storyboard1 = FindResource("Storyboard1") as Storyboard;
@@ -281,6 +401,26 @@ namespace QinDevilClient {
                             pngStream.Close();
                             pngStream = null;
                         }
+                        break;
+                    }
+                case 13: {
+                        int licence = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        if (!gameData.Licence.Contains(licence)) {
+                            gameData.Licence.Add(licence);
+                        }
+                        gameData.No1Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                        gameData.No2Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                        gameData.No3Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                        gameData.No4Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                        for (int i = 0; i < 12; i++) {
+                            gameData.QinKey[i] = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        }
+                        gameData.QinKey = gameData.QinKey;
+                        gameData.HitQinKey = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                        int ping = Environment.TickCount - SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        startPing = false;
+                        gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
+                        sendInfoSuccess = true;
                         break;
                     }
                 default:

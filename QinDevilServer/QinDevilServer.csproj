@@ -53,6 +53,9 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Itenso.Windows.Controls.ListViewLayout, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\WPF.ListViewLayoutManager.2.0.0\lib\net40\Itenso.Windows.Controls.ListViewLayout.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
@@ -77,10 +80,18 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="GameData.cs" />
+    <Compile Include="LogDetail.cs" />
+    <Compile Include="LogViewerWindow.xaml.cs">
+      <DependentUpon>LogViewerWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="PictureViewerWindow.xaml.cs">
       <DependentUpon>PictureViewerWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="UserInfo.cs" />
+    <Page Include="LogViewerWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -117,6 +128,7 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <None Include="app.manifest" />
+    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

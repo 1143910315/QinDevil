@@ -1,4 +1,4 @@
-﻿using AudioPlayer.ViewModel;
+﻿using QinDevilCommon.ViewModel;
 using QinDevilCommon.Data_structure;
 using System;
 using System.Collections.Generic;
@@ -42,6 +42,11 @@ namespace QinDevilServer {
         public string HitQinKey {
             get => _hitQinKey;
             set => Set(ref _hitQinKey, value);
+        }
+        private readonly List<LogDetail> _log = new List<LogDetail>();
+        public List<LogDetail> Log {
+            get => _log;
+            set => Update();
         }
     }
 }

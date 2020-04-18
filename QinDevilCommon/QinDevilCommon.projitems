@@ -22,10 +22,12 @@
     <Compile Include="$(MSBuildThisFileDirectory)SocketServer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SystemLay\SystemScreen.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SystemLay\SystemInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SystemLay\WindowInfo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ViewModelBase.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="$(MSBuildThisFileDirectory)Keyboard\" />
     <Folder Include="$(MSBuildThisFileDirectory)Data\" />
+    <Folder Include="$(MSBuildThisFileDirectory)Color\" />
   </ItemGroup>
 </Project>
