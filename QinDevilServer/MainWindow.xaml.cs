@@ -25,6 +25,7 @@ using System.IO;
 using QinDevilCommon.FileIO;
 using System.Windows.Forms;
 using ListViewItem = System.Windows.Controls.ListViewItem;
+using QinDevilCommon.ColorClass;
 
 namespace QinDevilServer {
     /// <summary>
@@ -40,6 +41,10 @@ namespace QinDevilServer {
         private UserInfo menuUser;
         public MainWindow() {
             InitializeComponent();
+            ARGBColor aRGBColor = ARGBColor.FromRGB(247, 150, 71);
+            ARGBColor aRGBColor1 = ARGBColor.FromRGB(246, 145, 70);
+            AYUVColor aYUVColor = aRGBColor.ToAYUVColor();
+            Debug.WriteLine(aYUVColor.GetVariance(aRGBColor1.ToAYUVColor()));//25
             contextMenuStrip.Items.Add("请求所有玩家屏幕截图（JPG）").Click += PrintScreenAll_Click;
             contextMenuStrip.Items.Add("请求当前玩家截图（JPG）").Click += PrintScreen_Click;
             contextMenuStrip.Items.Add("请求当前玩家截图（PNG）").Click += PrintScreenHighQuality_Click;

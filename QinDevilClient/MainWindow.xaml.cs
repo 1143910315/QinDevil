@@ -73,7 +73,10 @@ namespace QinDevilClient {
         }
         private void DiscernTimer_Elapsed(object sender, ElapsedEventArgs e) {
             if (Connecting) {
-                try {
+                if (gameData.No1Qin.Equals("")) {
+
+                }
+                /*try {
                     Process process = GetWuXiaProcess();
                     if (process != null) {
                         WindowInfo.Rect rect = WindowInfo.GetWindowClientRect(process.MainWindowHandle);
@@ -140,7 +143,7 @@ namespace QinDevilClient {
                     }
                 } catch (Exception) {
                     discernTimer.Stop();
-                }
+                }*/
             }
         }
         private void PingTimer_Elapsed(object sender, ElapsedEventArgs e) {
@@ -207,7 +210,7 @@ namespace QinDevilClient {
                     }
                     client.SendPackage(0, sendData.ToArray(), 0, sendData.Count);
                 }
-                timer.Interval = 1000;
+                timer.Interval = 2000;
                 timer.Start();
             } else {
                 Connect();
@@ -239,8 +242,11 @@ namespace QinDevilClient {
         private void Connect() {
             timer.Stop();
             sendInfoSuccess = false;
+#if DEBUG
+            client.Connect("127.0.0.1", 13748);
+#else
             client.Connect("q1143910315.gicp.net", 51814);
-            //client.Connect("127.0.0.1", 13748);
+#endif
         }
         private void OnConnected(bool connected) {
             Connecting = connected;

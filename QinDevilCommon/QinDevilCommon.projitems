@@ -9,6 +9,8 @@
     <Import_RootNamespace>QinDevilCommon</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)ColorClass\ARGBColor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ColorClass\AYUVColor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Data structure\DoubleLinkList.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Data structure\LinkList.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Data structure\SafeLinkList.cs" />
@@ -28,6 +30,5 @@
   <ItemGroup>
     <Folder Include="$(MSBuildThisFileDirectory)Keyboard\" />
     <Folder Include="$(MSBuildThisFileDirectory)Data\" />
-    <Folder Include="$(MSBuildThisFileDirectory)Color\" />
   </ItemGroup>
 </Project>

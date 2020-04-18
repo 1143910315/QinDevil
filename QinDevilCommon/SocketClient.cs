@@ -123,7 +123,7 @@ namespace QinDevilCommon {
                                 sendData.Clear();
                                 SendAsyncEventArgs.SetBuffer(temp, 0, len);
                                 if (socketIsOnline) {
-                                    socket.SendAsync(SendAsyncEventArgs);
+                                    _ = socket.SendAsync(SendAsyncEventArgs);
                                 }
                             } else {
                                 onSendCompletedEvent?.Invoke();
@@ -137,7 +137,7 @@ namespace QinDevilCommon {
                     SendAsyncEventArgs = null;
                 };
                 if (socketIsOnline) {
-                    socket.SendAsync(SendAsyncEventArgs);
+                    _ = socket.SendAsync(SendAsyncEventArgs);
                 }
             } else {
                 for (int i = 0; i < l.Length; i++) {

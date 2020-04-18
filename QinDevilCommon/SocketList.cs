@@ -28,9 +28,6 @@ namespace QinDevilCommon {
                     }
                 }
             }
-            if (length < 512) {
-                 Debug.WriteLine("考虑是错误包！");
-            }
             return false;
         }
         internal Socket Get(object id) {
