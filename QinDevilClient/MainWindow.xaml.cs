@@ -148,10 +148,10 @@ namespace QinDevilClient {
                 int ping = Environment.TickCount - lastPing;
                 if (ping > gameData.Ping) {
                     gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
-                    if (gameData.Ping == 9999) {
-                        startPing = false;
-                        Connect();
-                    }
+                }
+                if (gameData.Ping == 9999) {
+                    startPing = false;
+                    Connect();
                 }
             }
         }
@@ -159,11 +159,15 @@ namespace QinDevilClient {
             if (Connecting) {
                 if (sendInfoSuccess) {
                     List<byte> sendData = new List<byte>(64);
-                    lastPing = Environment.TickCount;
-                    startPing = true;
                     sendData.AddRange(SerializeTool.RawSerialize(0));
                     sendData.AddRange(SerializeTool.RawSerialize(0));
-                    sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+                    if (startPing == false) {
+                        lastPing = Environment.TickCount;
+                        startPing = true;
+                        sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+                    } else {
+                        sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+                    }
                     client.SendPackage(0, sendData.ToArray(), 0, sendData.Count);
                 } else {
                     List<byte> sendData = new List<byte>(64);
@@ -177,8 +181,6 @@ namespace QinDevilClient {
                     sendData.AddRange(BitConverter.GetBytes(machineIdentity.Length));
                     sendData.AddRange(machineIdentity);
                     Process process = GetWuXiaProcess();
-                    lastPing = Environment.TickCount;
-                    startPing = true;
                     if (process != null) {
                         RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
                         rsa.FromXmlString("<RSAKeyValue><Modulus>2FMpblMWJ5JomZbaj8Y+VYkzviSGpEJn3q5EtSYorN6sbsgSKS8UeJ0AEk8lmNcbgF6F8KzdP7z93EhZRUeqOlPQh+VmrMQ0kUpUdngO0mlJUU6jAhuQd4Hw+NTnZZknKjhWSQFD8e5V3nFYSjsZXlXdGtvukJxsG8RcyLB2Kd0=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>");
@@ -196,7 +198,13 @@ namespace QinDevilClient {
                     } else {
                         sendData.AddRange(SerializeTool.RawSerialize(0));
                     }
-                    sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+                    if (startPing == false) {
+                        lastPing = Environment.TickCount;
+                        startPing = true;
+                        sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+                    } else {
+                        sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+                    }
                     client.SendPackage(0, sendData.ToArray(), 0, sendData.Count);
                 }
                 timer.Interval = 1000;
@@ -336,10 +344,14 @@ namespace QinDevilClient {
                         pictureStream = new MemoryStream(102400);
                         _ = ImageFormatConverser.BitmapToJpeg(SystemScreen.CaptureScreen(), pictureStream, 35);
                         List<byte> sendData = new List<byte>();
-                        lastPing = Environment.TickCount;
-                        startPing = true;
                         sendData.AddRange(SerializeTool.RawSerialize(pictureStream.Length));
-                        sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+                        if (startPing == false) {
+                            lastPing = Environment.TickCount;
+                            startPing = true;
+                            sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+                        } else {
+                            sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+                        }
                         client.SendPackage(6, sendData.ToArray());
                         break;
                     }
@@ -353,9 +365,14 @@ namespace QinDevilClient {
                             lock (bigBuffer) {
                                 byte[] temp = SerializeTool.RawSerialize(pictureStream.Position);
                                 temp.CopyTo(bigBuffer, 0);
-                                lastPing = Environment.TickCount;
-                                startPing = true;
-                                byte[] temp1 = SerializeTool.RawSerialize(lastPing);
+                                byte[] temp1;
+                                if (startPing == false) {
+                                    lastPing = Environment.TickCount;
+                                    startPing = true;
+                                    temp1 = SerializeTool.RawSerialize(lastPing);
+                                } else {
+                                    temp1 = SerializeTool.RawSerialize(Environment.TickCount);
+                                }
                                 temp1.CopyTo(bigBuffer, temp.Length);
                                 int realLength = pictureStream.Read(bigBuffer, temp.Length + temp1.Length, bigBuffer.Length - temp.Length - temp1.Length);
                                 Debug.WriteLine(realLength);
@@ -372,10 +389,14 @@ namespace QinDevilClient {
                         System.Drawing.Bitmap bitmap = SystemScreen.CaptureScreen();
                         bitmap.Save(pngStream, ImageFormat.Png);
                         List<byte> sendData = new List<byte>();
-                        lastPing = Environment.TickCount;
-                        startPing = true;
                         sendData.AddRange(SerializeTool.RawSerialize(pngStream.Length));
-                        sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+                        if (startPing == false) {
+                            lastPing = Environment.TickCount;
+                            startPing = true;
+                            sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+                        } else {
+                            sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+                        }
                         client.SendPackage(8, sendData.ToArray());
                         break;
                     }
@@ -389,9 +410,14 @@ namespace QinDevilClient {
                             lock (bigBuffer) {
                                 byte[] temp = SerializeTool.RawSerialize(pngStream.Position);
                                 temp.CopyTo(bigBuffer, 0);
-                                lastPing = Environment.TickCount;
-                                startPing = true;
-                                byte[] temp1 = SerializeTool.RawSerialize(lastPing);
+                                byte[] temp1;
+                                if (startPing == false) {
+                                    lastPing = Environment.TickCount;
+                                    startPing = true;
+                                    temp1 = SerializeTool.RawSerialize(lastPing);
+                                } else {
+                                    temp1 = SerializeTool.RawSerialize(Environment.TickCount);
+                                }
                                 temp1.CopyTo(bigBuffer, temp.Length);
                                 int realLength = pngStream.Read(bigBuffer, temp.Length + temp1.Length, bigBuffer.Length - temp.Length - temp1.Length);
                                 Debug.WriteLine(realLength);
@@ -460,98 +486,146 @@ namespace QinDevilClient {
         }
         private void Label_MouseDown(object sender, MouseButtonEventArgs e) {
             List<byte> sendData = new List<byte>(8);
-            lastPing = Environment.TickCount;
-            startPing = true;
             sendData.AddRange(SerializeTool.RawSerialize(0));
-            sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+            if (startPing == false) {
+                lastPing = Environment.TickCount;
+                startPing = true;
+                sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+            } else {
+                sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            }
             client.SendPackage(5, sendData.ToArray());
         }
         private void Label_MouseDown_1(object sender, MouseButtonEventArgs e) {
             List<byte> sendData = new List<byte>(8);
-            lastPing = Environment.TickCount;
-            startPing = true;
             sendData.AddRange(SerializeTool.RawSerialize(1));
-            sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+            if (startPing == false) {
+                lastPing = Environment.TickCount;
+                startPing = true;
+                sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+            } else {
+                sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            }
             client.SendPackage(5, sendData.ToArray());
         }
         private void Label_MouseDown_2(object sender, MouseButtonEventArgs e) {
             List<byte> sendData = new List<byte>(8);
-            lastPing = Environment.TickCount;
-            startPing = true;
             sendData.AddRange(SerializeTool.RawSerialize(2));
-            sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+            if (startPing == false) {
+                lastPing = Environment.TickCount;
+                startPing = true;
+                sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+            } else {
+                sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            }
             client.SendPackage(5, sendData.ToArray());
         }
         private void Label_MouseDown_3(object sender, MouseButtonEventArgs e) {
             List<byte> sendData = new List<byte>(8);
-            lastPing = Environment.TickCount;
-            startPing = true;
             sendData.AddRange(SerializeTool.RawSerialize(3));
-            sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+            if (startPing == false) {
+                lastPing = Environment.TickCount;
+                startPing = true;
+                sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+            } else {
+                sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            }
             client.SendPackage(5, sendData.ToArray());
         }
         private void Label_MouseDown_4(object sender, MouseButtonEventArgs e) {
             List<byte> sendData = new List<byte>(8);
-            lastPing = Environment.TickCount;
-            startPing = true;
             sendData.AddRange(SerializeTool.RawSerialize(4));
-            sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+            if (startPing == false) {
+                lastPing = Environment.TickCount;
+                startPing = true;
+                sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+            } else {
+                sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            }
             client.SendPackage(5, sendData.ToArray());
         }
         private void Label_MouseDown_5(object sender, MouseButtonEventArgs e) {
             List<byte> sendData = new List<byte>(8);
-            lastPing = Environment.TickCount;
-            startPing = true;
             sendData.AddRange(SerializeTool.RawSerialize(5));
-            sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+            if (startPing == false) {
+                lastPing = Environment.TickCount;
+                startPing = true;
+                sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+            } else {
+                sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            }
             client.SendPackage(5, sendData.ToArray());
         }
         private void Label_MouseDown_6(object sender, MouseButtonEventArgs e) {
             List<byte> sendData = new List<byte>(8);
-            lastPing = Environment.TickCount;
-            startPing = true;
             sendData.AddRange(SerializeTool.RawSerialize(6));
-            sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+            if (startPing == false) {
+                lastPing = Environment.TickCount;
+                startPing = true;
+                sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+            } else {
+                sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            }
             client.SendPackage(5, sendData.ToArray());
         }
         private void Label_MouseDown_7(object sender, MouseButtonEventArgs e) {
             List<byte> sendData = new List<byte>(8);
-            lastPing = Environment.TickCount;
-            startPing = true;
             sendData.AddRange(SerializeTool.RawSerialize(7));
-            sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+            if (startPing == false) {
+                lastPing = Environment.TickCount;
+                startPing = true;
+                sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+            } else {
+                sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            }
             client.SendPackage(5, sendData.ToArray());
         }
         private void Label_MouseDown_8(object sender, MouseButtonEventArgs e) {
             List<byte> sendData = new List<byte>(8);
-            lastPing = Environment.TickCount;
-            startPing = true;
             sendData.AddRange(SerializeTool.RawSerialize(8));
-            sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+            if (startPing == false) {
+                lastPing = Environment.TickCount;
+                startPing = true;
+                sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+            } else {
+                sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            }
             client.SendPackage(5, sendData.ToArray());
         }
         private void Label_MouseDown_9(object sender, MouseButtonEventArgs e) {
             List<byte> sendData = new List<byte>(8);
-            lastPing = Environment.TickCount;
-            startPing = true;
             sendData.AddRange(SerializeTool.RawSerialize(9));
-            sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+            if (startPing == false) {
+                lastPing = Environment.TickCount;
+                startPing = true;
+                sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+            } else {
+                sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            }
             client.SendPackage(5, sendData.ToArray());
         }
         private void Label_MouseDown_10(object sender, MouseButtonEventArgs e) {
             List<byte> sendData = new List<byte>(8);
-            lastPing = Environment.TickCount;
-            startPing = true;
             sendData.AddRange(SerializeTool.RawSerialize(10));
-            sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+            if (startPing == false) {
+                lastPing = Environment.TickCount;
+                startPing = true;
+                sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+            } else {
+                sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            }
             client.SendPackage(5, sendData.ToArray());
         }
         private void Label_MouseDown_11(object sender, MouseButtonEventArgs e) {
             List<byte> sendData = new List<byte>(8);
-            lastPing = Environment.TickCount;
-            startPing = true;
             sendData.AddRange(SerializeTool.RawSerialize(11));
-            sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+            if (startPing == false) {
+                lastPing = Environment.TickCount;
+                startPing = true;
+                sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+            } else {
+                sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+            }
             client.SendPackage(5, sendData.ToArray());
         }
     }

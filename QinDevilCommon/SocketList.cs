@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net.Sockets;
 using System.Text;
 
@@ -26,6 +27,9 @@ namespace QinDevilCommon {
                         return true;
                     }
                 }
+            }
+            if (length < 512) {
+                 Debug.WriteLine("考虑是错误包！");
             }
             return false;
         }
