@@ -17,9 +17,9 @@ namespace QinDevilServer {
     /// LogViewerWindow.xaml 的交互逻辑
     /// </summary>
     public partial class LogViewerWindow : Window {
-        public LogViewerWindow(GameData gameData) {
+        public LogViewerWindow(List<LogDetail> logDetail) {
             InitializeComponent();
-            LogPanel.DataContext = gameData;
+            logList.ItemsSource = logDetail;
         }
     }
 }

@@ -7,8 +7,8 @@
         xmlns:ctrl="clr-namespace:Itenso.Windows.Controls.ListViewLayout;assembly=Itenso.Windows.Controls.ListViewLayout"
         mc:Ignorable="d"
         Title="事件查看器" Height="400" Width="600">
-    <Grid x:Name="LogPanel" d:DataContext="{d:DesignInstance local:GameData}">
-        <ListView Margin="10,10,10,10" ItemsSource="{Binding Log}" ctrl:ListViewLayoutManager.Enabled="true">
+    <Grid>
+        <ListView x:Name="logList" Margin="10,10,10,10" ctrl:ListViewLayoutManager.Enabled="true">
             <ListView.View>
                 <GridView>
                     <GridView.ColumnHeaderContainerStyle>

@@ -151,11 +151,12 @@ namespace QinDevilClient {
                 int ping = Environment.TickCount - lastPing;
                 if (ping > gameData.Ping) {
                     gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
+                    if (gameData.Ping == 9999) {
+                        startPing = false;
+                        Connect();
+                    }
                 }
-                if (gameData.Ping == 9999) {
-                    startPing = false;
-                    Connect();
-                }
+
             }
         }
         private void Timer_Elapsed(object sender, ElapsedEventArgs e) {
