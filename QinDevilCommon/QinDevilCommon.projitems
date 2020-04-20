@@ -22,6 +22,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)SocketClient.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SocketList.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SocketServer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SystemLay\DeviceContext.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SystemLay\SystemScreen.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SystemLay\SystemInfo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SystemLay\WindowInfo.cs" />

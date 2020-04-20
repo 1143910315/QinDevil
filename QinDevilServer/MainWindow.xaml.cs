@@ -285,20 +285,21 @@ namespace QinDevilServer {
                             }
                             int ping = BitConverter.ToInt32(buffer, 8 + length + ciphertextLength);
                             List<byte> sendData = new List<byte>();
-                            sendData.AddRange(SerializeTool.RawSerialize(userInfo.Id));
-                            sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.No1Qin));
-                            sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.No2Qin));
-                            sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.No3Qin));
-                            sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.No4Qin));
-                            for (int i = 0; i < gameData.QinKey.Count; i++) {
-                                sendData.AddRange(SerializeTool.RawSerialize(gameData.QinKey[i]));
-                            }
-                            sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey));
-                            sendData.AddRange(SerializeTool.RawSerialize(ping));
-                            if (userInfo.MachineIdentity.Length > 0 && userInfo.GamePath.Length > 0) {
-                                server.SendPackage(id, 13, sendData.ToArray(), 0, sendData.Count);
-                            } else {
+                            if (userInfo.MachineIdentity.Length == 0 || userInfo.GamePath.Length == 0) {
+                                sendData.AddRange(SerializeTool.RawSerialize(userInfo.Id));
+                                sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.No1Qin));
+                                sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.No2Qin));
+                                sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.No3Qin));
+                                sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.No4Qin));
+                                for (int i = 0; i < gameData.QinKey.Count; i++) {
+                                    sendData.AddRange(SerializeTool.RawSerialize(gameData.QinKey[i]));
+                                }
+                                sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey));
+                                sendData.AddRange(SerializeTool.RawSerialize(ping));
                                 server.SendPackage(id, 0, sendData.ToArray(), 0, sendData.Count);
+                            } else {
+                                sendData.AddRange(SerializeTool.RawSerialize(ping));
+                                server.SendPackage(id, 13, sendData.ToArray(), 0, sendData.Count);
                             }
                             break;
                         }
@@ -311,13 +312,9 @@ namespace QinDevilServer {
                                     server.SendPackage(tempUserInfo.Id, 1, QinStrByte);
                                 }
                             }
-                            _ = ThreadPool.QueueUserWorkItem(delegate {
-                                Dispatcher.Invoke(() => {
-                                    gameData.Log.Add(new LogDetail() {
-                                        Content = userInfo.Remark + " 修改一号琴缺弦为：" + gameData.No1Qin,
-                                        Time = Environment.TickCount
-                                    });
-                                });
+                            gameData.Log.Add(new LogDetail() {
+                                Content = userInfo.Remark + " 修改一号琴缺弦为：" + gameData.No1Qin,
+                                Time = Environment.TickCount
                             });
                             break;
                         }
@@ -330,13 +327,9 @@ namespace QinDevilServer {
                                     server.SendPackage(tempUserInfo.Id, 2, QinStrByte);
                                 }
                             }
-                            _ = ThreadPool.QueueUserWorkItem(delegate {
-                                Dispatcher.Invoke(() => {
-                                    gameData.Log.Add(new LogDetail() {
-                                        Content = userInfo.Remark + " 修改二号琴缺弦为：" + gameData.No2Qin,
-                                        Time = Environment.TickCount
-                                    });
-                                });
+                            gameData.Log.Add(new LogDetail() {
+                                Content = userInfo.Remark + " 修改二号琴缺弦为：" + gameData.No2Qin,
+                                Time = Environment.TickCount
                             });
                             break;
                         }
@@ -349,13 +342,9 @@ namespace QinDevilServer {
                                     server.SendPackage(tempUserInfo.Id, 3, QinStrByte);
                                 }
                             }
-                            _ = ThreadPool.QueueUserWorkItem(delegate {
-                                Dispatcher.Invoke(() => {
-                                    gameData.Log.Add(new LogDetail() {
-                                        Content = userInfo.Remark + " 修改三号琴缺弦为：" + gameData.No3Qin,
-                                        Time = Environment.TickCount
-                                    });
-                                });
+                            gameData.Log.Add(new LogDetail() {
+                                Content = userInfo.Remark + " 修改三号琴缺弦为：" + gameData.No3Qin,
+                                Time = Environment.TickCount
                             });
                             break;
                         }
@@ -368,13 +357,9 @@ namespace QinDevilServer {
                                     server.SendPackage(tempUserInfo.Id, 4, QinStrByte);
                                 }
                             }
-                            _ = ThreadPool.QueueUserWorkItem(delegate {
-                                Dispatcher.Invoke(() => {
-                                    gameData.Log.Add(new LogDetail() {
-                                        Content = userInfo.Remark + " 修改四号琴缺弦为：" + gameData.No4Qin,
-                                        Time = Environment.TickCount
-                                    });
-                                });
+                            gameData.Log.Add(new LogDetail() {
+                                Content = userInfo.Remark + " 修改四号琴缺弦为：" + gameData.No4Qin,
+                                Time = Environment.TickCount
                             });
                             break;
                         }
@@ -390,33 +375,20 @@ namespace QinDevilServer {
                                 } else {
                                     if (gameData.QinKey[i] == 0) {
                                         gameData.QinKey[i] = userInfo.Id;
-                                        _ = ThreadPool.QueueUserWorkItem(delegate {
-                                            Dispatcher.Invoke(() => {
-                                                gameData.Log.Add(new LogDetail() {
-                                                    Content = userInfo.Remark + " 补 " + keyIndex.ToString() + " 琴弦。",
-                                                    Time = Environment.TickCount
-                                                });
-                                            });
+                                        gameData.Log.Add(new LogDetail() {
+                                            Content = userInfo.Remark + " 补 " + keyIndex.ToString() + " 琴弦。",
+                                            Time = Environment.TickCount
                                         });
-
                                     } else if (gameData.QinKey[i] == userInfo.Id) {
                                         gameData.QinKey[i] = 0;
-                                        _ = ThreadPool.QueueUserWorkItem(delegate {
-                                            Dispatcher.Invoke(() => {
-                                                gameData.Log.Add(new LogDetail() {
-                                                    Content = userInfo.Remark + " 放弃补 " + keyIndex.ToString() + " 琴弦。",
-                                                    Time = Environment.TickCount
-                                                });
-                                            });
+                                        gameData.Log.Add(new LogDetail() {
+                                            Content = userInfo.Remark + " 放弃补 " + keyIndex.ToString() + " 琴弦。",
+                                            Time = Environment.TickCount
                                         });
                                     } else {
-                                        _ = ThreadPool.QueueUserWorkItem(delegate {
-                                            Dispatcher.Invoke(() => {
-                                                gameData.Log.Add(new LogDetail() {
-                                                    Content = userInfo.Remark + " 尝试补 " + keyIndex.ToString() + " 琴弦但冲突。",
-                                                    Time = Environment.TickCount
-                                                });
-                                            });
+                                        gameData.Log.Add(new LogDetail() {
+                                            Content = userInfo.Remark + " 尝试补 " + keyIndex.ToString() + " 琴弦但冲突。",
+                                            Time = Environment.TickCount
                                         });
                                     }
                                 }
@@ -522,18 +494,14 @@ namespace QinDevilServer {
             }
         }
         private void OnLeave(int id, object userToken) {
+            Debug.WriteLine(id.ToString());
             _ = ThreadPool.QueueUserWorkItem(delegate {
                 Dispatcher.Invoke(() => {
                     for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
                         if (gameData.ClientInfo.Get(i).Id == id) {
-                            string message = "客户 " + id.ToString() + "离开。备注：" + gameData.ClientInfo.Get(i).Remark;
-                            _ = ThreadPool.QueueUserWorkItem(delegate {
-                                Dispatcher.Invoke(() => {
-                                    gameData.Log.Add(new LogDetail() {
-                                        Content = message,
-                                        Time = Environment.TickCount
-                                    });
-                                });
+                            gameData.Log.Add(new LogDetail() {
+                                Content = "客户 " + id.ToString() + "离开。备注：" + gameData.ClientInfo.Get(i).Remark,
+                                Time = Environment.TickCount
                             });
                             gameData.ClientInfo.Del(i);
                         }

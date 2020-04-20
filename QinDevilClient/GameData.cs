@@ -55,5 +55,10 @@ namespace QinDevilClient {
             get => _hitQinKey;
             set => Set(ref _hitQinKey, value);
         }
+        private int _matchColor = 0;
+        public int MatchColor {
+            get => _matchColor;
+            set => Set(ref _matchColor, value);
+        }
     }
 }

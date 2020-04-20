@@ -28,6 +28,8 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Timer = System.Timers.Timer;
 using Color = System.Drawing.Color;
+using System.Media;
+using QinDevilCommon.ColorClass;
 
 namespace QinDevilClient {
     /// <summary>
@@ -73,8 +75,62 @@ namespace QinDevilClient {
         }
         private void DiscernTimer_Elapsed(object sender, ElapsedEventArgs e) {
             if (Connecting) {
-                if (gameData.No1Qin.Equals("")) {
-
+                int noNull = 0;
+                if (!gameData.No1Qin.Equals("")) {
+                    noNull++;
+                }
+                if (!gameData.No2Qin.Equals("")) {
+                    noNull++;
+                }
+                if (!gameData.No3Qin.Equals("")) {
+                    noNull++;
+                }
+                if (!gameData.No4Qin.Equals("")) {
+                    noNull++;
+                }
+                Process process = GetWuXiaProcess();
+                if (process == null || noNull > 2) {
+                    discernTimer.Stop();
+                } else {
+                    WindowInfo.Rect rect = WindowInfo.GetWindowClientRect(process.MainWindowHandle);
+                    DeviceContext DC = new DeviceContext();
+                    AYUVColor[] qinKeyColor = {
+                        ARGBColor.FromRGB(192, 80, 78).ToAYUVColor(),
+                        ARGBColor.FromRGB(156,188,89).ToAYUVColor(),
+                        ARGBColor.FromRGB(131,103,164).ToAYUVColor(),
+                        ARGBColor.FromRGB(75,172,197).ToAYUVColor(),
+                        ARGBColor.FromRGB(246,150,71).ToAYUVColor()
+                    };
+                    int[] match = { 0, 0, 0, 0, 0 };
+                    int matchColor = 0;
+                    for (int x = rect.right / 2; x > 0; x--) {
+                        for (int y = 0; y < 100; y++) {
+                            WindowInfo.Point point = new WindowInfo.Point() {
+                                x = x,
+                                y = rect.bottom - y
+                            };
+                            WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point);
+                            AYUVColor color = ARGBColor.FromInt(DC.GetPointColor(point.x, point.y)).ToAYUVColor();
+                            for (int i = 0; i < 5; i++) {
+                                if (match[i] < 10) {
+                                    if (color.GetVariance(qinKeyColor[i]) < 25) {
+                                        match[i]++;
+                                        if (match[i] == 10) {
+                                            matchColor |= 1 << i;
+                                        }
+                                    } else {
+                                        match[i] = 0;
+                                    }
+                                }
+                            }
+                            if (matchColor == 31) {
+                                //break
+                                y = 200;
+                                x = 0;
+                            }
+                        }
+                    }
+                    gameData.MatchColor = matchColor;
                 }
                 /*try {
                     Process process = GetWuXiaProcess();
@@ -152,7 +208,7 @@ namespace QinDevilClient {
                 if (ping > gameData.Ping) {
                     gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
                     if (gameData.Ping == 9999) {
-                        startPing = false;
+                        Debug.WriteLine("超时，连接！");
                         Connect();
                     }
                 }
@@ -214,6 +270,7 @@ namespace QinDevilClient {
                 timer.Interval = 2000;
                 timer.Start();
             } else {
+                Debug.WriteLine("掉线！连接！");
                 Connect();
                 gameData.FailTimes++;
             }
@@ -241,15 +298,19 @@ namespace QinDevilClient {
             return null;
         }
         private void Connect() {
+            startPing = false;
             timer.Stop();
             sendInfoSuccess = false;
 #if DEBUG
-            client.Connect("127.0.0.1", 13748);
+            client.Connect("q1143910315.gicp.net", 51814);
+            //client.Connect("127.0.0.1", 13748);
 #else
             client.Connect("q1143910315.gicp.net", 51814);
 #endif
         }
         private void OnConnected(bool connected) {
+            startPing = false;
+            Debug.WriteLine("连接！" + (connected ? "成功！" : "失败!"));
             Connecting = connected;
             if (connected == false) {
                 gameData.Ping = 9999;
@@ -331,7 +392,7 @@ namespace QinDevilClient {
                         startPing = false;
                         gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
                         if (!gameData.Licence.Contains(gameData.QinKey[keyIndex])) {
-                            Console.Beep();
+                            SystemSounds.Question.Play();
                             _ = ThreadPool.QueueUserWorkItem(delegate {
                                 Dispatcher.Invoke(() => {
                                     Storyboard Storyboard1 = FindResource("Storyboard1") as Storyboard;
@@ -437,19 +498,6 @@ namespace QinDevilClient {
                         break;
                     }
                 case 13: {
-                        int licence = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
-                        if (!gameData.Licence.Contains(licence)) {
-                            gameData.Licence.Add(licence);
-                        }
-                        gameData.No1Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
-                        gameData.No2Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
-                        gameData.No3Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
-                        gameData.No4Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
-                        for (int i = 0; i < 12; i++) {
-                            gameData.QinKey[i] = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
-                        }
-                        gameData.QinKey = gameData.QinKey;
-                        gameData.HitQinKey = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
                         int ping = Environment.TickCount - SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
                         startPing = false;
                         gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
@@ -461,6 +509,8 @@ namespace QinDevilClient {
             }
         }
         private void OnConnectionBreak() {
+            Debug.WriteLine("断开！");
+            startPing = false;
             Connecting = false;
             gameData.Ping = 9999;
             timer.Interval = 500;

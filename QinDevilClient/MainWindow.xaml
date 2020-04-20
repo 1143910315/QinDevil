@@ -40,7 +40,7 @@
     <Grid x:Name="GamePanel" d:DataContext="{d:DesignInstance local:GameData}" >
         <Viewbox Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Top">
             <Canvas Width="378" Height="150">
-                <Label Name="ping" Content="{Binding Ping}" ContentStringFormat="Ping：{0}ms" Width="102" Height="15" Canvas.Left="10" Canvas.Top="10" Padding="0" RenderTransformOrigin="0.49,0.533"/>
+                <Label Name="ping" Content="{Binding Ping}" ContentStringFormat="Ping：{0}ms" Width="102" Height="18" Canvas.Left="10" Canvas.Top="10" Padding="0" RenderTransformOrigin="0.49,0.533"/>
                 <Label Content="一号琴" Canvas.Left="10" Canvas.Top="30" Padding="0" Width="82" HorizontalContentAlignment="Center"/>
                 <TextBox Text="{Binding No1Qin,UpdateSourceTrigger=PropertyChanged,NotifyOnSourceUpdated=True}" Width="82" Canvas.Left="10" Canvas.Top="50" InputMethod.IsInputMethodEnabled="False" PreviewTextInput="TextBox_PreviewTextInput" SourceUpdated="TextBox_SourceUpdated"/>
                 <Label Content="二号琴" Canvas.Left="102" Canvas.Top="30" Padding="0" Width="82" HorizontalContentAlignment="Center"/>
@@ -327,6 +327,7 @@
                 </Label>
                 <Label Content="琴上剩余对比：9 8 7 6 5 4 3 2 1" Canvas.Left="10" Canvas.Top="101" Padding="0" FontSize="14"/>
                 <Label Content="{Binding HitQinKey}" ContentStringFormat="需要弹琴数字：{0}" Canvas.Left="10" Canvas.Top="124" Padding="0" FontSize="14"/>
+                <Label Content="{Binding MatchColor}" Canvas.Left="296" Canvas.Top="10" Padding="0" Width="72" Height="18" HorizontalContentAlignment="Right"/>
             </Canvas>
         </Viewbox>
     </Grid>
