@@ -1,0 +1,20 @@
+﻿<Window x:Class="QinDevilTest.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:QinDevilTest"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="158.115" Width="469.943" Closing="Window_Closing" Topmost="True">
+    <Grid x:Name="gamePanel">
+        <Label Content="{Binding MousePoint}" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="122" Height="30"/>
+        <Label Content="{Binding MouseColor}" HorizontalAlignment="Left" Margin="10,45,0,0" VerticalAlignment="Top" Width="122" Height="30"/>
+        <Label Content="{Binding ColorDifference}" HorizontalAlignment="Left" Margin="10,80,0,0" VerticalAlignment="Top" Width="442" Height="30"/>
+        <Label Background="{Binding Color}" HorizontalAlignment="Left" Margin="137,10,0,0" VerticalAlignment="Top" Height="65" Width="65"/>
+        <Label HorizontalAlignment="Left" Margin="207,10,0,0" VerticalAlignment="Top" Width="13" Height="13" Background="#FFC0504E"/>
+        <Label HorizontalAlignment="Left" Margin="207,23,0,0" VerticalAlignment="Top" Width="13" Height="13" Background="#FF9CBC59"/>
+        <Label HorizontalAlignment="Left" Margin="207,36,0,0" VerticalAlignment="Top" Width="13" Height="13" Background="#FF8367A4"/>
+        <Label HorizontalAlignment="Left" Margin="207,49,0,0" VerticalAlignment="Top" Width="13" Height="13" Background="#FF4BACC5"/>
+        <Label HorizontalAlignment="Left" Margin="207,62,0,0" VerticalAlignment="Top" Width="13" Height="13" Background="#FFF69647"/>
+    </Grid>
+</Window>

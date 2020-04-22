@@ -38,6 +38,9 @@ namespace QinDevilClient {
     public partial class MainWindow : Window {
         [DllImport("Psapi.dll", EntryPoint = "GetModuleFileNameEx")]
         public static extern int GetModuleFileNameEx(IntPtr handle, IntPtr hModule, [Out] StringBuilder lpszFileName, int nSize);
+        [DllImport("Psapi.dll", EntryPoint = "QueryFullProcessImageNameA")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool QueryFullProcessImageNameA(IntPtr hProcess, int dwFlags, [Out] StringBuilder lpExeName, ref int lpdwSize);
         private SocketClient client;
         private readonly Timer timer = new Timer();
         private readonly Timer pingTimer = new Timer();
@@ -74,133 +77,74 @@ namespace QinDevilClient {
             Connect();
         }
         private void DiscernTimer_Elapsed(object sender, ElapsedEventArgs e) {
-            if (Connecting) {
-                int noNull = 0;
-                if (!gameData.No1Qin.Equals("")) {
-                    noNull++;
-                }
-                if (!gameData.No2Qin.Equals("")) {
-                    noNull++;
-                }
-                if (!gameData.No3Qin.Equals("")) {
-                    noNull++;
-                }
-                if (!gameData.No4Qin.Equals("")) {
-                    noNull++;
-                }
+            /*try {
                 Process process = GetWuXiaProcess();
-                if (process == null || noNull > 2) {
-                    discernTimer.Stop();
-                } else {
+                if (process != null) {
                     WindowInfo.Rect rect = WindowInfo.GetWindowClientRect(process.MainWindowHandle);
-                    DeviceContext DC = new DeviceContext();
-                    AYUVColor[] qinKeyColor = {
-                        ARGBColor.FromRGB(192, 80, 78).ToAYUVColor(),
-                        ARGBColor.FromRGB(156,188,89).ToAYUVColor(),
-                        ARGBColor.FromRGB(131,103,164).ToAYUVColor(),
-                        ARGBColor.FromRGB(75,172,197).ToAYUVColor(),
-                        ARGBColor.FromRGB(246,150,71).ToAYUVColor()
-                    };
-                    int[] match = { 0, 0, 0, 0, 0 };
-                    int matchColor = 0;
-                    for (int x = rect.right / 2; x > 0; x--) {
-                        for (int y = 0; y < 100; y++) {
-                            WindowInfo.Point point = new WindowInfo.Point() {
-                                x = x,
-                                y = rect.bottom - y
-                            };
-                            WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point);
-                            AYUVColor color = ARGBColor.FromInt(DC.GetPointColor(point.x, point.y)).ToAYUVColor();
-                            for (int i = 0; i < 5; i++) {
-                                if (match[i] < 10) {
-                                    if (color.GetVariance(qinKeyColor[i]) < 25) {
-                                        match[i]++;
-                                        if (match[i] == 10) {
-                                            matchColor |= 1 << i;
-                                        }
-                                    } else {
-                                        match[i] = 0;
-                                    }
-                                }
-                            }
-                            if (matchColor == 31) {
-                                //break
-                                y = 200;
-                                x = 0;
-                            }
+                    if (rect.right > 100 & rect.bottom > 100) {
+                        int discernColor = 0;
+                        //普通UI
+                        //宫
+                        WindowInfo.Point point = new WindowInfo.Point() {
+                            x = rect.right / 2 - 287,
+                            y = rect.bottom - 45
+                        };
+                        WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point);
+                        Color color = SystemScreen.GetScreenPointColor(point.x, point.y);
+                        if (color.Equals(Color.FromArgb(245, 245, 245))) {
+                            discernColor |= 0b1;
+                        }
+                        //商
+                        point = new WindowInfo.Point() {
+                            x = rect.right / 2 - 246,
+                            y = rect.bottom - 45
+                        };
+                        WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point);
+                        color = SystemScreen.GetScreenPointColor(point.x, point.y);
+                        if (color.Equals(Color.FromArgb(39, 47, 22))) {
+                            discernColor |= 0b10;
+                        }
+                        //角
+                        point = new WindowInfo.Point() {
+                            x = rect.right / 2 - 209,
+                            y = rect.bottom - 45
+                        };
+                        WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point);
+                        color = SystemScreen.GetScreenPointColor(point.x, point.y);
+                        if (color.Equals(Color.FromArgb(32, 25, 41)) || color.Equals(Color.FromArgb(32, 25, 40))) {
+                            discernColor |= 0b100;
+                        }
+                        //徵
+                        point = new WindowInfo.Point() {
+                            x = rect.right / 2 - 172,
+                            y = rect.bottom - 45
+                        };
+                        WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point);
+                        color = SystemScreen.GetScreenPointColor(point.x, point.y);
+                        if (color.Equals(Color.FromArgb(245, 245, 245))) {
+                            discernColor |= 0b1000;
+                        }
+                        //羽
+                        point = new WindowInfo.Point() {
+                            x = rect.right / 2 - 134,
+                            y = rect.bottom - 45
+                        };
+                        _ = WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point);
+                        color = SystemScreen.GetScreenPointColor(point.x, point.y);
+                        if (color.Equals(Color.FromArgb(62, 37, 18))) {
+                            discernColor |= 0b10000;
+                        }
+                        if (discernColor != 0) {
+                            discernTimer.Stop();
+                            List<byte> sendData = new List<byte>();
+                            sendData.AddRange(SerializeTool.RawSerialize(discernColor));
+                            client.SendPackage(10, sendData.ToArray());
                         }
                     }
-                    gameData.MatchColor = matchColor;
                 }
-                /*try {
-                    Process process = GetWuXiaProcess();
-                    if (process != null) {
-                        WindowInfo.Rect rect = WindowInfo.GetWindowClientRect(process.MainWindowHandle);
-                        if (rect.right > 100 & rect.bottom > 100) {
-                            int discernColor = 0;
-                            //普通UI
-                            //宫
-                            WindowInfo.Point point = new WindowInfo.Point() {
-                                x = rect.right / 2 - 287,
-                                y = rect.bottom - 45
-                            };
-                            WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point);
-                            Color color = SystemScreen.GetScreenPointColor(point.x, point.y);
-                            if (color.Equals(Color.FromArgb(245, 245, 245))) {
-                                discernColor |= 0b1;
-                            }
-                            //商
-                            point = new WindowInfo.Point() {
-                                x = rect.right / 2 - 246,
-                                y = rect.bottom - 45
-                            };
-                            WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point);
-                            color = SystemScreen.GetScreenPointColor(point.x, point.y);
-                            if (color.Equals(Color.FromArgb(39, 47, 22))) {
-                                discernColor |= 0b10;
-                            }
-                            //角
-                            point = new WindowInfo.Point() {
-                                x = rect.right / 2 - 209,
-                                y = rect.bottom - 45
-                            };
-                            WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point);
-                            color = SystemScreen.GetScreenPointColor(point.x, point.y);
-                            if (color.Equals(Color.FromArgb(32, 25, 41)) || color.Equals(Color.FromArgb(32, 25, 40))) {
-                                discernColor |= 0b100;
-                            }
-                            //徵
-                            point = new WindowInfo.Point() {
-                                x = rect.right / 2 - 172,
-                                y = rect.bottom - 45
-                            };
-                            WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point);
-                            color = SystemScreen.GetScreenPointColor(point.x, point.y);
-                            if (color.Equals(Color.FromArgb(245, 245, 245))) {
-                                discernColor |= 0b1000;
-                            }
-                            //羽
-                            point = new WindowInfo.Point() {
-                                x = rect.right / 2 - 134,
-                                y = rect.bottom - 45
-                            };
-                            _ = WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point);
-                            color = SystemScreen.GetScreenPointColor(point.x, point.y);
-                            if (color.Equals(Color.FromArgb(62, 37, 18))) {
-                                discernColor |= 0b10000;
-                            }
-                            if (discernColor != 0) {
-                                discernTimer.Stop();
-                                List<byte> sendData = new List<byte>();
-                                sendData.AddRange(SerializeTool.RawSerialize(discernColor));
-                                client.SendPackage(10, sendData.ToArray());
-                            }
-                        }
-                    }
-                } catch (Exception) {
-                    discernTimer.Stop();
-                }*/
-            }
+            } catch (Exception) {
+                discernTimer.Stop();
+            }*/
         }
         private void PingTimer_Elapsed(object sender, ElapsedEventArgs e) {
             if (startPing) {
@@ -212,7 +156,6 @@ namespace QinDevilClient {
                         Connect();
                     }
                 }
-
             }
         }
         private void Timer_Elapsed(object sender, ElapsedEventArgs e) {
@@ -249,9 +192,21 @@ namespace QinDevilClient {
                         StringBuilder stringBuilder;
                         do {
                             i++;
+                            length = i * 260;
+                            stringBuilder = new StringBuilder(length);
+                            QueryFullProcessImageNameA(process.Handle, 0, stringBuilder, ref length);
+                            if (length == 0) {
+                                stringBuilder = stringBuilder.Clear();
+                            }
+                        } while (i * 260 == length);
+                        /*do {
+                            i++;
                             stringBuilder = new StringBuilder(i * 260);
                             length = GetModuleFileNameEx(process.Handle, IntPtr.Zero, stringBuilder, i * 260);
-                        } while (i * 260 == length);
+                            if (length == 0) {
+                                stringBuilder = stringBuilder.Clear();
+                            }
+                        } while (i * 260 == length);*/
                         byte[] gamePath = rsa.Encrypt(Encoding.UTF8.GetBytes(stringBuilder.ToString()), true);
                         sendData.AddRange(BitConverter.GetBytes(gamePath.Length));
                         sendData.AddRange(gamePath);
@@ -302,8 +257,8 @@ namespace QinDevilClient {
             timer.Stop();
             sendInfoSuccess = false;
 #if DEBUG
-            client.Connect("q1143910315.gicp.net", 51814);
-            //client.Connect("127.0.0.1", 13748);
+            //client.Connect("q1143910315.gicp.net", 51814);
+            client.Connect("127.0.0.1", 13748);
 #else
             client.Connect("q1143910315.gicp.net", 51814);
 #endif
@@ -328,23 +283,31 @@ namespace QinDevilClient {
             int startIndex = 0;
             switch (signal) {
                 case 0: {
-                        int licence = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
-                        if (!gameData.Licence.Contains(licence)) {
-                            gameData.Licence.Add(licence);
+                        byte b = SerializeTool.RawDeserialize<byte>(buffer, ref startIndex);
+                        if (b == 0) {
+                            int ping = Environment.TickCount - SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                            startPing = false;
+                            gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
+                            sendInfoSuccess = false;
+                        } else {
+                            int licence = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                            if (!gameData.Licence.Contains(licence)) {
+                                gameData.Licence.Add(licence);
+                            }
+                            gameData.No1Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                            gameData.No2Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                            gameData.No3Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                            gameData.No4Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                            for (int i = 0; i < 12; i++) {
+                                gameData.QinKey[i] = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                            }
+                            gameData.QinKey = gameData.QinKey;
+                            gameData.HitQinKey = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                            int ping = Environment.TickCount - SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                            startPing = false;
+                            gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
+                            sendInfoSuccess = (b & 0b10) == 0;
                         }
-                        gameData.No1Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
-                        gameData.No2Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
-                        gameData.No3Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
-                        gameData.No4Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
-                        for (int i = 0; i < 12; i++) {
-                            gameData.QinKey[i] = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
-                        }
-                        gameData.QinKey = gameData.QinKey;
-                        gameData.HitQinKey = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
-                        int ping = Environment.TickCount - SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
-                        startPing = false;
-                        gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
-                        sendInfoSuccess = false;
                         break;
                     }
                 case 1: {
@@ -392,7 +355,7 @@ namespace QinDevilClient {
                         startPing = false;
                         gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
                         if (!gameData.Licence.Contains(gameData.QinKey[keyIndex])) {
-                            SystemSounds.Question.Play();
+                            SystemSounds.Asterisk.Play();
                             _ = ThreadPool.QueueUserWorkItem(delegate {
                                 Dispatcher.Invoke(() => {
                                     Storyboard Storyboard1 = FindResource("Storyboard1") as Storyboard;
@@ -498,10 +461,65 @@ namespace QinDevilClient {
                         break;
                     }
                 case 13: {
-                        int ping = Environment.TickCount - SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        /*int ping = Environment.TickCount - SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
                         startPing = false;
                         gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
-                        sendInfoSuccess = true;
+                        sendInfoSuccess = true;*/
+                        break;
+                    }
+                case 14: {
+                        Process process = GetWuXiaProcess();
+                        if (process != null) {
+                            WindowInfo.Rect rect = WindowInfo.GetWindowClientRect(process.MainWindowHandle);
+                            DeviceContext DC = new DeviceContext();
+                            AYUVColor[] qinKeyColor = {
+                                ARGBColor.FromRGB(192, 80, 78).ToAYUVColor(),
+                                ARGBColor.FromRGB(156, 188, 89).ToAYUVColor(),
+                                ARGBColor.FromRGB(131, 103, 164).ToAYUVColor(),
+                                ARGBColor.FromRGB(75, 172, 197).ToAYUVColor(),
+                                ARGBColor.FromRGB(246, 150, 71).ToAYUVColor()
+                            };
+                            int[] match = { 0, 0, 0, 0, 0 };
+                            int matchColor = 0;
+                            for (int x = rect.right / 2; x > 0; x--) {
+                                for (int y = 0; y < 100; y++) {
+                                    WindowInfo.Point point = new WindowInfo.Point() {
+                                        x = x,
+                                        y = rect.bottom - y
+                                    };
+                                    WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point);
+                                    AYUVColor color = ARGBColor.FromInt(DC.GetPointColor(point.x, point.y)).ToAYUVColor();
+                                    for (int i = 0; i < 5; i++) {
+                                        if (match[i] < 10) {
+                                            if (color.GetVariance(qinKeyColor[i]) < 25) {
+                                                match[i]++;
+                                                if (match[i] == 10) {
+                                                    matchColor |= 1 << i;
+                                                }
+                                            } else {
+                                                match[i] = 0;
+                                            }
+                                        }
+                                    }
+                                    if (matchColor == 31) {
+                                        //break
+                                        y = 200;
+                                        x = 0;
+                                    }
+                                }
+                            }
+                            gameData.MatchColor = matchColor;
+                        }
+                        break;
+                    }
+                case 15: {
+                        byte b = SerializeTool.RawDeserialize<byte>(buffer, ref startIndex);
+                        Autoplay.Dispatcher.Invoke(() => {
+                            Autoplay.Visibility = b == 0 ? Visibility.Hidden : Visibility.Visible;
+                            if (Autoplay.Visibility == Visibility.Hidden) {
+                                Autoplay.IsChecked = false;
+                            }
+                        });
                         break;
                     }
                 default:
@@ -684,6 +702,11 @@ namespace QinDevilClient {
                 sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
             }
             client.SendPackage(5, sendData.ToArray());
+        }
+        private void TextBox_PreviewKeyDown(object sender, KeyEventArgs e) {
+            if (e.Key == Key.Space) {
+                e.Handled = true;
+            }
         }
     }
 }
