@@ -26,5 +26,8 @@ namespace QinDevilCommon.ColorClass {
         public AYUVColor ToAYUVColor() {
             return AYUVColor.FromAYUV(A, 0.299 * R + 0.587 * G + 0.114 * B, -0.147 * R - 0.289 * G + 0.436 * B, 0.615 * R - 0.515 * G - 0.100 * B);
         }
+        public int ToInt() {
+            return (R & 0xFF) | ((G & 0xFF) << 8) | ((B & 0xFF) << 16);
+        }
     }
 }

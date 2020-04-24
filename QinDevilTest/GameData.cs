@@ -29,5 +29,15 @@ namespace QinDevilTest {
             get => _colorDifference;
             set => Set(ref _colorDifference, value);
         }
+        private string _gamePath = "";
+        public string GamePath {
+            get => _gamePath;
+            set => Set(ref _gamePath, value);
+        }
+        private string _key = "";
+        public string Key {
+            get => _key;
+            set => Set(ref _key, value);
+        }
     }
 }

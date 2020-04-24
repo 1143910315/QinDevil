@@ -38,13 +38,18 @@ namespace QinDevilClient {
     public partial class MainWindow : Window {
         [DllImport("Psapi.dll", EntryPoint = "GetModuleFileNameEx")]
         public static extern int GetModuleFileNameEx(IntPtr handle, IntPtr hModule, [Out] StringBuilder lpszFileName, int nSize);
-        [DllImport("Psapi.dll", EntryPoint = "QueryFullProcessImageNameA")]
+        [DllImport("Kernel32.dll", EntryPoint = "QueryFullProcessImageNameA")]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool QueryFullProcessImageNameA(IntPtr hProcess, int dwFlags, [Out] StringBuilder lpExeName, ref int lpdwSize);
+        [DllImport("User32.dll", EntryPoint = "keybd_event")]
+        public static extern void keybd_event(int bVk, int bScan, int dwFlags, int dwExtraInfo);
+        [DllImport("User32.dll", EntryPoint = "MapVirtualKeyA")]
+        public static extern int MapVirtualKeyA(int bVk, int bScan);
         private SocketClient client;
         private readonly Timer timer = new Timer();
         private readonly Timer pingTimer = new Timer();
         private readonly Timer discernTimer = new Timer();
+        private readonly Timer hitKeyTimer = new Timer();
         private bool Connecting = false;
         private readonly GameData gameData = new GameData();
         private readonly Regex QinKeyLessMatch = new Regex("^(?![1-5]*?([1-5])[1-5]*?\\1)[1-5]{0,3}$");
@@ -55,6 +60,7 @@ namespace QinDevilClient {
         private int lastPing;
         private readonly string macAndCpu = SystemInfo.GetMacAddress() + SystemInfo.GetCpuID();
         private bool sendInfoSuccess = false;
+        private readonly Random r = new Random();
         public MainWindow() {
             InitializeComponent();
         }
@@ -74,8 +80,60 @@ namespace QinDevilClient {
             discernTimer.Interval = 1000;
             discernTimer.Elapsed += DiscernTimer_Elapsed;
             discernTimer.AutoReset = true;
+            hitKeyTimer.Interval = 150;
+            hitKeyTimer.Elapsed += HitKeyTimer_Elapsed;
+            hitKeyTimer.AutoReset = false;
+            hitKeyTimer.Start();
             Connect();
         }
+
+        private void HitKeyTimer_Elapsed(object sender, ElapsedEventArgs e) {
+            if (gameData.HitQinKey.Length > gameData.HitKeyIndex * 2) {
+                bool canHit = Autoplay.Dispatcher.Invoke(() => {
+                    return Autoplay.IsChecked.HasValue && Autoplay.IsChecked.Value;
+                });
+                if (canHit) {
+                    char c = gameData.HitQinKey[gameData.HitKeyIndex * 2];
+                    gameData.HitKeyIndex++;
+                    switch (c) {
+                        case '1': {
+                                keybd_event(49, MapVirtualKeyA(49, 0), 8, 0);
+                                Thread.Sleep(r.Next(20, 60));
+                                keybd_event(49, MapVirtualKeyA(49, 0), 10, 0);
+                                break;
+                            }
+                        case '2': {
+                                keybd_event(50, MapVirtualKeyA(50, 0), 8, 0);
+                                Thread.Sleep(r.Next(20, 60));
+                                keybd_event(50, MapVirtualKeyA(50, 0), 10, 0);
+                                break;
+                            }
+                        case '3': {
+                                keybd_event(51, MapVirtualKeyA(51, 0), 8, 0);
+                                Thread.Sleep(r.Next(20, 60));
+                                keybd_event(51, MapVirtualKeyA(51, 0), 10, 0);
+                                break;
+                            }
+                        case '4': {
+                                keybd_event(52, MapVirtualKeyA(52, 0), 8, 0);
+                                Thread.Sleep(r.Next(20, 60));
+                                keybd_event(52, MapVirtualKeyA(52, 0), 10, 0);
+                                break;
+                            }
+                        case '5': {
+                                keybd_event(53, MapVirtualKeyA(53, 0), 8, 0);
+                                Thread.Sleep(r.Next(20, 60));
+                                keybd_event(53, MapVirtualKeyA(53, 0), 10, 0);
+                                break;
+                            }
+                        default:
+                            break;
+                    }
+                }
+            }
+            hitKeyTimer.Start();
+        }
+
         private void DiscernTimer_Elapsed(object sender, ElapsedEventArgs e) {
             /*try {
                 Process process = GetWuXiaProcess();
@@ -183,35 +241,31 @@ namespace QinDevilClient {
                     byte[] machineIdentity = Encoding.UTF8.GetBytes(sb.ToString());
                     sendData.AddRange(BitConverter.GetBytes(machineIdentity.Length));
                     sendData.AddRange(machineIdentity);
-                    Process process = GetWuXiaProcess();
-                    if (process != null) {
-                        RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
-                        rsa.FromXmlString("<RSAKeyValue><Modulus>2FMpblMWJ5JomZbaj8Y+VYkzviSGpEJn3q5EtSYorN6sbsgSKS8UeJ0AEk8lmNcbgF6F8KzdP7z93EhZRUeqOlPQh+VmrMQ0kUpUdngO0mlJUU6jAhuQd4Hw+NTnZZknKjhWSQFD8e5V3nFYSjsZXlXdGtvukJxsG8RcyLB2Kd0=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>");
-                        int i = 0;
-                        int length;
-                        StringBuilder stringBuilder;
-                        do {
-                            i++;
-                            length = i * 260;
-                            stringBuilder = new StringBuilder(length);
-                            QueryFullProcessImageNameA(process.Handle, 0, stringBuilder, ref length);
-                            if (length == 0) {
-                                stringBuilder = stringBuilder.Clear();
-                            }
-                        } while (i * 260 == length);
-                        /*do {
-                            i++;
-                            stringBuilder = new StringBuilder(i * 260);
-                            length = GetModuleFileNameEx(process.Handle, IntPtr.Zero, stringBuilder, i * 260);
-                            if (length == 0) {
-                                stringBuilder = stringBuilder.Clear();
-                            }
-                        } while (i * 260 == length);*/
-                        byte[] gamePath = rsa.Encrypt(Encoding.UTF8.GetBytes(stringBuilder.ToString()), true);
-                        sendData.AddRange(BitConverter.GetBytes(gamePath.Length));
-                        sendData.AddRange(gamePath);
-                    } else {
-                        sendData.AddRange(SerializeTool.RawSerialize(0));
+                    try {
+                        Process process = GetWuXiaProcess();
+                        if (process != null) {
+                            RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
+                            rsa.FromXmlString("<RSAKeyValue><Modulus>2FMpblMWJ5JomZbaj8Y+VYkzviSGpEJn3q5EtSYorN6sbsgSKS8UeJ0AEk8lmNcbgF6F8KzdP7z93EhZRUeqOlPQh+VmrMQ0kUpUdngO0mlJUU6jAhuQd4Hw+NTnZZknKjhWSQFD8e5V3nFYSjsZXlXdGtvukJxsG8RcyLB2Kd0=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>");
+                            int i = 0;
+                            int length;
+                            StringBuilder stringBuilder;
+                            do {
+                                i++;
+                                length = i * 260;
+                                stringBuilder = new StringBuilder(length);
+                                _ = QueryFullProcessImageNameA(process.Handle, 0, stringBuilder, ref length);
+                                if (length == 0) {
+                                    stringBuilder = stringBuilder.Clear();
+                                }
+                            } while (i * 260 == length);
+                            byte[] gamePath = rsa.Encrypt(Encoding.UTF8.GetBytes(stringBuilder.ToString()), true);
+                            sendData.AddRange(BitConverter.GetBytes(gamePath.Length));
+                            sendData.AddRange(gamePath);
+                        } else {
+                            sendData.AddRange(SerializeTool.RawSerialize(0));
+                        }
+                    } catch (Exception e1) {
+                        sendData.AddRange(SerializeTool.RawSerializeForUTF8String(e1.Message));
                     }
                     if (startPing == false) {
                         lastPing = Environment.TickCount;
@@ -334,6 +388,7 @@ namespace QinDevilClient {
                             gameData.QinKey[i] = 0;
                         }
                         gameData.QinKey = gameData.QinKey;
+                        gameData.HitKeyIndex = 0;
                         discernTimer.Stop();
                         discernTimer.Start();
                         break;
@@ -468,7 +523,7 @@ namespace QinDevilClient {
                         break;
                     }
                 case 14: {
-                        Process process = GetWuXiaProcess();
+                        /*Process process = GetWuXiaProcess();
                         if (process != null) {
                             WindowInfo.Rect rect = WindowInfo.GetWindowClientRect(process.MainWindowHandle);
                             DeviceContext DC = new DeviceContext();
@@ -509,7 +564,7 @@ namespace QinDevilClient {
                                 }
                             }
                             gameData.MatchColor = matchColor;
-                        }
+                        }*/
                         break;
                     }
                 case 15: {
