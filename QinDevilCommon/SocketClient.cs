@@ -114,30 +114,37 @@ namespace QinDevilCommon {
                 SendAsyncEventArgs = new SocketAsyncEventArgs();
                 SendAsyncEventArgs.SetBuffer(package, 0, index);
                 SendAsyncEventArgs.Completed += (s, e) => {
-                    if (s.Equals(socket)) {
-                        if (e.SocketError == SocketError.Success) {
-                            Monitor.Enter(sendLock);
-                            int len = sendData.Count;
-                            if (len > 0) {
-                                byte[] temp = sendData.ToArray();
-                                sendData.Clear();
-                                SendAsyncEventArgs.SetBuffer(temp, 0, len);
-                                if (socketIsOnline) {
-                                    _ = socket.SendAsync(SendAsyncEventArgs);
+                    try {
+                        if (s.Equals(socket)) {
+                            if (e.SocketError == SocketError.Success) {
+                                Monitor.Enter(sendLock);
+                                int len = sendData.Count;
+                                if (len > 0) {
+                                    byte[] temp = sendData.ToArray();
+                                    sendData.Clear();
+                                    SendAsyncEventArgs.SetBuffer(temp, 0, len);
+                                    if (socketIsOnline) {
+                                        _ = socket.SendAsync(SendAsyncEventArgs);
+                                    }
+                                } else {
+                                    onSendCompletedEvent?.Invoke();
                                 }
+                                Monitor.Exit(sendLock);
                             } else {
-                                onSendCompletedEvent?.Invoke();
+                                onConnectionBreakEvent?.Invoke();
+                                socket.Close();
                             }
-                            Monitor.Exit(sendLock);
-                        } else {
-                            onConnectionBreakEvent?.Invoke();
-                            socket.Close();
                         }
+                    } finally {
+                        SendAsyncEventArgs = null;
                     }
-                    SendAsyncEventArgs = null;
                 };
                 if (socketIsOnline) {
-                    _ = socket.SendAsync(SendAsyncEventArgs);
+                    try {
+                        _ = socket.SendAsync(SendAsyncEventArgs);
+                    } catch (Exception) {
+                        SendAsyncEventArgs = null;
+                    }
                 }
             } else {
                 for (int i = 0; i < l.Length; i++) {

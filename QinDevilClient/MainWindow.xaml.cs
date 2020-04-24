@@ -30,6 +30,9 @@ using Timer = System.Timers.Timer;
 using Color = System.Drawing.Color;
 using System.Media;
 using QinDevilCommon.ColorClass;
+using System.Windows.Forms;
+using TextBox = System.Windows.Controls.TextBox;
+using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 
 namespace QinDevilClient {
     /// <summary>
@@ -516,13 +519,73 @@ namespace QinDevilClient {
                         break;
                     }
                 case 13: {
-                        /*int ping = Environment.TickCount - SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
-                        startPing = false;
-                        gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
-                        sendInfoSuccess = true;*/
+                        _ = ThreadPool.QueueUserWorkItem(delegate {
+                            Dispatcher.Invoke(() => {
+                                Close();
+                            });
+                        });
                         break;
                     }
                 case 14: {
+                        Process process = GetWuXiaProcess();
+                        if (process != null) {
+                            WindowInfo.Rect rect = WindowInfo.GetWindowClientRect(process.MainWindowHandle);
+                            DeviceContext DC = new DeviceContext();
+                            if (DC.GetDeviceContext(IntPtr.Zero)) {
+                                WindowInfo.Point point = new WindowInfo.Point() {
+                                    x = rect.right / 2,
+                                    y = rect.bottom
+                                };
+                                WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point);
+                                int startX = point.x - rect.right / 2, endX = point.x, startY = point.y, endY = point.y + 100;
+                                startX = startX < 0 ? 0 : startX;
+                                endY = endY > Screen.PrimaryScreen.Bounds.Height ? Screen.PrimaryScreen.Bounds.Height : endY;
+                                if (startX > endX) {
+                                    startX ^= endX;
+                                    endX ^= startX;
+                                    startX ^= endX;
+                                }
+                                if (startY > endY) {
+                                    startY ^= endY;
+                                    endY ^= startY;
+                                    startY ^= endY;
+                                }
+                                if (DC.CacheRegion(new DeviceContext.Rect { left = startX, right = endX, top = startY, bottom = endY })) {
+                                    AYUVColor[] qinKeyColor = {
+                                        ARGBColor.FromRGB(192, 80, 78).ToAYUVColor(),
+                                        ARGBColor.FromRGB(156, 188, 89).ToAYUVColor(),
+                                        ARGBColor.FromRGB(131, 103, 164).ToAYUVColor(),
+                                        ARGBColor.FromRGB(75, 172, 197).ToAYUVColor(),
+                                        ARGBColor.FromRGB(246, 150, 71).ToAYUVColor()
+                                    };
+                                    int[] match = { 0, 0, 0, 0, 0 };
+                                    int matchColor = 0;
+                                    for (int x = startX; x < endX; x++) {
+                                        for (int y = startY; y < endY; y++) {
+                                            AYUVColor color = ARGBColor.FromInt(DC.GetPointColor(x, y)).ToAYUVColor();
+                                            for (int i = 0; i < 5; i++) {
+                                                if (match[i] < 10) {
+                                                    if (color.GetVariance(qinKeyColor[i]) < 500) {
+                                                        match[i]++;
+                                                        if (match[i] == 10) {
+                                                            matchColor |= 1 << i;
+                                                        }
+                                                    } else {
+                                                        match[i] = 0;
+                                                    }
+                                                }
+                                            }
+                                            if (matchColor == 31) {
+                                                //break
+                                                y = 9999999;
+                                                x = 9999999;
+                                            }
+                                        }
+                                    }
+                                    gameData.MatchColor = matchColor;
+                                }
+                            }
+                        }
                         /*Process process = GetWuXiaProcess();
                         if (process != null) {
                             WindowInfo.Rect rect = WindowInfo.GetWindowClientRect(process.MainWindowHandle);

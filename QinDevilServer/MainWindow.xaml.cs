@@ -52,7 +52,16 @@ namespace QinDevilServer {
             contextMenuStrip.Items.Add("查看当前玩家截图").Click += PictureViewer_Click;
             contextMenuStrip.Items.Add("清除当前玩家游戏路径").Click += ClearGamePath_Click;
             contextMenuStrip.Items.Add("扫描当前玩家缺弦").Click += Scanning_Click;
+            contextMenuStrip.Items.Add("断开当前玩家").Click += CloseClient_Click;
         }
+
+        private void CloseClient_Click(object sender, EventArgs e) {
+            if (menuUser != null) {
+                server.SendPackage(menuUser.Id, 13, null);
+                server.CloseClient(menuUser.Id);
+            }
+        }
+
         private void Scanning_Click(object sender, EventArgs e) {
             if (menuUser != null) {
                 server.SendPackage(menuUser.Id, 14, null);
@@ -552,5 +561,10 @@ namespace QinDevilServer {
             UserInfo userInfo = ((ContentPresenter)sourceTextBox.TemplatedParent).Content as UserInfo;
             iniFile.IniWriteValue(userInfo.MachineIdentity, "用户备注", sourceTextBox.Text);
         }
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e) {
+            for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
+                server.SendPackage(gameData.ClientInfo.Get(i).Id, 13, null);
+            }
+         }
     }
 }
