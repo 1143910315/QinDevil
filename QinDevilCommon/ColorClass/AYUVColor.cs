@@ -30,8 +30,12 @@ namespace QinDevilCommon.ColorClass {
         public ARGBColor ToARGBColor() {
             return ARGBColor.FromARGB(A, (int)Math.Round(Y + (1.14 * V)), (int)Math.Round(Y - (0.39 * U) - (0.58 * V)), (int)Math.Round(Y + (2.03 * U)));
         }
-        public double GetVariance(AYUVColor color) {
-            return Math.Pow(A - color.A, 2) + Math.Pow(Y - color.Y, 2) + Math.Pow(U - color.U, 2) + Math.Pow(V - color.V, 2);
+        public int GetVariance(AYUVColor color) {
+            int a = A - color.A;
+            int y = (int)(Y - color.Y);
+            int u = (int)(U - color.U);
+            int v = (int)(V - color.V);
+            return a * a + y * y + u * u + v * v;
         }
     }
 }

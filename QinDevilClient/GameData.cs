@@ -55,8 +55,8 @@ namespace QinDevilClient {
             get => _hitQinKey;
             set => Set(ref _hitQinKey, value);
         }
-        private int _matchColor = 0;
-        public int MatchColor {
+        private string _matchColor = "未就绪";
+        public string MatchColor {
             get => _matchColor;
             set => Set(ref _matchColor, value);
         }
@@ -64,6 +64,16 @@ namespace QinDevilClient {
         public int HitKeyIndex {
             get => _hitKeyIndex;
             set => Set(ref _hitKeyIndex, value);
+        }
+        private int _killingIntentionStrip = 0;
+        public int KillingIntentionStrip {
+            get => _killingIntentionStrip;
+            set => Set(ref _killingIntentionStrip, value);
+        }
+        private int _time = 0;
+        public int Time {
+            get => _time;
+            set => Set(ref _time, value);
         }
     }
 }

@@ -58,10 +58,10 @@ namespace QinDevilServer {
             get => _remark;
             set => Set(ref _remark, value);
         }
-        private string _pickColor = "未就绪";
-        public string PickColor {
-            get => _pickColor;
-            set => Set(ref _pickColor, value);
+        private int _killingIntentionStrip = 0;
+        public int KillingIntentionStrip {
+            get => _killingIntentionStrip;
+            set => Set(ref _killingIntentionStrip, value);
         }
     }
 }

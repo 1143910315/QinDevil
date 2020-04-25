@@ -13,12 +13,15 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
+using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Color = System.Drawing.Color;
+using Timer = System.Timers.Timer;
+
 namespace QinDevilTest {
     /// <summary>
     /// MainWindow.xaml 的交互逻辑
@@ -43,6 +46,7 @@ namespace QinDevilTest {
         private readonly Timer timer1 = new Timer();
         private readonly Timer timer2 = new Timer();
         private readonly Timer timer3 = new Timer();
+        private readonly Timer timer4 = new Timer();
         private readonly GameData gameData = new GameData();
         public MainWindow() {
             InitializeComponent();
@@ -62,9 +66,52 @@ namespace QinDevilTest {
             timer3.Interval = 20000;
             timer3.AutoReset = false;
             timer3.Elapsed += Timer3_Elapsed;
-            timer3.Start();
+            //timer3.Start();
+            timer4.Interval = 1000;
+            timer4.AutoReset = false;
+            timer4.Elapsed += Timer4_Elapsed;
+            timer4.Start();
         }
-
+        private void Timer4_Elapsed(object sender, ElapsedEventArgs e) {
+            string s = "";
+            int t = Environment.TickCount;
+            DeviceContext DC = new DeviceContext();
+            if (DC.GetDeviceContext(IntPtr.Zero)) {
+                int startX = 0, endX = Screen.PrimaryScreen.Bounds.Width/2, startY = 600, endY = 700;
+                if (DC.CacheRegion(new DeviceContext.Rect { left = startX, right = endX, top = startY, bottom = endY })) {
+                    AYUVColor[] qinKeyColor = {
+                        ARGBColor.FromRGB(192, 80, 78).ToAYUVColor(),
+                        ARGBColor.FromRGB(156, 188, 89).ToAYUVColor(),
+                        ARGBColor.FromRGB(131, 103, 164).ToAYUVColor(),
+                        ARGBColor.FromRGB(75, 172, 197).ToAYUVColor(),
+                        ARGBColor.FromRGB(246, 150, 71).ToAYUVColor()
+                    };
+                    int[] match = { 0, 0, 0, 0, 0 };
+                    for (int x = startX; x < endX; x++) {
+                        for (int y = startY; y < endY; y++) {
+                            AYUVColor color = ARGBColor.FromInt(DC.GetPointColor(x, y)).ToAYUVColor();
+                            for (int i = 0; i < 5; i++) {
+                                if (match[i] < 10) {
+                                    if (color.GetVariance(qinKeyColor[i]) < 25) {
+                                        match[i]++;
+                                    } else {
+                                        match[i] = 0;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    for (int i = 0; i < 5; i++) {
+                        if (match[i] >= 10) {
+                            s += i.ToString();
+                        }
+                    }
+                }
+            }
+            s += "|" + (Environment.TickCount - t).ToString();
+            gameData.GamePath = s;
+            timer4.Start();
+        }
         private void Timer3_Elapsed(object sender, ElapsedEventArgs e) {
             Debug.WriteLine(Environment.TickCount);
             DeviceContext DC = new DeviceContext();
@@ -72,14 +119,13 @@ namespace QinDevilTest {
                 if (DC.CacheRegion(new DeviceContext.Rect { left = 1324, right = 1346, top = 242, bottom = 253 })) {
                     for (int x = 1324; x < 1344; x++) {
                         for (int y = 242; y < 252; y++) {
-                            Debug.WriteLine(DC.GetPointColor(x,y));
+                            Debug.WriteLine(DC.GetPointColor(x, y));
                         }
                     }
                 }
             }
             Debug.WriteLine(Environment.TickCount);
         }
-
         private void Timer2_Elapsed(object sender, ElapsedEventArgs e) {
             int start = Environment.TickCount;
             DeviceContext deviceContext = new DeviceContext();
@@ -113,7 +159,6 @@ namespace QinDevilTest {
             }
             timer1.Start();
         }
-
         private void Timer_Elapsed(object sender, ElapsedEventArgs e) {
             gamePanel.Dispatcher.Invoke(() => {
                 _ = GetCursorPos(out POINT pnt);

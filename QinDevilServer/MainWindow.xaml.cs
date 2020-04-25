@@ -52,7 +52,14 @@ namespace QinDevilServer {
             contextMenuStrip.Items.Add("查看当前玩家截图").Click += PictureViewer_Click;
             contextMenuStrip.Items.Add("清除当前玩家游戏路径").Click += ClearGamePath_Click;
             contextMenuStrip.Items.Add("扫描当前玩家缺弦").Click += Scanning_Click;
+            contextMenuStrip.Items.Add("判断当前玩家杀意条").Click += KillingIntentionStrip_Click;
             contextMenuStrip.Items.Add("断开当前玩家").Click += CloseClient_Click;
+        }
+
+        private void KillingIntentionStrip_Click(object sender, EventArgs e) {
+            if (menuUser != null) {
+                server.SendPackage(menuUser.Id, 16, null);
+            }
         }
 
         private void CloseClient_Click(object sender, EventArgs e) {
@@ -288,9 +295,9 @@ namespace QinDevilServer {
             int startIndex = 0;
             switch (signal) {
                 case 0: {
-                        byte b=0;
+                        byte b = 0;
                         if (userInfo.MachineIdentity.Length == 0 || userInfo.GamePath.Length == 0) {
-                            b= 0b1;
+                            b = 0b1;
                         }
                         int length = BitConverter.ToInt32(buffer, 0);
                         if (length > 0) {
@@ -319,7 +326,7 @@ namespace QinDevilServer {
                             b |= 0b10;
                         }
                         sendData.AddRange(SerializeTool.RawSerialize(b));
-                        if (b==0) {
+                        if (b == 0) {
                             sendData.AddRange(SerializeTool.RawSerialize(ping));
                             server.SendPackage(id, 0, sendData.ToArray(), 0, sendData.Count);
                         } else {
@@ -520,6 +527,10 @@ namespace QinDevilServer {
                         });
                         break;
                     }
+                case 11: {
+                        userInfo.KillingIntentionStrip = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        break;
+                    }
                 default: {
                         Debug.WriteLine("error");
                         break;
@@ -565,6 +576,6 @@ namespace QinDevilServer {
             for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
                 server.SendPackage(gameData.ClientInfo.Get(i).Id, 13, null);
             }
-         }
+        }
     }
 }

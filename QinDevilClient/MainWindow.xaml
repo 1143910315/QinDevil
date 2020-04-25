@@ -327,7 +327,7 @@
                 </Label>
                 <Label Content="琴上剩余对比：9 8 7 6 5 4 3 2 1" Canvas.Left="10" Canvas.Top="101" Padding="0" FontSize="14"/>
                 <Label Content="{Binding HitQinKey}" ContentStringFormat="需要弹琴数字：{0}" Canvas.Left="10" Canvas.Top="124" Padding="0" FontSize="14"/>
-                <Label Content="{Binding MatchColor}" Canvas.Left="296" Canvas.Top="10" Padding="0" Width="72" Height="18" HorizontalContentAlignment="Right"/>
+                <Label Content="{Binding Time}" Canvas.Left="296" Canvas.Top="10" Padding="0" Width="72" Height="18" HorizontalContentAlignment="Right"/>
                 <CheckBox x:Name="Autoplay" Content="自动弹琴" Canvas.Left="223" Canvas.Top="10" Visibility="Hidden"/>
             </Canvas>
         </Viewbox>
