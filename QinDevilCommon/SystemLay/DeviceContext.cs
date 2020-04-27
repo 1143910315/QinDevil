@@ -96,7 +96,7 @@ namespace QinDevilCommon.SystemLay {
             BITMAPINFO pbmi = new BITMAPINFO();
             pbmi.bmiHeader.biSize = 40;
             pbmi.bmiHeader.biWidth = width;
-            pbmi.bmiHeader.biHeight = height;
+            pbmi.bmiHeader.biHeight = -height;
             pbmi.bmiHeader.biPlanes = 1;
             pbmi.bmiHeader.biBitCount = 24;
             pbmi.bmiHeader.biCompression = 0;

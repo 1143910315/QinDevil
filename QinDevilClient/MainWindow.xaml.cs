@@ -62,6 +62,7 @@ namespace QinDevilClient {
         private MemoryStream pngStream = null;
         private readonly byte[] bigBuffer = new byte[8000];
         private bool startPing = false;
+        private bool sitOn = false;
         private int lastPing;
         private readonly string macAndCpu = SystemInfo.GetMacAddress() + SystemInfo.GetCpuID();
         private bool sendInfoSuccess = false;
@@ -98,11 +99,9 @@ namespace QinDevilClient {
             secondTimer.AutoReset = true;
             Connect();
         }
-
         private void SecondTimer_Elapsed(object sender, ElapsedEventArgs e) {
             gameData.Time += 1;
         }
-
         private void ColorDiscriminateTimer_Elapsed(object sender, ElapsedEventArgs e) {
             if (sendInfoSuccess) {
                 Process process = GetWuXiaProcess();
@@ -116,22 +115,78 @@ namespace QinDevilClient {
                         if (WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point)) {
                             if (gameData.KillingIntentionStrip == 0) {
                                 AYUVColor color = ARGBColor.FromRGB(254, 184, 0).ToAYUVColor();
-                                int startX = point.x + rect.right / 2;
+                                int startX = point.x + (rect.right / 2);
                                 int endX = startX + 1;
                                 int startY = point.y;
                                 int endY = point.y + rect.bottom;
                                 DeviceContext DC = new DeviceContext();
                                 if (DC.GetDeviceContext(IntPtr.Zero)) {
-                                    DC.CacheRegion(new DeviceContext.Rect { left = startX, right = endX, top = startY, bottom = endY });
+                                    _ = DC.CacheRegion(new DeviceContext.Rect { left = startX, right = endX, top = startY, bottom = endY });
                                     for (int i = endY - 1; i > startY; i--) {
                                         AYUVColor color2 = ARGBColor.FromInt(DC.GetPointColor(startX, i)).ToAYUVColor();
-                                        if (color.GetVariance(color2) < 15) {
+                                        if (color.GetVariance(color2) < 5) {
                                             gameData.KillingIntentionStrip = rect.bottom - i + point.y;
                                             client.SendPackage(11, SerializeTool.RawSerialize(gameData.KillingIntentionStrip));
-                                            return;
                                         }
                                     }
-
+                                }
+                            } else {
+                                int ready = 0;
+                                for (int i = 0; i < 5; i++) {
+                                    if (gameData.FiveTone[i] == 0) {
+                                        ready += 1;
+                                    }
+                                }
+                                if (ready > 0) {
+                                    AYUVColor[] qinKeyColor = new AYUVColor[5];
+                                    qinKeyColor[0] = ARGBColor.FromRGB(192, 80, 78).ToAYUVColor();
+                                    qinKeyColor[1] = ARGBColor.FromRGB(156, 188, 89).ToAYUVColor();
+                                    qinKeyColor[2] = ARGBColor.FromRGB(131, 103, 164).ToAYUVColor();
+                                    qinKeyColor[3] = ARGBColor.FromRGB(75, 172, 197).ToAYUVColor();
+                                    qinKeyColor[4] = ARGBColor.FromRGB(246, 150, 71).ToAYUVColor();
+                                    int startX = point.x + (gameData.KillingIntentionStrip * 290 / 63);
+                                    int endX = point.x + (rect.right / 2);
+                                    int middleY = rect.bottom - (gameData.KillingIntentionStrip / 2);
+                                    int startY = point.y + middleY - 5;
+                                    int endY = startY + 10;
+                                    DeviceContext DC = new DeviceContext();
+                                    if (DC.GetDeviceContext(IntPtr.Zero)) {
+                                        _ = DC.CacheRegion(new DeviceContext.Rect { left = startX, right = endX, top = startY, bottom = endY });
+                                        AYUVColor color;
+                                        for (int i = startX; i < endX; i++) {
+                                            color = ARGBColor.FromInt(DC.GetPointColor(i, middleY)).ToAYUVColor();
+                                            for (int j = 0; j < 5; j++) {
+                                                if (gameData.FiveTone[j] == 0 && color.GetVariance(qinKeyColor[j]) < 25) {
+                                                    int matchTime = 1;
+                                                    for (int k = 0; k < 5; k++) {
+                                                        color = ARGBColor.FromInt(DC.GetPointColor(i, middleY - k - 1)).ToAYUVColor();
+                                                        if (color.GetVariance(qinKeyColor[j]) < 25) {
+                                                            matchTime += 1;
+                                                        } else {
+                                                            break;
+                                                        }
+                                                    }
+                                                    for (int k = 1; k < 5; k++) {
+                                                        color = ARGBColor.FromInt(DC.GetPointColor(i, middleY + k)).ToAYUVColor();
+                                                        if (color.GetVariance(qinKeyColor[j]) < 25) {
+                                                            matchTime += 1;
+                                                        } else {
+                                                            break;
+                                                        }
+                                                    }
+                                                    if (matchTime > 5) {
+                                                        gameData.FiveTone[j] = i - point.x;
+                                                        List<byte> sendData = new List<byte>(8);
+                                                        sendData.AddRange(SerializeTool.RawSerialize(j));
+                                                        sendData.AddRange(SerializeTool.RawSerialize(gameData.FiveTone[j]));
+                                                        client.SendPackage(12, sendData.ToArray());
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    return;
                                 }
                             }
                         }
@@ -141,50 +196,63 @@ namespace QinDevilClient {
             colorDiscriminateTimer.Start();
         }
         private void HitKeyTimer_Elapsed(object sender, ElapsedEventArgs e) {
-            if (gameData.HitQinKey.Length > gameData.HitKeyIndex * 2) {
-                bool canHit = Autoplay.Dispatcher.Invoke(() => {
-                    return Autoplay.IsChecked.HasValue && Autoplay.IsChecked.Value;
-                });
-                if (canHit) {
-                    char c = gameData.HitQinKey[gameData.HitKeyIndex * 2];
-                    gameData.HitKeyIndex++;
-                    switch (c) {
-                        case '1': {
-                                Keybd_event(49, MapVirtualKeyA(49, 0), 8, 0);
-                                Thread.Sleep(r.Next(20, 60));
-                                Keybd_event(49, MapVirtualKeyA(49, 0), 10, 0);
-                                break;
+            if (sitOn) {
+                if (gameData.HitQinKey.Length > gameData.HitKeyIndex * 2) {
+                    bool canHit = Autoplay.Dispatcher.Invoke(() => {
+                        return Autoplay.IsChecked.HasValue && Autoplay.IsChecked.Value;
+                    });
+                    if (canHit) {
+                        sitOn = JudgeSitOn();
+                        if (sitOn) {
+                            char c = gameData.HitQinKey[gameData.HitKeyIndex * 2];
+                            gameData.HitKeyIndex++;
+                            switch (c) {
+                                case '1': {
+                                        Keybd_event(49, MapVirtualKeyA(49, 0), 8, 0);
+                                        Thread.Sleep(r.Next(20, 60));
+                                        Keybd_event(49, MapVirtualKeyA(49, 0), 10, 0);
+                                        break;
+                                    }
+                                case '2': {
+                                        Keybd_event(50, MapVirtualKeyA(50, 0), 8, 0);
+                                        Thread.Sleep(r.Next(20, 60));
+                                        Keybd_event(50, MapVirtualKeyA(50, 0), 10, 0);
+                                        break;
+                                    }
+                                case '3': {
+                                        Keybd_event(51, MapVirtualKeyA(51, 0), 8, 0);
+                                        Thread.Sleep(r.Next(20, 60));
+                                        Keybd_event(51, MapVirtualKeyA(51, 0), 10, 0);
+                                        break;
+                                    }
+                                case '4': {
+                                        Keybd_event(52, MapVirtualKeyA(52, 0), 8, 0);
+                                        Thread.Sleep(r.Next(20, 60));
+                                        Keybd_event(52, MapVirtualKeyA(52, 0), 10, 0);
+                                        break;
+                                    }
+                                case '5': {
+                                        Keybd_event(53, MapVirtualKeyA(53, 0), 8, 0);
+                                        Thread.Sleep(r.Next(20, 60));
+                                        Keybd_event(53, MapVirtualKeyA(53, 0), 10, 0);
+                                        break;
+                                    }
+                                default:
+                                    break;
                             }
-                        case '2': {
-                                Keybd_event(50, MapVirtualKeyA(50, 0), 8, 0);
-                                Thread.Sleep(r.Next(20, 60));
-                                Keybd_event(50, MapVirtualKeyA(50, 0), 10, 0);
-                                break;
-                            }
-                        case '3': {
-                                Keybd_event(51, MapVirtualKeyA(51, 0), 8, 0);
-                                Thread.Sleep(r.Next(20, 60));
-                                Keybd_event(51, MapVirtualKeyA(51, 0), 10, 0);
-                                break;
-                            }
-                        case '4': {
-                                Keybd_event(52, MapVirtualKeyA(52, 0), 8, 0);
-                                Thread.Sleep(r.Next(20, 60));
-                                Keybd_event(52, MapVirtualKeyA(52, 0), 10, 0);
-                                break;
-                            }
-                        case '5': {
-                                Keybd_event(53, MapVirtualKeyA(53, 0), 8, 0);
-                                Thread.Sleep(r.Next(20, 60));
-                                Keybd_event(53, MapVirtualKeyA(53, 0), 10, 0);
-                                break;
-                            }
-                        default:
-                            break;
+                        }
                     }
                 }
+            } else {
+                sitOn = JudgeSitOn();
             }
             hitKeyTimer.Start();
+        }
+        private bool JudgeSitOn() {
+            for (int i = 0; i < 5; i++) {
+
+            }
+            return true;
         }
         private void DiscernTimer_Elapsed(object sender, ElapsedEventArgs e) {
             /*try {
@@ -262,7 +330,7 @@ namespace QinDevilClient {
                 if (ping > gameData.Ping) {
                     gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
                     if (gameData.Ping == 9999) {
-                        Debug.WriteLine("超时，连接！");
+                        //Debug.WriteLine("超时，连接！");
                         Connect();
                     }
                 }
@@ -288,7 +356,7 @@ namespace QinDevilClient {
                     byte[] hash = md5.ComputeHash(Encoding.UTF8.GetBytes(macAndCpu));
                     StringBuilder sb = new StringBuilder();
                     foreach (byte b in hash) {
-                        sb.Append(b.ToString("X2"));
+                        _ = sb.Append(b.ToString("X2"));
                     }
                     byte[] machineIdentity = Encoding.UTF8.GetBytes(sb.ToString());
                     sendData.AddRange(BitConverter.GetBytes(machineIdentity.Length));
@@ -331,7 +399,7 @@ namespace QinDevilClient {
                 timer.Interval = 2000;
                 timer.Start();
             } else {
-                Debug.WriteLine("掉线！连接！");
+                //Debug.WriteLine("掉线！连接！");
                 Connect();
                 gameData.FailTimes++;
             }
@@ -371,7 +439,7 @@ namespace QinDevilClient {
         }
         private void OnConnected(bool connected) {
             startPing = false;
-            Debug.WriteLine("连接！" + (connected ? "成功！" : "失败!"));
+            //Debug.WriteLine("连接！" + (connected ? "成功！" : "失败!"));
             Connecting = connected;
             if (connected == false) {
                 gameData.Ping = 9999;
@@ -394,7 +462,7 @@ namespace QinDevilClient {
                             int ping = Environment.TickCount - SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
                             startPing = false;
                             gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
-                            sendInfoSuccess = false;
+                            sendInfoSuccess = true;
                         } else {
                             int licence = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
                             if (!gameData.Licence.Contains(licence)) {
@@ -513,7 +581,7 @@ namespace QinDevilClient {
                                 }
                                 temp1.CopyTo(bigBuffer, temp.Length);
                                 int realLength = pictureStream.Read(bigBuffer, temp.Length + temp1.Length, bigBuffer.Length - temp.Length - temp1.Length);
-                                Debug.WriteLine(realLength);
+                                //Debug.WriteLine(realLength);
                                 client.SendPackage(7, bigBuffer, 0, realLength + temp.Length + temp1.Length);
                             }
                         } else {
@@ -558,7 +626,7 @@ namespace QinDevilClient {
                                 }
                                 temp1.CopyTo(bigBuffer, temp.Length);
                                 int realLength = pngStream.Read(bigBuffer, temp.Length + temp1.Length, bigBuffer.Length - temp.Length - temp1.Length);
-                                Debug.WriteLine(realLength);
+                                //Debug.WriteLine(realLength);
                                 client.SendPackage(9, bigBuffer, 0, realLength + temp.Length + temp1.Length);
                             }
                         } else {
@@ -700,7 +768,7 @@ namespace QinDevilClient {
             }
         }
         private void OnConnectionBreak() {
-            Debug.WriteLine("断开！");
+            //Debug.WriteLine("断开！");
             startPing = false;
             Connecting = false;
             gameData.Ping = 9999;

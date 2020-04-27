@@ -1,0 +1,45 @@
+﻿<Window x:Class="QinDevilTest.FantasyWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:QinDevilTest"
+        mc:Ignorable="d"
+        Title="琴魔副本工具" Height="181" Width="386">
+    <Grid x:Name="GamePanel" >
+        <Viewbox Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <Canvas Width="378" Height="150">
+                <Label Content="Ping：9999ms" Width="102" Height="18" Canvas.Left="10" Canvas.Top="10" Padding="0"/>
+                <Label Content="一号琴" Canvas.Left="10" Canvas.Top="30" Padding="0" Width="82" HorizontalContentAlignment="Center"/>
+                <TextBox Text="123" Width="82" Canvas.Left="10" Canvas.Top="50" InputMethod.IsInputMethodEnabled="False"/>
+                <Label Content="二号琴" Canvas.Left="102" Canvas.Top="30" Padding="0" Width="82" HorizontalContentAlignment="Center"/>
+                <TextBox Text="123" Width="82" Canvas.Left="102" Canvas.Top="50" InputMethod.IsInputMethodEnabled="False" />
+                <Label Content="三号琴" Canvas.Left="194" Canvas.Top="30" Padding="0" Width="82" HorizontalContentAlignment="Center"/>
+                <TextBox Text="123" Width="82" Canvas.Left="194" Canvas.Top="50" InputMethod.IsInputMethodEnabled="False"/>
+                <Label Content="四号琴" Canvas.Left="286" Canvas.Top="30" Padding="0" Width="82" HorizontalContentAlignment="Center"/>
+                <TextBox Text="123" Width="82" Canvas.Left="286" Canvas.Top="50" InputMethod.IsInputMethodEnabled="False"/>
+                <Label Content="宫" Background="Red" Canvas.Left="10" Canvas.Top="72" Padding="0" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="18"></Label>
+                <Label Content="宫" Background="Red" Canvas.Left="39" Canvas.Top="72" Padding="0" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="18"></Label>
+                <Label Content="宫" Background="Red" Canvas.Left="68" Canvas.Top="72" Padding="0" FontWeight="Bold" Foreground="White" Width="24" Height="24" FontSize="18" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"></Label>
+                <Label Content="宫" Background="Red" Canvas.Left="102" Canvas.Top="72" Padding="0" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="18"></Label>
+                <Label Content="宫" Background="Red" Canvas.Left="131" Canvas.Top="72" Padding="0" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="18"></Label>
+                <Label Content="宫" Background="Red" Canvas.Left="160" Canvas.Top="72" Padding="0" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="18"></Label>
+                <Label Content="宫" Background="Red" Canvas.Left="194" Canvas.Top="72" Padding="0" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="18"></Label>
+                <Label Content="宫" Background="Red" Canvas.Left="223" Canvas.Top="72" Padding="0" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="18"></Label>
+                <Label Content="宫" Background="Red" Canvas.Left="252" Canvas.Top="72" Padding="0" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="18"></Label>
+                <Label Content="宫" Background="Red" Canvas.Left="286" Canvas.Top="72" Padding="0" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="18"></Label>
+                <Label Content="宫" Background="Red" Canvas.Left="315" Canvas.Top="72" Padding="0" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="18"></Label>
+                <Label Content="宫" Background="Red" Canvas.Left="344" Canvas.Top="72" Padding="0" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="18"></Label>
+                <Label Content="琴上剩余对比：9 8 7 6 5 4 3 2 1" Canvas.Left="10" Canvas.Top="101" Padding="0" FontSize="14"/>
+                <Label Content="需要弹琴数字：1 2 3 4 5 5 4 3 2" Canvas.Left="10" Canvas.Top="124" Padding="0" FontSize="14"/>
+                <CheckBox x:Name="Autoplay" Content="自动弹琴" Canvas.Left="223" Canvas.Top="10" />
+                <ComboBox Height="20" Canvas.Left="296" Width="72" SelectedIndex="0" Canvas.Top="7">
+                    <ComboBoxItem Content="一号琴"></ComboBoxItem>
+                    <ComboBoxItem Content="二号琴"></ComboBoxItem>
+                    <ComboBoxItem Content="三号琴"></ComboBoxItem>
+                    <ComboBoxItem Content="四号琴"></ComboBoxItem>
+                </ComboBox>
+            </Canvas>
+        </Viewbox>
+    </Grid>
+</Window>

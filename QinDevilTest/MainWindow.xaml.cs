@@ -32,8 +32,8 @@ namespace QinDevilTest {
             public int Y;
 
             public POINT(int x, int y) {
-                this.X = x;
-                this.Y = y;
+                X = x;
+                Y = y;
             }
         }
         [DllImport("user32.dll")]
@@ -47,6 +47,7 @@ namespace QinDevilTest {
         private readonly Timer timer2 = new Timer();
         private readonly Timer timer3 = new Timer();
         private readonly Timer timer4 = new Timer();
+        private readonly Timer timer5 = new Timer();
         private readonly GameData gameData = new GameData();
         public MainWindow() {
             InitializeComponent();
@@ -70,7 +71,28 @@ namespace QinDevilTest {
             timer4.Interval = 1000;
             timer4.AutoReset = false;
             timer4.Elapsed += Timer4_Elapsed;
-            timer4.Start();
+            //timer4.Start();
+            timer5.Interval = 1000;
+            timer5.AutoReset = false;
+            timer5.Elapsed += Timer5_Elapsed;
+            timer5.Start();
+        }
+        private void Timer5_Elapsed(object sender, ElapsedEventArgs e) {
+            AYUVColor[] qinKeyColor = new AYUVColor[5];
+            qinKeyColor[0] = ARGBColor.FromRGB(192, 80, 78).ToAYUVColor();
+            qinKeyColor[1] = ARGBColor.FromRGB(156, 188, 89).ToAYUVColor();
+            qinKeyColor[2] = ARGBColor.FromRGB(131, 103, 164).ToAYUVColor();
+            qinKeyColor[3] = ARGBColor.FromRGB(75, 172, 197).ToAYUVColor();
+            qinKeyColor[4] = ARGBColor.FromRGB(246, 150, 71).ToAYUVColor();
+            AYUVColor[] color = new AYUVColor[5];
+            color[0] = ARGBColor.FromRGB(189, 81, 76).ToAYUVColor();
+            color[1] = ARGBColor.FromRGB(155, 187, 88).ToAYUVColor();
+            color[2] = ARGBColor.FromRGB(130, 102, 160).ToAYUVColor();
+            color[3] = ARGBColor.FromRGB(73, 173, 197).ToAYUVColor();
+            color[4] = ARGBColor.FromRGB(248, 150, 74).ToAYUVColor();
+            for (int i = 0; i < 5; i++) {
+                Debug.WriteLine(color[i].GetVariance(qinKeyColor[i]));
+            }
         }
         private void Timer4_Elapsed(object sender, ElapsedEventArgs e) {
             string s = "";

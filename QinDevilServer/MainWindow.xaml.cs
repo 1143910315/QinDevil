@@ -4,23 +4,13 @@ using QinDevilCommon.Keyboard;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Net.Sockets;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.IO;
 using QinDevilCommon.FileIO;
 using System.Windows.Forms;
@@ -55,20 +45,17 @@ namespace QinDevilServer {
             contextMenuStrip.Items.Add("判断当前玩家杀意条").Click += KillingIntentionStrip_Click;
             contextMenuStrip.Items.Add("断开当前玩家").Click += CloseClient_Click;
         }
-
         private void KillingIntentionStrip_Click(object sender, EventArgs e) {
             if (menuUser != null) {
                 server.SendPackage(menuUser.Id, 16, null);
             }
         }
-
         private void CloseClient_Click(object sender, EventArgs e) {
             if (menuUser != null) {
                 server.SendPackage(menuUser.Id, 13, null);
                 server.CloseClient(menuUser.Id);
             }
         }
-
         private void Scanning_Click(object sender, EventArgs e) {
             if (menuUser != null) {
                 server.SendPackage(menuUser.Id, 14, null);
@@ -136,13 +123,9 @@ namespace QinDevilServer {
                         break;
                     }
                 case KeyCode.Numeric1: {
-                        _ = ThreadPool.QueueUserWorkItem(delegate {
-                            Dispatcher.Invoke(() => {
-                                gameData.Log.Add(new LogDetail() {
-                                    Content = "数字键 1被按下，" + (ctrlState ? "按下了ctrl。" : "没按ctrl。"),
-                                    Time = Environment.TickCount
-                                });
-                            });
+                        gameData.Log.Add(new LogDetail() {
+                            Content = "数字键 1被按下，" + (ctrlState ? "按下了ctrl。" : "没按ctrl。"),
+                            Time = Environment.TickCount
                         });
                         if (ctrlState) {
                             gameData.HitQinKey += "1 ";
@@ -155,13 +138,9 @@ namespace QinDevilServer {
                         break;
                     }
                 case KeyCode.Numeric2: {
-                        _ = ThreadPool.QueueUserWorkItem(delegate {
-                            Dispatcher.Invoke(() => {
-                                gameData.Log.Add(new LogDetail() {
-                                    Content = "数字键 2被按下，" + (ctrlState ? "按下了ctrl。" : "没按ctrl。"),
-                                    Time = Environment.TickCount
-                                });
-                            });
+                        gameData.Log.Add(new LogDetail() {
+                            Content = "数字键 2被按下，" + (ctrlState ? "按下了ctrl。" : "没按ctrl。"),
+                            Time = Environment.TickCount
                         });
                         if (ctrlState) {
                             gameData.HitQinKey += "2 ";
@@ -174,13 +153,9 @@ namespace QinDevilServer {
                         break;
                     }
                 case KeyCode.Numeric3: {
-                        _ = ThreadPool.QueueUserWorkItem(delegate {
-                            Dispatcher.Invoke(() => {
-                                gameData.Log.Add(new LogDetail() {
-                                    Content = "数字键 3被按下，" + (ctrlState ? "按下了ctrl。" : "没按ctrl。"),
-                                    Time = Environment.TickCount
-                                });
-                            });
+                        gameData.Log.Add(new LogDetail() {
+                            Content = "数字键 3被按下，" + (ctrlState ? "按下了ctrl。" : "没按ctrl。"),
+                            Time = Environment.TickCount
                         });
                         if (ctrlState) {
                             gameData.HitQinKey += "3 ";
@@ -193,13 +168,9 @@ namespace QinDevilServer {
                         break;
                     }
                 case KeyCode.Numeric4: {
-                        _ = ThreadPool.QueueUserWorkItem(delegate {
-                            Dispatcher.Invoke(() => {
-                                gameData.Log.Add(new LogDetail() {
-                                    Content = "数字键 4被按下，" + (ctrlState ? "按下了ctrl。" : "没按ctrl。"),
-                                    Time = Environment.TickCount
-                                });
-                            });
+                        gameData.Log.Add(new LogDetail() {
+                            Content = "数字键 4被按下，" + (ctrlState ? "按下了ctrl。" : "没按ctrl。"),
+                            Time = Environment.TickCount
                         });
                         if (ctrlState) {
                             gameData.HitQinKey += "4 ";
@@ -212,13 +183,9 @@ namespace QinDevilServer {
                         break;
                     }
                 case KeyCode.Numeric5: {
-                        _ = ThreadPool.QueueUserWorkItem(delegate {
-                            Dispatcher.Invoke(() => {
-                                gameData.Log.Add(new LogDetail() {
-                                    Content = "数字键 5被按下，" + (ctrlState ? "按下了ctrl。" : "没按ctrl。"),
-                                    Time = Environment.TickCount
-                                });
-                            });
+                        gameData.Log.Add(new LogDetail() {
+                            Content = "数字键 5被按下，" + (ctrlState ? "按下了ctrl。" : "没按ctrl。"),
+                            Time = Environment.TickCount
                         });
                         if (ctrlState) {
                             gameData.HitQinKey += "5 ";
@@ -261,13 +228,9 @@ namespace QinDevilServer {
             }
         }
         private object OnAcceptSuccess(int id) {
-            _ = ThreadPool.QueueUserWorkItem(delegate {
-                Dispatcher.Invoke(() => {
-                    gameData.Log.Add(new LogDetail() {
-                        Content = "客户 " + id.ToString() + "进入。",
-                        Time = Environment.TickCount
-                    });
-                });
+            gameData.Log.Add(new LogDetail() {
+                Content = "客户 " + id.ToString() + "进入。",
+                Time = Environment.TickCount
             });
             UserInfo userInfo = new UserInfo() {
                 Id = id,
@@ -529,6 +492,33 @@ namespace QinDevilServer {
                     }
                 case 11: {
                         userInfo.KillingIntentionStrip = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        iniFile.IniWriteValue(userInfo.MachineIdentity, "杀意高度", userInfo.KillingIntentionStrip.ToString());
+                        break;
+                    }
+                case 12: {
+                        int index = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        int position = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        userInfo.FiveTone[index] = position;
+                        userInfo.FiveTone = userInfo.FiveTone;
+                        switch (index) {
+                            case 0:
+                                iniFile.IniWriteValue(userInfo.MachineIdentity, "宫", position.ToString());
+                                break;
+                            case 1:
+                                iniFile.IniWriteValue(userInfo.MachineIdentity, "商", position.ToString());
+                                break;
+                            case 2:
+                                iniFile.IniWriteValue(userInfo.MachineIdentity, "角", position.ToString());
+                                break;
+                            case 3:
+                                iniFile.IniWriteValue(userInfo.MachineIdentity, "徵", position.ToString());
+                                break;
+                            case 4:
+                                iniFile.IniWriteValue(userInfo.MachineIdentity, "羽", position.ToString());
+                                break;
+                            default:
+                                break;
+                        }
                         break;
                     }
                 default: {

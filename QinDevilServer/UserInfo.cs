@@ -63,5 +63,10 @@ namespace QinDevilServer {
             get => _killingIntentionStrip;
             set => Set(ref _killingIntentionStrip, value);
         }
+        private readonly int[] _fiveTone = new int[5];
+        public int[] FiveTone {
+            get => _fiveTone;
+            set => Update();
+        }
     }
 }
