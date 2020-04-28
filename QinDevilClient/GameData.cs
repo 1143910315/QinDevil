@@ -75,7 +75,7 @@ namespace QinDevilClient {
             get => _time;
             set => Set(ref _time, value);
         }
-        private int[] _fiveTone = new int[5];
+        private int[] _fiveTone = new int[] { 99999, 99999, 99999, 99999, 99999 };
         public int[] FiveTone {
             get => _fiveTone;
             set => Set(ref _fiveTone, value);

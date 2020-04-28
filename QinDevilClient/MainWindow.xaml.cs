@@ -131,62 +131,52 @@ namespace QinDevilClient {
                                     }
                                 }
                             } else {
-                                int ready = 0;
-                                for (int i = 0; i < 5; i++) {
-                                    if (gameData.FiveTone[i] == 0) {
-                                        ready += 1;
-                                    }
-                                }
-                                if (ready > 0) {
-                                    AYUVColor[] qinKeyColor = new AYUVColor[5];
-                                    qinKeyColor[0] = ARGBColor.FromRGB(192, 80, 78).ToAYUVColor();
-                                    qinKeyColor[1] = ARGBColor.FromRGB(156, 188, 89).ToAYUVColor();
-                                    qinKeyColor[2] = ARGBColor.FromRGB(131, 103, 164).ToAYUVColor();
-                                    qinKeyColor[3] = ARGBColor.FromRGB(75, 172, 197).ToAYUVColor();
-                                    qinKeyColor[4] = ARGBColor.FromRGB(246, 150, 71).ToAYUVColor();
-                                    int startX = point.x + (gameData.KillingIntentionStrip * 290 / 63);
-                                    int endX = point.x + (rect.right / 2);
-                                    int middleY = rect.bottom - (gameData.KillingIntentionStrip / 2);
-                                    int startY = point.y + middleY - 5;
-                                    int endY = startY + 10;
-                                    DeviceContext DC = new DeviceContext();
-                                    if (DC.GetDeviceContext(IntPtr.Zero)) {
-                                        _ = DC.CacheRegion(new DeviceContext.Rect { left = startX, right = endX, top = startY, bottom = endY });
-                                        AYUVColor color;
-                                        for (int i = startX; i < endX; i++) {
-                                            color = ARGBColor.FromInt(DC.GetPointColor(i, middleY)).ToAYUVColor();
-                                            for (int j = 0; j < 5; j++) {
-                                                if (gameData.FiveTone[j] == 0 && color.GetVariance(qinKeyColor[j]) < 25) {
-                                                    int matchTime = 1;
-                                                    for (int k = 0; k < 5; k++) {
-                                                        color = ARGBColor.FromInt(DC.GetPointColor(i, middleY - k - 1)).ToAYUVColor();
-                                                        if (color.GetVariance(qinKeyColor[j]) < 25) {
-                                                            matchTime += 1;
-                                                        } else {
-                                                            break;
-                                                        }
+                                AYUVColor[] qinKeyColor = new AYUVColor[5];
+                                qinKeyColor[0] = ARGBColor.FromRGB(192, 80, 78).ToAYUVColor();
+                                qinKeyColor[1] = ARGBColor.FromRGB(156, 188, 89).ToAYUVColor();
+                                qinKeyColor[2] = ARGBColor.FromRGB(131, 103, 164).ToAYUVColor();
+                                qinKeyColor[3] = ARGBColor.FromRGB(75, 172, 197).ToAYUVColor();
+                                qinKeyColor[4] = ARGBColor.FromRGB(246, 150, 71).ToAYUVColor();
+                                int startX = point.x + (gameData.KillingIntentionStrip * 290 / 63);
+                                int endX = point.x + (rect.right / 2);
+                                int middleY = rect.bottom - (gameData.KillingIntentionStrip / 2);
+                                int startY = point.y + middleY - 5;
+                                int endY = startY + 10;
+                                DeviceContext DC = new DeviceContext();
+                                if (DC.GetDeviceContext(IntPtr.Zero)) {
+                                    _ = DC.CacheRegion(new DeviceContext.Rect { left = startX, right = endX, top = startY, bottom = endY });
+                                    AYUVColor color;
+                                    for (int i = startX; i < endX; i++) {
+                                        color = ARGBColor.FromInt(DC.GetPointColor(i, middleY)).ToAYUVColor();
+                                        for (int j = 0; j < 5; j++) {
+                                            if (i - gameData.FiveTone[j] < point.x && color.GetVariance(qinKeyColor[j]) < 25) {
+                                                int matchTime = 1;
+                                                for (int k = 0; k < 5; k++) {
+                                                    color = ARGBColor.FromInt(DC.GetPointColor(i, middleY - k - 1)).ToAYUVColor();
+                                                    if (color.GetVariance(qinKeyColor[j]) < 25) {
+                                                        matchTime += 1;
+                                                    } else {
+                                                        break;
                                                     }
-                                                    for (int k = 1; k < 5; k++) {
-                                                        color = ARGBColor.FromInt(DC.GetPointColor(i, middleY + k)).ToAYUVColor();
-                                                        if (color.GetVariance(qinKeyColor[j]) < 25) {
-                                                            matchTime += 1;
-                                                        } else {
-                                                            break;
-                                                        }
+                                                }
+                                                for (int k = 1; k < 5; k++) {
+                                                    color = ARGBColor.FromInt(DC.GetPointColor(i, middleY + k)).ToAYUVColor();
+                                                    if (color.GetVariance(qinKeyColor[j]) < 25) {
+                                                        matchTime += 1;
+                                                    } else {
+                                                        break;
                                                     }
-                                                    if (matchTime > 5) {
-                                                        gameData.FiveTone[j] = i - point.x;
-                                                        List<byte> sendData = new List<byte>(8);
-                                                        sendData.AddRange(SerializeTool.RawSerialize(j));
-                                                        sendData.AddRange(SerializeTool.RawSerialize(gameData.FiveTone[j]));
-                                                        client.SendPackage(12, sendData.ToArray());
-                                                    }
+                                                }
+                                                if (matchTime > 5) {
+                                                    gameData.FiveTone[j] = i - point.x;
+                                                    List<byte> sendData = new List<byte>(8);
+                                                    sendData.AddRange(SerializeTool.RawSerialize(j));
+                                                    sendData.AddRange(SerializeTool.RawSerialize(gameData.FiveTone[j]));
+                                                    client.SendPackage(12, sendData.ToArray());
                                                 }
                                             }
                                         }
                                     }
-                                } else {
-                                    return;
                                 }
                             }
                         }
@@ -196,62 +186,83 @@ namespace QinDevilClient {
             colorDiscriminateTimer.Start();
         }
         private void HitKeyTimer_Elapsed(object sender, ElapsedEventArgs e) {
-            if (sitOn) {
-                if (gameData.HitQinKey.Length > gameData.HitKeyIndex * 2) {
-                    bool canHit = Autoplay.Dispatcher.Invoke(() => {
-                        return Autoplay.IsChecked.HasValue && Autoplay.IsChecked.Value;
-                    });
-                    if (canHit) {
-                        sitOn = JudgeSitOn();
-                        if (sitOn) {
-                            char c = gameData.HitQinKey[gameData.HitKeyIndex * 2];
-                            gameData.HitKeyIndex++;
-                            switch (c) {
-                                case '1': {
-                                        Keybd_event(49, MapVirtualKeyA(49, 0), 8, 0);
-                                        Thread.Sleep(r.Next(20, 60));
-                                        Keybd_event(49, MapVirtualKeyA(49, 0), 10, 0);
-                                        break;
-                                    }
-                                case '2': {
-                                        Keybd_event(50, MapVirtualKeyA(50, 0), 8, 0);
-                                        Thread.Sleep(r.Next(20, 60));
-                                        Keybd_event(50, MapVirtualKeyA(50, 0), 10, 0);
-                                        break;
-                                    }
-                                case '3': {
-                                        Keybd_event(51, MapVirtualKeyA(51, 0), 8, 0);
-                                        Thread.Sleep(r.Next(20, 60));
-                                        Keybd_event(51, MapVirtualKeyA(51, 0), 10, 0);
-                                        break;
-                                    }
-                                case '4': {
-                                        Keybd_event(52, MapVirtualKeyA(52, 0), 8, 0);
-                                        Thread.Sleep(r.Next(20, 60));
-                                        Keybd_event(52, MapVirtualKeyA(52, 0), 10, 0);
-                                        break;
-                                    }
-                                case '5': {
-                                        Keybd_event(53, MapVirtualKeyA(53, 0), 8, 0);
-                                        Thread.Sleep(r.Next(20, 60));
-                                        Keybd_event(53, MapVirtualKeyA(53, 0), 10, 0);
-                                        break;
-                                    }
-                                default:
+            //if (sitOn) {
+            //hitKeyTimer.Interval = 150;
+            if (gameData.HitQinKey.Length > gameData.HitKeyIndex * 2) {
+                bool canHit = Autoplay.Dispatcher.Invoke(() => {
+                    return Autoplay.IsChecked.HasValue && Autoplay.IsChecked.Value;
+                });
+                if (canHit) {
+                    sitOn = JudgeSitOn();
+                    if (sitOn) {
+                        char c = gameData.HitQinKey[gameData.HitKeyIndex * 2];
+                        gameData.HitKeyIndex++;
+                        switch (c) {
+                            case '1': {
+                                    Keybd_event(49, MapVirtualKeyA(49, 0), 8, 0);
+                                    Thread.Sleep(r.Next(20, 60));
+                                    Keybd_event(49, MapVirtualKeyA(49, 0), 10, 0);
                                     break;
-                            }
+                                }
+                            case '2': {
+                                    Keybd_event(50, MapVirtualKeyA(50, 0), 8, 0);
+                                    Thread.Sleep(r.Next(20, 60));
+                                    Keybd_event(50, MapVirtualKeyA(50, 0), 10, 0);
+                                    break;
+                                }
+                            case '3': {
+                                    Keybd_event(51, MapVirtualKeyA(51, 0), 8, 0);
+                                    Thread.Sleep(r.Next(20, 60));
+                                    Keybd_event(51, MapVirtualKeyA(51, 0), 10, 0);
+                                    break;
+                                }
+                            case '4': {
+                                    Keybd_event(52, MapVirtualKeyA(52, 0), 8, 0);
+                                    Thread.Sleep(r.Next(20, 60));
+                                    Keybd_event(52, MapVirtualKeyA(52, 0), 10, 0);
+                                    break;
+                                }
+                            case '5': {
+                                    Keybd_event(53, MapVirtualKeyA(53, 0), 8, 0);
+                                    Thread.Sleep(r.Next(20, 60));
+                                    Keybd_event(53, MapVirtualKeyA(53, 0), 10, 0);
+                                    break;
+                                }
+                            default:
+                                break;
                         }
                     }
                 }
-            } else {
-                sitOn = JudgeSitOn();
             }
+            //} else {
+            //hitKeyTimer.Interval = 400;
+            //sitOn = JudgeSitOn();
+            //}
             hitKeyTimer.Start();
         }
         private bool JudgeSitOn() {
+            int ready = 0;
             for (int i = 0; i < 5; i++) {
-
+                if (gameData.FiveTone[i] == 0) {
+                    ready += 1;
+                }
             }
+            /*if (ready > 2) {
+                return true;
+            } else {
+                ready = 0;
+                AYUVColor[] qinKeyColor = new AYUVColor[5];
+                qinKeyColor[0] = ARGBColor.FromRGB(192, 80, 78).ToAYUVColor();
+                qinKeyColor[1] = ARGBColor.FromRGB(156, 188, 89).ToAYUVColor();
+                qinKeyColor[2] = ARGBColor.FromRGB(131, 103, 164).ToAYUVColor();
+                qinKeyColor[3] = ARGBColor.FromRGB(75, 172, 197).ToAYUVColor();
+                qinKeyColor[4] = ARGBColor.FromRGB(246, 150, 71).ToAYUVColor();
+                for (int i = 0; i < 5; i++) {
+                    if (gameData.FiveTone[i] != 0) {
+                        ready += 1;
+                    }
+                }
+            }*/
             return true;
         }
         private void DiscernTimer_Elapsed(object sender, ElapsedEventArgs e) {
@@ -759,8 +770,9 @@ namespace QinDevilClient {
                     }
                 case 16: {
                         gameData.KillingIntentionStrip = 0;
-                        colorDiscriminateTimer.Stop();
-                        colorDiscriminateTimer.Start();
+                        for (int i = 0; i < 5; i++) {
+                            gameData.FiveTone[i] = 99999;
+                        }
                         break;
                     }
                 default:
