@@ -15,5 +15,11 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+        <Setter Property="WindowChrome.WindowChrome">
+            <Setter.Value>
+                <WindowChrome UseAeroCaptionButtons="False"
+                      CaptionHeight="{Binding Path=(SystemParameters.WindowNonClientFrameThickness).Top}" />
+            </Setter.Value>
+        </Setter>
     </Style>
 </ResourceDictionary>
