@@ -33,6 +33,7 @@ using QinDevilCommon.ColorClass;
 using System.Windows.Forms;
 using TextBox = System.Windows.Controls.TextBox;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
+using Cursors = System.Windows.Input.Cursors;
 
 namespace QinDevilClient {
     /// <summary>
@@ -959,6 +960,33 @@ namespace QinDevilClient {
         private void TextBox_PreviewKeyDown(object sender, KeyEventArgs e) {
             if (e.Key == Key.Space) {
                 e.Handled = true;
+            }
+        }
+        private void Image_MouseDown(object sender, MouseButtonEventArgs e) {
+            DragMove();
+        }
+        private void Window_MouseMove(object sender, System.Windows.Input.MouseEventArgs e) {
+            Point point = e.GetPosition(this);
+            if (point.Y < 5) {
+                if (point.X < 5) {
+                    Cursor = Cursors.SizeNWSE;
+                } else if (point.X > ActualWidth - 5) {
+                    Cursor = Cursors.SizeNESW;
+                } else {
+                    Cursor = Cursors.SizeNS;
+                }
+            } else if (point.Y > ActualHeight - 5) {
+                if (point.X < 5) {
+                    Cursor = Cursors.SizeNESW;
+                } else if (point.X > ActualWidth - 5) {
+                    Cursor = Cursors.SizeNWSE;
+                } else {
+                    Cursor = Cursors.SizeNS;
+                }
+            } else if (point.X < 5 || point.X > ActualWidth - 5) {
+                Cursor = Cursors.SizeWE;
+            } else {
+                Cursor = Cursors.Arrow;
             }
         }
     }

@@ -130,6 +130,12 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="head.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="border.png" />
+  </ItemGroup>
   <Import Project="..\QinDevilCommon\QinDevilCommon.projitems" Label="Shared" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

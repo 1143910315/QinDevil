@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:QinDevilClient"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
-        Title="琴魔副本工具" Height="181" Width="386" Loaded="Window_Loaded" Topmost="True" Background="{x:Null}" WindowStartupLocation="CenterScreen" WindowStyle="None" AllowsTransparency="True">
+        Title="琴魔副本工具" Width="388" Loaded="Window_Loaded" Topmost="True" Background="{x:Null}" WindowStartupLocation="CenterScreen" WindowStyle="None" AllowsTransparency="True" SizeToContent="Height" MouseMove="Window_MouseMove">
     <Window.Resources>
         <local:QinKeyConverter x:Key="QinKey"/>
         <sys:Int32 x:Key="one">1</sys:Int32>
@@ -38,8 +38,22 @@
         </EventTrigger>
     </Window.Triggers>-->
     <Grid x:Name="GamePanel" d:DataContext="{d:DesignInstance local:GameData}" >
-        <Viewbox Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Top">
-            <Canvas Width="378" Height="150">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="5"></ColumnDefinition>
+            <ColumnDefinition Width="*"></ColumnDefinition>
+            <ColumnDefinition Width="5"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"></RowDefinition>
+            <RowDefinition Height="auto"></RowDefinition>
+            <RowDefinition Height="5"></RowDefinition>
+        </Grid.RowDefinitions>
+        <Image Source="head.png" Grid.ColumnSpan="3" MouseDown="Image_MouseDown"></Image>
+        <Image Source="border.png" Grid.Row="1" Grid.Column="0" Stretch="UniformToFill"></Image>
+        <Image Source="border.png" Grid.Row="1" Grid.Column="2" Stretch="UniformToFill"></Image>
+        <Image Source="border.png" Grid.Row="2" Grid.ColumnSpan="3" Stretch="UniformToFill"></Image>
+        <Viewbox Stretch="Uniform" VerticalAlignment="Top" Grid.Row="1" Grid.Column="1">
+            <Canvas Width="378" Height="150" Background="White">
                 <Label Name="ping" Content="{Binding Ping}" ContentStringFormat="Ping：{0}ms" Width="102" Height="18" Canvas.Left="10" Canvas.Top="10" Padding="0" RenderTransformOrigin="0.49,0.533"/>
                 <Label Content="一号琴" Canvas.Left="10" Canvas.Top="30" Padding="0" Width="82" HorizontalContentAlignment="Center"/>
                 <TextBox Text="{Binding No1Qin,UpdateSourceTrigger=PropertyChanged,NotifyOnSourceUpdated=True}" Width="82" Canvas.Left="10" Canvas.Top="50" InputMethod.IsInputMethodEnabled="False" PreviewTextInput="TextBox_PreviewTextInput" SourceUpdated="TextBox_SourceUpdated" PreviewKeyDown="TextBox_PreviewKeyDown"/>
