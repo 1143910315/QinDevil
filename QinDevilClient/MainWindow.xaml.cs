@@ -139,8 +139,8 @@ namespace QinDevilClient {
                                 qinKeyColor[4] = ARGBColor.FromRGB(246, 150, 71).ToAYUVColor();
                                 int startX = point.x + (gameData.KillingIntentionStrip * 290 / 63);
                                 int endX = point.x + (rect.right / 2);
-                                int middleY = rect.bottom - (gameData.KillingIntentionStrip / 2);
-                                int startY = point.y + middleY - 5;
+                                int middleY = point.y + rect.bottom - (gameData.KillingIntentionStrip / 2);
+                                int startY = middleY - 5;
                                 int endY = startY + 10;
                                 DeviceContext DC = new DeviceContext();
                                 if (DC.GetDeviceContext(IntPtr.Zero)) {
