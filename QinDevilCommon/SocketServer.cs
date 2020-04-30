@@ -93,7 +93,7 @@ namespace QinDevilCommon {
             }
         }
         public void CloseClient(int id) {
-            socketList.Get(id).Close(2);
+            socketList.Get(id)?.Close(2);
         }
         private void SendCallback(IAsyncResult ar) {
             Socket s = socketList.Get(ar.AsyncState);

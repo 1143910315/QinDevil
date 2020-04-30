@@ -39,6 +39,7 @@ namespace QinDevilCommon {
         internal void Delete(object id) {
             hashtable.Remove(id);
             data.Remove(id);
+            Debug.WriteLine("delete " + id.ToString());
         }
         internal (int, byte[]) GetDataAndDelete(object id) {
             byte[] buffer = null;

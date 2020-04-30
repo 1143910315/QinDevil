@@ -521,6 +521,14 @@ namespace QinDevilServer {
                         }
                         break;
                     }
+                case 13: {
+                        string lessKey = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                        gameData.Log.Add(new LogDetail() {
+                            Content = userInfo.Remark + " 推测缺 " + lessKey,
+                            Time = Environment.TickCount
+                        });
+                        break;
+                    }
                 default: {
                         Debug.WriteLine("error");
                         break;
@@ -540,6 +548,7 @@ namespace QinDevilServer {
                             gameData.ClientInfo.Del(i);
                         }
                     }
+                    Debug.WriteLine("leave");
                 });
             });
         }
