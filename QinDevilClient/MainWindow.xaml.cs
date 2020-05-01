@@ -305,12 +305,12 @@ namespace QinDevilClient {
                                             AYUVColor color = ARGBColor.FromInt(DC.GetPointColor(point.x + gameData.FiveTone[i], point.y + rect.bottom - (gameData.KillingIntentionStrip / 2))).ToAYUVColor();
                                             if (color.GetVariance(qinKeyColor[i]) < 25) {
                                                 success++;
-                                            } else {
+                                            } else if (i == 3 || color.GetVariance(qinKeyColor[i + 5]) < 25) {
                                                 fail++;
                                                 lessKey += (i + 1).ToString();
                                             }
                                         }
-                                        if (success > 1 && fail > 0) {
+                                        if (success + fail == 5) {
                                             client.SendPackage(13, SerializeTool.RawSerializeForUTF8String(lessKey));
                                             return;
                                         }
