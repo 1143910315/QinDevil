@@ -285,19 +285,24 @@ namespace QinDevilClient {
                             };
                             if (WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point)) {
                                 if (gameData.KillingIntentionStrip != 0) {
-                                    AYUVColor[] qinKeyColor = new AYUVColor[5];
+                                    AYUVColor[] qinKeyColor = new AYUVColor[10];
                                     qinKeyColor[0] = ARGBColor.FromRGB(192, 80, 78).ToAYUVColor();
                                     qinKeyColor[1] = ARGBColor.FromRGB(156, 188, 89).ToAYUVColor();
                                     qinKeyColor[2] = ARGBColor.FromRGB(131, 103, 164).ToAYUVColor();
                                     qinKeyColor[3] = ARGBColor.FromRGB(75, 172, 197).ToAYUVColor();
                                     qinKeyColor[4] = ARGBColor.FromRGB(246, 150, 71).ToAYUVColor();
+                                    qinKeyColor[5] = ARGBColor.FromRGB(48, 20, 19).ToAYUVColor();
+                                    qinKeyColor[6] = ARGBColor.FromRGB(39, 47, 22).ToAYUVColor();
+                                    qinKeyColor[7] = ARGBColor.FromRGB(32, 25, 40).ToAYUVColor();
+                                    qinKeyColor[8] = ARGBColor.FromRGB(75, 172, 197).ToAYUVColor();
+                                    qinKeyColor[9] = ARGBColor.FromRGB(62, 37, 18).ToAYUVColor();
                                     DeviceContext DC = new DeviceContext();
                                     if (DC.GetDeviceContext(IntPtr.Zero)) {
                                         int success = 0;
                                         int fail = 0;
                                         string lessKey = "";
                                         for (int i = 0; i < 5; i++) {
-                                            AYUVColor color = ARGBColor.FromInt(DC.GetPointColor(gameData.FiveTone[i], point.y + rect.bottom - (gameData.KillingIntentionStrip / 2))).ToAYUVColor();
+                                            AYUVColor color = ARGBColor.FromInt(DC.GetPointColor(point.x + gameData.FiveTone[i], point.y + rect.bottom - (gameData.KillingIntentionStrip / 2))).ToAYUVColor();
                                             if (color.GetVariance(qinKeyColor[i]) < 25) {
                                                 success++;
                                             } else {
