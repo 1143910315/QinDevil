@@ -76,7 +76,7 @@ namespace QinDevilServer {
                 server.SendPackage(gameData.ClientInfo.Get(i).Id, 9, null);
             }
         }
-        private void AllowAutoplay_Click(object sender, RoutedEventArgs e) {
+        private void AllowAutoPlay_Click(object sender, RoutedEventArgs e) {
             if (sender is MenuItem menuItem) {
                 //menuItem.IsChecked = true; 
                 byte[] sendData = menuItem.IsChecked ? SerializeTool.RawSerialize((byte)1) : SerializeTool.RawSerialize((byte)0);
@@ -84,6 +84,9 @@ namespace QinDevilServer {
                     server.SendPackage(gameData.ClientInfo.Get(i).Id, 15, sendData);
                 }
             }
+        }
+        private void AllowAutoLessKey_Click(object sender, RoutedEventArgs e) {
+            gameData.AutoLessKey = !gameData.AutoLessKey;
         }
         private void PrintScreenAll_Click(object sender, EventArgs e) {
             for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
@@ -546,6 +549,15 @@ namespace QinDevilServer {
                             UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
                             server.SendPackage(tempUserInfo.Id, 5, SerializeTool.RawSerialize(tempUserInfo.Id));
                         }
+                        break;
+                    }
+                case 16: {
+                        string lessKey = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                        string lastLessKey = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                        gameData.Log.Add(new LogDetail() {
+                            Content = userInfo.Remark + " 推测缺 " + lastLessKey + " ，但经过核对后缺 " + lessKey,
+                            Time = Environment.TickCount
+                        });
                         break;
                     }
                 default: {
