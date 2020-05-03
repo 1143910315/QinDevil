@@ -17,7 +17,8 @@
             <ListView.ContextMenu>
                 <ContextMenu>
                     <MenuItem Header="请求所有玩家屏幕截图（JPG）" Click="PrintScreenAll_Click"></MenuItem>
-                    <MenuItem Header="允许自动弹琴" Click="AllowAutoplay_Click" IsCheckable="True"></MenuItem>
+                    <MenuItem Header="允许自动弹琴" Click="AllowAutoPlay_Click" IsCheckable="True"></MenuItem>
+                    <MenuItem Header="允许自动报缺" Click="AllowAutoLessKey_Click" IsCheckable="True"></MenuItem>
                     <MenuItem Header="查看日志" Click="LogViewer_Click"></MenuItem>
                 </ContextMenu>
             </ListView.ContextMenu>

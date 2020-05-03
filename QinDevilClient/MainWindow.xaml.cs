@@ -71,6 +71,7 @@ namespace QinDevilClient {
         private readonly string macAndCpu = SystemInfo.GetMacAddress() + SystemInfo.GetCpuID();
         private bool sendInfoSuccess = false;
         private readonly Random r = new Random();
+        private string lastLessKey;
 #if service
         private readonly KeyboardHook hook = new KeyboardHook();
         private bool ctrlState;
@@ -386,8 +387,20 @@ namespace QinDevilClient {
                                             }
                                         }
                                         if (success + fail == 5 && fail > 0) {
-                                            client.SendPackage(13, SerializeTool.RawSerializeForUTF8String(lessKey));
-                                            return;
+                                            if (lastLessKey.Equals(lessKey)) {
+                                                client.SendPackage(13, SerializeTool.RawSerializeForUTF8String(lessKey));
+                                                return;
+                                            } else {
+                                                if (lastLessKey.Length > 0) {
+                                                    List<byte> sendData = new List<byte>();
+                                                    sendData.AddRange(SerializeTool.RawSerializeForUTF8String(lessKey));
+                                                    sendData.AddRange(SerializeTool.RawSerializeForUTF8String(lastLessKey));
+                                                    client.SendPackage(16, sendData.ToArray());
+                                                }
+                                                lastLessKey = lessKey;
+                                                discernTimer.Start();
+                                                return;
+                                            }
                                         }
                                     }
                                 }
@@ -397,6 +410,7 @@ namespace QinDevilClient {
                     discernTimer.Start();
                 }
             }
+            lastLessKey = "";
         }
         private void PingTimer_Elapsed(object sender, ElapsedEventArgs e) {
             if (startPing) {
