@@ -1,4 +1,5 @@
-﻿using QinDevilCommon.ColorClass;
+﻿using AForge.Math;
+using QinDevilCommon.ColorClass;
 using QinDevilCommon.SystemLay;
 using System;
 using System.Collections.Generic;
@@ -76,6 +77,8 @@ namespace QinDevilTest {
             timer5.AutoReset = false;
             timer5.Elapsed += Timer5_Elapsed;
             timer5.Start();
+            /*Complex[] complexs = new Complex[10];
+            FourierTransform.FFT(complexs, FourierTransform.Direction.Forward);*/
         }
         private void Timer5_Elapsed(object sender, ElapsedEventArgs e) {
             AYUVColor[] qinKeyColor = new AYUVColor[5];

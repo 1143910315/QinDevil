@@ -55,6 +55,13 @@ namespace QinDevilClient {
             get => _hitQinKey;
             set => Set(ref _hitQinKey, value);
         }
+#if service
+        private string _hitQinKeyAny = "";
+        public string HitQinKeyAny {
+            get => _hitQinKeyAny;
+            set => Set(ref _hitQinKeyAny, value);
+        }
+#endif
         private string _matchColor = "未就绪";
         public string MatchColor {
             get => _matchColor;

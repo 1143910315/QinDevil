@@ -521,6 +521,33 @@ namespace QinDevilServer {
                         }
                         break;
                     }
+                case 13: {
+                        string lessKey = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                        gameData.Log.Add(new LogDetail() {
+                            Content = userInfo.Remark + " 推测缺 " + lessKey,
+                            Time = Environment.TickCount
+                        });
+                        break;
+                    }
+                case 14: {
+                        gameData.HitQinKey = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                        for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
+                            UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
+                            server.SendPackage(tempUserInfo.Id, 8, buffer);
+                        }
+                        break;
+                    }
+                case 15: {
+                        gameData.No1Qin = gameData.No2Qin = gameData.No3Qin = gameData.No4Qin = gameData.HitQinKey = "";
+                        for (int i = 0; i < 12; i++) {
+                            gameData.QinKey[i] = 0;
+                        }
+                        for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
+                            UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
+                            server.SendPackage(tempUserInfo.Id, 5, SerializeTool.RawSerialize(tempUserInfo.Id));
+                        }
+                        break;
+                    }
                 default: {
                         Debug.WriteLine("error");
                         break;
@@ -540,6 +567,7 @@ namespace QinDevilServer {
                             gameData.ClientInfo.Del(i);
                         }
                     }
+                    Debug.WriteLine("leave");
                 });
             });
         }
