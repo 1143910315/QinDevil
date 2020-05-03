@@ -33,6 +33,9 @@ using QinDevilCommon.ColorClass;
 using System.Windows.Forms;
 using TextBox = System.Windows.Controls.TextBox;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
+#if service
+using QinDevilCommon.Keyboard;
+#endif
 
 namespace QinDevilClient {
     /// <summary>
@@ -67,6 +70,10 @@ namespace QinDevilClient {
         private readonly string macAndCpu = SystemInfo.GetMacAddress() + SystemInfo.GetCpuID();
         private bool sendInfoSuccess = false;
         private readonly Random r = new Random();
+#if service
+        private readonly KeyboardHook hook = new KeyboardHook();
+        private bool ctrlState;
+#endif
         public MainWindow() {
             InitializeComponent();
         }
@@ -97,8 +104,75 @@ namespace QinDevilClient {
             secondTimer.Interval = 1000;
             secondTimer.Elapsed += SecondTimer_Elapsed;
             secondTimer.AutoReset = true;
+#if service
+            hook.KeyDownEvent += KeyDownCallbak;
+            hook.KeyUpEvent += KeyUpCallbak;
+#endif
             Connect();
         }
+#if service
+        private void KeyDownCallbak(KeyCode keyCode) {
+            switch (keyCode) {
+                case KeyCode.VK_LCONTROL: {
+                        ctrlState = true;
+                        break;
+                    }
+                case KeyCode.Numeric1: {
+                        if (ctrlState) {
+                            gameData.HitQinKeyAny += "1 ";
+                            client.SendPackage(14, SerializeTool.RawSerializeForUTF8String(gameData.HitQinKeyAny));
+                        }
+                        break;
+                    }
+                case KeyCode.Numeric2: {
+                        if (ctrlState) {
+                            gameData.HitQinKeyAny += "2 ";
+                            client.SendPackage(14, SerializeTool.RawSerializeForUTF8String(gameData.HitQinKeyAny));
+                        }
+                        break;
+                    }
+                case KeyCode.Numeric3: {
+                        if (ctrlState) {
+                            gameData.HitQinKeyAny += "3 ";
+                            client.SendPackage(14, SerializeTool.RawSerializeForUTF8String(gameData.HitQinKeyAny));
+                        }
+                        break;
+                    }
+                case KeyCode.Numeric4: {
+                        if (ctrlState) {
+                            gameData.HitQinKeyAny += "4 ";
+                            client.SendPackage(14, SerializeTool.RawSerializeForUTF8String(gameData.HitQinKeyAny));
+                        }
+                        break;
+                    }
+                case KeyCode.Numeric5: {
+                        if (ctrlState) {
+                            gameData.HitQinKeyAny += "5 ";
+                            client.SendPackage(14, SerializeTool.RawSerializeForUTF8String(gameData.HitQinKeyAny));
+                        }
+                        break;
+                    }
+                case KeyCode.Numeric7: {
+                        if (ctrlState) {
+                            gameData.HitQinKeyAny = "";
+                            client.SendPackage(15, null);
+                        }
+                        break;
+                    }
+                default:
+                    break;
+            }
+        }
+        private void KeyUpCallbak(KeyCode keyCode) {
+            switch (keyCode) {
+                case KeyCode.VK_LCONTROL:
+                    ctrlState = false;
+                    break;
+                default:
+                    break;
+            }
+        }
+#endif
         private void SecondTimer_Elapsed(object sender, ElapsedEventArgs e) {
             gameData.Time += 1;
         }
@@ -310,7 +384,7 @@ namespace QinDevilClient {
                                                 lessKey += (i + 1).ToString();
                                             }
                                         }
-                                        if (success + fail == 5) {
+                                        if (success + fail == 5 && fail > 0) {
                                             client.SendPackage(13, SerializeTool.RawSerializeForUTF8String(lessKey));
                                             return;
                                         }
