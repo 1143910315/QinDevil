@@ -965,29 +965,28 @@ namespace QinDevilClient {
         private void Image_MouseDown(object sender, MouseButtonEventArgs e) {
             DragMove();
         }
-        private void Window_MouseMove(object sender, System.Windows.Input.MouseEventArgs e) {
-            Point point = e.GetPosition(this);
-            if (point.Y < 5) {
-                if (point.X < 5) {
-                    Cursor = Cursors.SizeNWSE;
-                } else if (point.X > ActualWidth - 5) {
-                    Cursor = Cursors.SizeNESW;
-                } else {
-                    Cursor = Cursors.SizeNS;
-                }
-            } else if (point.Y > ActualHeight - 5) {
-                if (point.X < 5) {
-                    Cursor = Cursors.SizeNESW;
-                } else if (point.X > ActualWidth - 5) {
-                    Cursor = Cursors.SizeNWSE;
-                } else {
-                    Cursor = Cursors.SizeNS;
-                }
-            } else if (point.X < 5 || point.X > ActualWidth - 5) {
-                Cursor = Cursors.SizeWE;
-            } else {
-                Cursor = Cursors.Arrow;
+        private void Image_MouseDown_1(object sender, MouseButtonEventArgs e) {
+            if (sender is Image senderImage) {
+                _ = senderImage.CaptureMouse();
             }
+        }
+        private void Image_MouseMove(object sender, System.Windows.Input.MouseEventArgs e) {
+            if (sender is Image senderImage && senderImage.IsMouseCaptured) {
+                Width = e.GetPosition(this).X;
+            }
+        }
+        private void Image_MouseUp(object sender, MouseButtonEventArgs e) {
+            if (sender is Image senderImage) {
+                senderImage.ReleaseMouseCapture();
+            }
+        }
+        private void Image_MouseMove_1(object sender, System.Windows.Input.MouseEventArgs e) {
+            if (sender is Image senderImage && senderImage.IsMouseCaptured) {
+                Width = (e.GetPosition(this).Y - 1.031746031746) / 0.54263565891473;
+            }
+        }
+        private void Button_Click(object sender, RoutedEventArgs e) {
+            Close();
         }
     }
 }
