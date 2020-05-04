@@ -509,7 +509,12 @@ namespace QinDevilClient {
             //client.Connect("q1143910315.gicp.net", 51814);
             client.Connect("127.0.0.1", 13748);
 #else
+#if service
+            client.Connect("q1143910315.gicp.net", 35126);
+#else
             client.Connect("q1143910315.gicp.net", 51814);
+#endif
+            
 #endif
         }
         private void OnConnected(bool connected) {
