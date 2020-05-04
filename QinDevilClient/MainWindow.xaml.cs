@@ -378,7 +378,7 @@ namespace QinDevilClient {
                                         int fail = 0;
                                         string lessKey = "";
                                         for (int i = 0; i < 5; i++) {
-                                            AYUVColor color = ARGBColor.FromInt(DC.GetPointColor(point.x + gameData.FiveTone[i], point.y + rect.bottom - (gameData.KillingIntentionStrip / 2))).ToAYUVColor();
+                                            AYUVColor color = ARGBColor.FromInt(DC.GetPointColor(point.x + gameData.FiveTone[i] + 2, point.y + rect.bottom - (gameData.KillingIntentionStrip / 2))).ToAYUVColor();
                                             if (color.GetVariance(qinKeyColor[i]) < 25) {
                                                 success++;
                                             } else if (color.GetVariance(qinKeyColor[i + 5]) < 25) {
@@ -386,21 +386,9 @@ namespace QinDevilClient {
                                                 lessKey += (i + 1).ToString();
                                             }
                                         }
-                                        if (success + fail == 5 && fail > 0) {
-                                            if (lastLessKey.Equals(lessKey)) {
-                                                client.SendPackage(13, SerializeTool.RawSerializeForUTF8String(lessKey));
-                                                return;
-                                            } else {
-                                                if (lastLessKey.Length > 0) {
-                                                    List<byte> sendData = new List<byte>();
-                                                    sendData.AddRange(SerializeTool.RawSerializeForUTF8String(lessKey));
-                                                    sendData.AddRange(SerializeTool.RawSerializeForUTF8String(lastLessKey));
-                                                    client.SendPackage(16, sendData.ToArray());
-                                                }
-                                                lastLessKey = lessKey;
-                                                discernTimer.Start();
-                                                return;
-                                            }
+                                        if (success + fail == 5 && fail > 0 && fail < 4 && lastLessKey.Equals(lessKey)) {
+                                            client.SendPackage(13, SerializeTool.RawSerializeForUTF8String(lessKey));
+                                            return;
                                         }
                                     }
                                 }
@@ -522,7 +510,12 @@ namespace QinDevilClient {
             //client.Connect("q1143910315.gicp.net", 51814);
             client.Connect("127.0.0.1", 13748);
 #else
+#if service
+            client.Connect("q1143910315.gicp.net", 35126);
+#else
             client.Connect("q1143910315.gicp.net", 51814);
+#endif
+            
 #endif
         }
         private void OnConnected(bool connected) {
