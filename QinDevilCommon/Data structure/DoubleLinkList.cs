@@ -1,4 +1,5 @@
-﻿using System;
+﻿using QinDevilServer;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -59,6 +60,7 @@ namespace QinDevilCommon.Data_structure {
         private readonly DoubleLinkListNode _linkHead;
         //节点个数
         private int _size;
+        private int sign = 0;
         public event NotifyCollectionChangedEventHandler CollectionChanged;
         public DoubleLinkList() {
             _linkHead = new DoubleLinkListNode();//双向链表 表头为空
@@ -73,8 +75,9 @@ namespace QinDevilCommon.Data_structure {
             }
             if (index < _size / 2) { //正向查找
                 DoubleLinkListNode node = _linkHead.Next;
-                for (int i = 0; i < index; i++)
+                for (int i = 0; i < index; i++) {
                     node = node.Next;
+                }
                 return node;
             }
             //反向查找
@@ -93,16 +96,19 @@ namespace QinDevilCommon.Data_structure {
                 while (index < 0) {
                     index = _size + index;
                 }
-                DoubleLinkListNode inode = GetNode(index);
-                DoubleLinkListNode tnode = new DoubleLinkListNode() {
-                    Data = t,
-                    Prev = inode.Prev,
-                    Next = inode
-                };
-                inode.Prev.Next = tnode;
-                inode.Prev = tnode;
-                _size++;
-                CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, t, index));
+                DoubleLinkListNode inode = GetNode(index).Prev;
+                lock (inode) {
+                    DoubleLinkListNode tnode = new DoubleLinkListNode() {
+                        Data = t,
+                        Prev = inode,
+                        Next = inode.Next
+                    };
+                    sign++;
+                    inode.Next.Prev = tnode;
+                    inode.Next = tnode;
+                    _size++;
+                    CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, t, index));
+                }
             }
         }
         //追加到index位置之后
@@ -119,15 +125,18 @@ namespace QinDevilCommon.Data_structure {
                 }
                 inode = GetNode(index);
             }
-            DoubleLinkListNode tnode = new DoubleLinkListNode() {
-                Data = t,
-                Prev = inode,
-                Next = inode.Next
-            };
-            inode.Next.Prev = tnode;
-            inode.Next = tnode;
-            _size++;
-            CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, t, index + 1));
+            lock (inode) {
+                DoubleLinkListNode tnode = new DoubleLinkListNode() {
+                    Data = t,
+                    Prev = inode,
+                    Next = inode.Next
+                };
+                sign++;
+                inode.Next.Prev = tnode;
+                inode.Next = tnode;
+                _size++;
+                CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, t, index + 1));
+            }
         }
         public void Del(int index) {
             if (_size == 0) {
@@ -140,10 +149,26 @@ namespace QinDevilCommon.Data_structure {
                 index = _size + index;
             }
             DoubleLinkListNode inode = GetNode(index);
-            inode.Prev.Next = inode.Next;
-            inode.Next.Prev = inode.Prev;
-            _size--;
-            CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, inode.Data, index));
+            lock (inode.Prev) {
+                sign++;
+                inode.Prev.Next = inode.Next;
+                inode.Next.Prev = inode.Prev;
+                _size--;
+                CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, inode.Data, index));
+            }
+        }
+        public T[] ToArray() {
+            while (true) {
+                DoubleLinkListNode node = _linkHead.Next;
+                int i = 0, len = _size, oldSign = sign;
+                T[] ts = new T[len];
+                for (; i < len; i++, node = node.Next) {
+                    ts[i] = node.Data;
+                }
+                if (oldSign == sign) {
+                    return ts;
+                }
+            }
         }
         public int GetSize() => _size;
         public bool IsEmpty() => (_size == 0);
@@ -152,14 +177,6 @@ namespace QinDevilCommon.Data_structure {
         public T GetLast() => GetNode(_size - 1).Data;
         public void DelFirst() => Del(0);
         public void DelLast() => Del(-1);
-        public void ShowAll() {
-            Console.WriteLine("******************* 链表数据如下 *******************");
-            for (int i = 0; i < _size; i++) {
-                Console.WriteLine("(" + i + ")=" + Get(i));
-            }
-            Console.WriteLine("******************* 链表数据展示完毕 *******************\n");
-        }
-
         public IEnumerator GetEnumerator() {
             return new DoubleLinkListEnumerator(this);
         }

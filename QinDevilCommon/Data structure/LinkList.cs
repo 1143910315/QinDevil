@@ -1,31 +1,34 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
 namespace QinDevilCommon.Data_structure {
     public class LinkList<T> {
         private class LinkListNode {
+            //数据域,当前结点数据
             public T Data {
                 set; get;
-            }          //数据域,当前结点数据
+            }
+            //位置域,下一个结点地址
             public LinkListNode Next {
                 set; get;
-            }    //位置域,下一个结点地址
+            }
             public LinkListNode() {
                 Data = default;
                 Next = null;
             }
         }
+        //单链表头
         private LinkListNode Head {
             set; get;
-        } //单链表头
+        }
         private int len = 0;
         private readonly object lockObject = new object();
         //构造
         public LinkList() {
             Clear();
         }
-
         /// <summary>
         /// 求单链表的长度
         /// </summary>
@@ -132,7 +135,7 @@ namespace QinDevilCommon.Data_structure {
                     j++;
                 }
                 LinkListNode C = new LinkListNode() {
-                    Data=item,
+                    Data = item,
                     Next = B
                 };
                 A.Next = C;

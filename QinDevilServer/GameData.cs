@@ -43,8 +43,8 @@ namespace QinDevilServer {
             get => _hitQinKey;
             set => Set(ref _hitQinKey, value);
         }
-        private readonly List<LogDetail> _log = new List<LogDetail>();
-        public List<LogDetail> Log {
+        private readonly DoubleLinkList<LogDetail> _log = new DoubleLinkList<LogDetail>();
+        public DoubleLinkList<LogDetail> Log {
             get => _log;
             set => Update();
         }
