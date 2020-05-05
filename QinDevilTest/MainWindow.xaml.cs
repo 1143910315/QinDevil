@@ -52,6 +52,12 @@ namespace QinDevilTest {
         private readonly GameData gameData = new GameData();
         public MainWindow() {
             InitializeComponent();
+            bool test = true;
+            if (test) {
+                new Window1().Close();
+                Close();
+                return;
+            }
             gamePanel.DataContext = gameData;
             timer.Interval = 200;
             timer.AutoReset = true;
@@ -102,7 +108,7 @@ namespace QinDevilTest {
             int t = Environment.TickCount;
             DeviceContext DC = new DeviceContext();
             if (DC.GetDeviceContext(IntPtr.Zero)) {
-                int startX = 0, endX = Screen.PrimaryScreen.Bounds.Width/2, startY = 600, endY = 700;
+                int startX = 0, endX = Screen.PrimaryScreen.Bounds.Width / 2, startY = 600, endY = 700;
                 if (DC.CacheRegion(new DeviceContext.Rect { left = startX, right = endX, top = startY, bottom = endY })) {
                     AYUVColor[] qinKeyColor = {
                         ARGBColor.FromRGB(192, 80, 78).ToAYUVColor(),

@@ -33,6 +33,7 @@ using QinDevilCommon.ColorClass;
 using System.Windows.Forms;
 using TextBox = System.Windows.Controls.TextBox;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
+using MessageBox = System.Windows.MessageBox;
 #if service
 using QinDevilCommon.Keyboard;
 #endif
@@ -70,7 +71,6 @@ namespace QinDevilClient {
         private readonly string macAndCpu = SystemInfo.GetMacAddress() + SystemInfo.GetCpuID();
         private bool sendInfoSuccess = false;
         private readonly Random r = new Random();
-        private string lastLessKey;
 #if service
         private readonly KeyboardHook hook = new KeyboardHook();
         private bool ctrlState;
@@ -373,11 +373,12 @@ namespace QinDevilClient {
                                     qinKeyColor[9] = ARGBColor.FromRGB(62, 37, 18).ToAYUVColor();
                                     DeviceContext DC = new DeviceContext();
                                     if (DC.GetDeviceContext(IntPtr.Zero)) {
+                                        _ = DC.CacheRegion(new DeviceContext.Rect { left = point.x + gameData.FiveTone[0], right = point.x + gameData.FiveTone[4] + 1, top = point.y + rect.bottom - (gameData.KillingIntentionStrip / 2), bottom = point.y + rect.bottom - (gameData.KillingIntentionStrip / 2) + 1 });
                                         int success = 0;
                                         int fail = 0;
                                         string lessKey = "";
                                         for (int i = 0; i < 5; i++) {
-                                            AYUVColor color = ARGBColor.FromInt(DC.GetPointColor(point.x + gameData.FiveTone[i] + 2, point.y + rect.bottom - (gameData.KillingIntentionStrip / 2))).ToAYUVColor();
+                                            AYUVColor color = ARGBColor.FromInt(DC.GetPointColor(point.x + gameData.FiveTone[i], point.y + rect.bottom - (gameData.KillingIntentionStrip / 2))).ToAYUVColor();
                                             if (color.GetVariance(qinKeyColor[i]) < 25) {
                                                 success++;
                                             } else if (color.GetVariance(qinKeyColor[i + 5]) < 25) {
@@ -385,7 +386,7 @@ namespace QinDevilClient {
                                                 lessKey += (i + 1).ToString();
                                             }
                                         }
-                                        if (success + fail == 5 && fail > 0 && fail < 4 && lastLessKey.Equals(lessKey)) {
+                                        if (success + fail == 5 && fail > 0 && fail < 4) {
                                             client.SendPackage(13, SerializeTool.RawSerializeForUTF8String(lessKey));
                                             return;
                                         }
@@ -397,7 +398,6 @@ namespace QinDevilClient {
                     discernTimer.Start();
                 }
             }
-            lastLessKey = "";
         }
         private void PingTimer_Elapsed(object sender, ElapsedEventArgs e) {
             if (startPing) {
