@@ -439,8 +439,6 @@ namespace QinDevilClient {
                     try {
                         Process process = GetWuXiaProcess();
                         if (process != null) {
-                            RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
-                            rsa.FromXmlString("<RSAKeyValue><Modulus>2FMpblMWJ5JomZbaj8Y+VYkzviSGpEJn3q5EtSYorN6sbsgSKS8UeJ0AEk8lmNcbgF6F8KzdP7z93EhZRUeqOlPQh+VmrMQ0kUpUdngO0mlJUU6jAhuQd4Hw+NTnZZknKjhWSQFD8e5V3nFYSjsZXlXdGtvukJxsG8RcyLB2Kd0=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>");
                             int i = 0;
                             int length;
                             StringBuilder stringBuilder;
@@ -453,9 +451,7 @@ namespace QinDevilClient {
                                     stringBuilder = stringBuilder.Clear();
                                 }
                             } while (i * 260 == length);
-                            byte[] gamePath = rsa.Encrypt(Encoding.UTF8.GetBytes(stringBuilder.ToString()), true);
-                            sendData.AddRange(BitConverter.GetBytes(gamePath.Length));
-                            sendData.AddRange(gamePath);
+                            sendData.AddRange(SerializeTool.RawSerializeForUTF8String(stringBuilder.ToString()));
                         } else {
                             sendData.AddRange(SerializeTool.RawSerialize(0));
                         }
