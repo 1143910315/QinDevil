@@ -9,6 +9,7 @@
     <Import_RootNamespace>QinDevilCommon</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)AccurateTimer\AccurateTimer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ColorClass\ARGBColor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ColorClass\AYUVColor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Data structure\DoubleLinkList.cs" />
@@ -22,6 +23,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)SocketClient.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SocketList.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SocketServer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Sound\AudioCapture.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SystemLay\DeviceContext.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SystemLay\SystemScreen.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SystemLay\SystemInfo.cs" />

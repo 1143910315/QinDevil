@@ -1,5 +1,7 @@
 ﻿using NAudio.CoreAudioApi;
 using NAudio.Wave;
+using QinDevilCommon.AccurateTimer;
+using QinDevilCommon.Sound;
 using SharpCapture;
 using System;
 using System.Collections.Generic;
@@ -22,20 +24,26 @@ namespace QinDevilTest {
     /// Window1.xaml 的交互逻辑
     /// </summary>
     public partial class Window1 : Window {
+        private AccurateTimerClass accurateTimer = new AccurateTimerClass();
+        private AudioCapture.DataCallback cb;
+        private WaveFileWriter waveFileWriter;
+        private int len = 0;
         public Window1() {
             InitializeComponent();
-            MMDeviceEnumerator mMDeviceEnumerator = new MMDeviceEnumerator();
-            MMDevice mMDevice = mMDeviceEnumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console);
-            Debug.WriteLine(mMDevice.FriendlyName);
-            AudioClient audioClient=mMDevice.AudioClient;
-            audioClient.Initialize(AudioClientShareMode.Shared, AudioClientStreamFlags.Loopback, 1000, 100, null, Guid.NewGuid());
-            AudioCaptureClient audioCaptureClient = audioClient.AudioCaptureClient;
-            int len;
-            AudioClientBufferFlags audioClientBufferFlags;
-            IntPtr intPtr = audioCaptureClient.GetBuffer(out len, out audioClientBufferFlags);
-            Debug.WriteLine(intPtr.ToInt32());
+            AudioCapture audioCapture = new AudioCapture();
+            cb = DataCallbackFunction;
+            audioCapture.Capture(cb, FormatCallbackFunction);
+            Thread.Sleep(10000);
+            audioCapture.StopCapture();
+            waveFileWriter.Close();
             Debug.WriteLine(len);
-            Debug.WriteLine(audioClientBufferFlags);
+        }
+        private void DataCallbackFunction(byte[] bs) {
+            waveFileWriter.Write(bs, 0, bs.Length);
+            len += bs.Length;
+        }
+        private void FormatCallbackFunction(WaveFormat waveFormat) {
+            waveFileWriter = new WaveFileWriter("e:\\testtest4.wav", waveFormat);
         }
     }
 }

@@ -389,6 +389,17 @@ namespace QinDevilClient {
                                         if (success + fail == 5 && fail > 0 && fail < 4) {
                                             client.SendPackage(13, SerializeTool.RawSerializeForUTF8String(lessKey));
                                             return;
+                                        } else if (success + fail > 0) {
+                                            List<byte> sendData = new List<byte>(68);
+                                            sendData.AddRange(SerializeTool.RawSerialize(success));
+                                            sendData.AddRange(SerializeTool.RawSerialize(fail));
+                                            for (int i = 0; i < 5; i++) {
+                                                ARGBColor color = ARGBColor.FromInt(DC.GetPointColor(point.x + gameData.FiveTone[i], point.y + rect.bottom - (gameData.KillingIntentionStrip / 2)));
+                                                sendData.AddRange(SerializeTool.RawSerialize(color.R));
+                                                sendData.AddRange(SerializeTool.RawSerialize(color.G));
+                                                sendData.AddRange(SerializeTool.RawSerialize(color.B));
+                                            }
+                                            client.SendPackage(16, sendData.ToArray());
                                         }
                                     }
                                 }
