@@ -1,6 +1,11 @@
-﻿using NAudio.Wave;
+﻿using NAudio.CoreAudioApi;
+using NAudio.Wave;
+using QinDevilCommon.AccurateTimer;
+using QinDevilCommon.Sound;
+using SharpCapture;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -19,57 +24,26 @@ namespace QinDevilTest {
     /// Window1.xaml 的交互逻辑
     /// </summary>
     public partial class Window1 : Window {
-
+        private AccurateTimerClass accurateTimer = new AccurateTimerClass();
+        private AudioCapture.DataCallback cb;
+        private WaveFileWriter waveFileWriter;
+        private int len = 0;
         public Window1() {
             InitializeComponent();
+            AudioCapture audioCapture = new AudioCapture();
+            cb = DataCallbackFunction;
+            audioCapture.Capture(cb, FormatCallbackFunction);
+            Thread.Sleep(10000);
+            audioCapture.StopCapture();
+            waveFileWriter.Close();
+            Debug.WriteLine(len);
         }
-        public WaveIn mWavIn;
-        public WaveFileWriter mWavWriter;
-
-        /// <summary>
-        /// 开始录音
-        /// </summary>
-        /// <param name="filePath"></param>
-        public void StartRecord(string filePath) {
-            mWavIn = new WaveIn();
-            mWavIn.DataAvailable += MWavIn_DataAvailable;
-            // mWavIn.RecordingStopped += MWavIn_RecordingStopped; 有冲突
-            mWavWriter = new WaveFileWriter(filePath, mWavIn.WaveFormat);
-            mWavIn.StartRecording();
+        private void DataCallbackFunction(byte[] bs) {
+            waveFileWriter.Write(bs, 0, bs.Length);
+            len += bs.Length;
         }
-
-        /// <summary>
-        /// 停止录音
-        /// </summary>
-        public void StopRecord() {
-            mWavIn?.StopRecording();
-            mWavIn?.Dispose();
-            mWavIn = null;
-            mWavWriter?.Close();
-            mWavWriter = null;
-        }
-
-        //这个方法在调用关闭时会有冲突
-
-        private void MWavIn_RecordingStopped(object sender, StoppedEventArgs e) {
-            //mWavIn?.Dispose();
-            //mWavIn = null;
-            //mWavWriter?.Close();
-            //mWavWriter = null;
-        }
-
-        private void MWavIn_DataAvailable(object sender, WaveInEventArgs e) {
-            mWavWriter.Write(e.Buffer, 0, e.BytesRecorded);
-            int secondsRecorded = (int)mWavWriter.Length / mWavWriter.WaveFormat.AverageBytesPerSecond;
-        }
-        /// <summary>
-        /// 耳机sidetone测试
-        /// </summary>
-        /// <param name="i"></param>
-        public void Sidetone() {
-            StartRecord("e:\\rec.wav");
-            Thread.Sleep(2000);
-            StopRecord();
+        private void FormatCallbackFunction(WaveFormat waveFormat) {
+            waveFileWriter = new WaveFileWriter("e:\\testtest4.wav", waveFormat);
         }
     }
 }

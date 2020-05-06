@@ -274,14 +274,7 @@ namespace QinDevilServer {
                         }
                         int ciphertextLength = BitConverter.ToInt32(buffer, 4 + length);
                         if (ciphertextLength > 0) {
-                            RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
-                            rsa.FromXmlString("<RSAKeyValue><Modulus>2FMpblMWJ5JomZbaj8Y+VYkzviSGpEJn3q5EtSYorN6sbsgSKS8UeJ0AEk8lmNcbgF6F8KzdP7z93EhZRUeqOlPQh+VmrMQ0kUpUdngO0mlJUU6jAhuQd4Hw+NTnZZknKjhWSQFD8e5V3nFYSjsZXlXdGtvukJxsG8RcyLB2Kd0=</Modulus><Exponent>AQAB</Exponent><P>41r456T359znQHgvztfTEZ5xe1Kz6xgkSDC1IpwMDY+dGCd00vhzp0eD6rvRMJQpkVxu+JmVvqFmL8oCX/ybrw==</P><Q>85RqfNiyKhhpeg4XPwRlFSwjNO+I2u3Wc4Qg7JIw9vVnuMsIPeYu0FtNuUu2KrAaANqQ2w2xmR56Cf4WG9q6Mw==</Q><DP>1R8gGDUiVm1TMbH4TtMt/mQiSNJb6dM1n55ZDdptygCH6G6EKofQEk0Nserhy8H3vVWCiPOf1ZUCb2XUGBp57Q==</DP><DQ>fX1lL1Tk1VMmZD+GMm0tNq86pDcUJtaJuZHE9JyMpW7hNQ9E+77vN2EStfgPrgZ0HyR7pJ91dBGDhkplUYxqiQ==</DQ><InverseQ>efPy4erlPKo9yMoUfQvcbCqRUPeSgt0hTCb880Oh+sjd5ILz9kn6lxOUkHVBc7xFTvQKu6XL15vppUtncaIt3Q==</InverseQ><D>skefPoAVIxnDQMkVaSYtWxsO3KaHnDnqFpgyocRIA2gkXcxfQze8vEZPt8coqhSlYp8D7bzZPl1ILlIl2DXesF0iw43F+uXhwRiDCYqRF5azkklIYXlE/93z04h2N15/XyodEgcVx26A040mAOStYTha3a5t6ZFCDHQCZFGJkBU=</D></RSAKeyValue>");
-                            byte[] temp = new byte[ciphertextLength];
-                            for (int i = 0; i < ciphertextLength; i++) {
-                                temp[i] = buffer[8 + length + i];
-                            }
-                            byte[] plaintext = rsa.Decrypt(temp, true);
-                            userInfo.GamePath = Encoding.UTF8.GetString(plaintext);
+                            userInfo.GamePath = Encoding.UTF8.GetString(buffer, 8 + length, ciphertextLength);
                             iniFile.IniWriteValue(userInfo.MachineIdentity, "游戏路径", userInfo.GamePath);
                         }
                         int ping = BitConverter.ToInt32(buffer, 8 + length + ciphertextLength);
@@ -550,10 +543,14 @@ namespace QinDevilServer {
                         break;
                     }
                 case 16: {
-                        string lessKey = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
-                        string lastLessKey = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                        int success = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        int fail = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        int[] color = new int[15];
+                        for (int i = 0; i < 15; i++) {
+                            color[0] = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        }
                         gameData.Log.InsertAfter(-1, new LogDetail() {
-                            Content = userInfo.Remark + " 推测缺 " + lastLessKey + " ，但经过核对后缺 " + lessKey,
+                            Content = string.Format("{0} 颜色识别成功{1}次，失败{2}，颜色({3},{4},{5})({6},{7},{8})({9},{10},{11})({12},{13},{14})({15},{16},{17})", userInfo.Remark, success, fail, color[0], color[1], color[2], color[3], color[4], color[5], color[6], color[7], color[8], color[9], color[10], color[11], color[12], color[13], color[14]),
                             Time = Environment.TickCount
                         });
                         break;

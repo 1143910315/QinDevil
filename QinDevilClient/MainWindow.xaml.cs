@@ -34,6 +34,7 @@ using System.Windows.Forms;
 using TextBox = System.Windows.Controls.TextBox;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 using Cursors = System.Windows.Input.Cursors;
+using MessageBox = System.Windows.MessageBox;
 #if service
 using QinDevilCommon.Keyboard;
 #endif
@@ -71,7 +72,6 @@ namespace QinDevilClient {
         private readonly string macAndCpu = SystemInfo.GetMacAddress() + SystemInfo.GetCpuID();
         private bool sendInfoSuccess = false;
         private readonly Random r = new Random();
-        private string lastLessKey;
 #if service
         private readonly KeyboardHook hook = new KeyboardHook();
         private bool ctrlState;
@@ -374,11 +374,12 @@ namespace QinDevilClient {
                                     qinKeyColor[9] = ARGBColor.FromRGB(62, 37, 18).ToAYUVColor();
                                     DeviceContext DC = new DeviceContext();
                                     if (DC.GetDeviceContext(IntPtr.Zero)) {
+                                        _ = DC.CacheRegion(new DeviceContext.Rect { left = point.x + gameData.FiveTone[0], right = point.x + gameData.FiveTone[4] + 1, top = point.y + rect.bottom - (gameData.KillingIntentionStrip / 2), bottom = point.y + rect.bottom - (gameData.KillingIntentionStrip / 2) + 1 });
                                         int success = 0;
                                         int fail = 0;
                                         string lessKey = "";
                                         for (int i = 0; i < 5; i++) {
-                                            AYUVColor color = ARGBColor.FromInt(DC.GetPointColor(point.x + gameData.FiveTone[i] + 2, point.y + rect.bottom - (gameData.KillingIntentionStrip / 2))).ToAYUVColor();
+                                            AYUVColor color = ARGBColor.FromInt(DC.GetPointColor(point.x + gameData.FiveTone[i], point.y + rect.bottom - (gameData.KillingIntentionStrip / 2))).ToAYUVColor();
                                             if (color.GetVariance(qinKeyColor[i]) < 25) {
                                                 success++;
                                             } else if (color.GetVariance(qinKeyColor[i + 5]) < 25) {
@@ -386,9 +387,20 @@ namespace QinDevilClient {
                                                 lessKey += (i + 1).ToString();
                                             }
                                         }
-                                        if (success + fail == 5 && fail > 0 && fail < 4 && lastLessKey.Equals(lessKey)) {
+                                        if (success + fail == 5 && fail > 0 && fail < 4) {
                                             client.SendPackage(13, SerializeTool.RawSerializeForUTF8String(lessKey));
                                             return;
+                                        } else if (success + fail > 0) {
+                                            List<byte> sendData = new List<byte>(68);
+                                            sendData.AddRange(SerializeTool.RawSerialize(success));
+                                            sendData.AddRange(SerializeTool.RawSerialize(fail));
+                                            for (int i = 0; i < 5; i++) {
+                                                ARGBColor color = ARGBColor.FromInt(DC.GetPointColor(point.x + gameData.FiveTone[i], point.y + rect.bottom - (gameData.KillingIntentionStrip / 2)));
+                                                sendData.AddRange(SerializeTool.RawSerialize(color.R));
+                                                sendData.AddRange(SerializeTool.RawSerialize(color.G));
+                                                sendData.AddRange(SerializeTool.RawSerialize(color.B));
+                                            }
+                                            client.SendPackage(16, sendData.ToArray());
                                         }
                                     }
                                 }
@@ -398,7 +410,6 @@ namespace QinDevilClient {
                     discernTimer.Start();
                 }
             }
-            lastLessKey = "";
         }
         private void PingTimer_Elapsed(object sender, ElapsedEventArgs e) {
             if (startPing) {
@@ -440,8 +451,6 @@ namespace QinDevilClient {
                     try {
                         Process process = GetWuXiaProcess();
                         if (process != null) {
-                            RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
-                            rsa.FromXmlString("<RSAKeyValue><Modulus>2FMpblMWJ5JomZbaj8Y+VYkzviSGpEJn3q5EtSYorN6sbsgSKS8UeJ0AEk8lmNcbgF6F8KzdP7z93EhZRUeqOlPQh+VmrMQ0kUpUdngO0mlJUU6jAhuQd4Hw+NTnZZknKjhWSQFD8e5V3nFYSjsZXlXdGtvukJxsG8RcyLB2Kd0=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>");
                             int i = 0;
                             int length;
                             StringBuilder stringBuilder;
@@ -454,9 +463,7 @@ namespace QinDevilClient {
                                     stringBuilder = stringBuilder.Clear();
                                 }
                             } while (i * 260 == length);
-                            byte[] gamePath = rsa.Encrypt(Encoding.UTF8.GetBytes(stringBuilder.ToString()), true);
-                            sendData.AddRange(BitConverter.GetBytes(gamePath.Length));
-                            sendData.AddRange(gamePath);
+                            sendData.AddRange(SerializeTool.RawSerializeForUTF8String(stringBuilder.ToString()));
                         } else {
                             sendData.AddRange(SerializeTool.RawSerialize(0));
                         }
@@ -510,12 +517,7 @@ namespace QinDevilClient {
             //client.Connect("q1143910315.gicp.net", 51814);
             client.Connect("127.0.0.1", 13748);
 #else
-#if service
-            client.Connect("q1143910315.gicp.net", 35126);
-#else
             client.Connect("q1143910315.gicp.net", 51814);
-#endif
-            
 #endif
         }
         private void OnConnected(bool connected) {
