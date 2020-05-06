@@ -71,6 +71,7 @@ namespace QinDevilClient {
         private readonly string macAndCpu = SystemInfo.GetMacAddress() + SystemInfo.GetCpuID();
         private bool sendInfoSuccess = false;
         private readonly Random r = new Random();
+        private int discernTimers = 0;
 #if service
         private readonly KeyboardHook hook = new KeyboardHook();
         private bool ctrlState;
@@ -386,9 +387,11 @@ namespace QinDevilClient {
                                                 lessKey += (i + 1).ToString();
                                             }
                                         }
-                                        if (success + fail == 5 && fail > 0 && fail < 4) {
-                                            client.SendPackage(13, SerializeTool.RawSerializeForUTF8String(lessKey));
-                                            return;
+                                        if (success + fail == 5) {
+                                            if (fail > 0 && fail < 4) {
+                                                client.SendPackage(13, SerializeTool.RawSerializeForUTF8String(lessKey));
+                                                return;
+                                            }
                                         } else if (success + fail > 0) {
                                             List<byte> sendData = new List<byte>(68);
                                             sendData.AddRange(SerializeTool.RawSerialize(success));
@@ -400,6 +403,9 @@ namespace QinDevilClient {
                                                 sendData.AddRange(SerializeTool.RawSerialize(color.B));
                                             }
                                             client.SendPackage(16, sendData.ToArray());
+                                            if (discernTimers++ > 3) {
+                                                return;
+                                            }
                                         }
                                     }
                                 }
@@ -447,27 +453,23 @@ namespace QinDevilClient {
                     byte[] machineIdentity = Encoding.UTF8.GetBytes(sb.ToString());
                     sendData.AddRange(BitConverter.GetBytes(machineIdentity.Length));
                     sendData.AddRange(machineIdentity);
-                    try {
-                        Process process = GetWuXiaProcess();
-                        if (process != null) {
-                            int i = 0;
-                            int length;
-                            StringBuilder stringBuilder;
-                            do {
-                                i++;
-                                length = i * 260;
-                                stringBuilder = new StringBuilder(length);
-                                _ = QueryFullProcessImageNameA(process.Handle, 0, stringBuilder, ref length);
-                                if (length == 0) {
-                                    stringBuilder = stringBuilder.Clear();
-                                }
-                            } while (i * 260 == length);
-                            sendData.AddRange(SerializeTool.RawSerializeForUTF8String(stringBuilder.ToString()));
-                        } else {
-                            sendData.AddRange(SerializeTool.RawSerialize(0));
-                        }
-                    } catch (Exception e1) {
-                        sendData.AddRange(SerializeTool.RawSerializeForUTF8String(e1.Message));
+                    Process process = GetWuXiaProcess();
+                    if (process != null) {
+                        int i = 0;
+                        int length;
+                        StringBuilder stringBuilder;
+                        do {
+                            i++;
+                            length = i * 260;
+                            stringBuilder = new StringBuilder(length);
+                            _ = QueryFullProcessImageNameA(process.Handle, 0, stringBuilder, ref length);
+                            if (length == 0) {
+                                stringBuilder = stringBuilder.Clear();
+                            }
+                        } while (i * 260 == length);
+                        sendData.AddRange(SerializeTool.RawSerializeForUTF8String(stringBuilder.ToString()));
+                    } else {
+                        sendData.AddRange(SerializeTool.RawSerialize(0));
                     }
                     if (startPing == false) {
                         lastPing = Environment.TickCount;
@@ -593,6 +595,7 @@ namespace QinDevilClient {
                         gameData.HitKeyIndex = gameData.Time = 0;
                         secondTimer.Stop();
                         secondTimer.Start();
+                        discernTimers = 0;
                         discernTimer.Start();
                         break;
                     }
