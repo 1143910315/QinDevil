@@ -144,7 +144,7 @@
                         </MultiBinding>
                     </Label.Background>
                 </Label>
-                <Label x:Name="OneKey3" Canvas.Left="102" Canvas.Top="72" Padding="0" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="18" MouseDown="Label_MouseDown_3" FontFamily="/琴魔副本工具;component/#FZZhengHeiS-B-GB">
+                <Label x:Name="OneKey3" Canvas.Left="102" Canvas.Top="72" Padding="0" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="22" MouseDown="Label_MouseDown_3" FontFamily="/琴魔副本工具;component/#FZZhengHeiS-B-GB">
                     <Label.RenderTransform>
                         <TransformGroup>
                             <ScaleTransform/>
@@ -167,7 +167,7 @@
                         </MultiBinding>
                     </Label.Background>
                 </Label>
-                <Label x:Name="OneKey4" Canvas.Left="131" Canvas.Top="72" Padding="0" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="18" MouseDown="Label_MouseDown_4" FontFamily="/琴魔副本工具;component/#FZZhengHeiS-B-GB">
+                <Label x:Name="OneKey4" Canvas.Left="131" Canvas.Top="72" Padding="0" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="22" MouseDown="Label_MouseDown_4" FontFamily="/琴魔副本工具;component/#FZZhengHeiS-B-GB">
                     <Label.RenderTransform>
                         <TransformGroup>
                             <ScaleTransform/>
