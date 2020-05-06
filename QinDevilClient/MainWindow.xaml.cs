@@ -1057,7 +1057,7 @@ namespace QinDevilClient {
                 Width = (e.GetPosition(this).Y - 1.031746031746) / 0.54263565891473;
             }
         }
-        private void Button_Click(object sender, RoutedEventArgs e) {
+        private void Label_MouseDown_12(object sender, MouseButtonEventArgs e) {
             Close();
         }
     }

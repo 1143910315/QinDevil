@@ -54,11 +54,11 @@
                 <Label Content="琴魔副本工具" Canvas.Left="70" Canvas.Top="42" FontFamily="/琴魔副本工具;component/#HYShangWeiShouShuJ" FontSize="125" Padding="0" Foreground="White"></Label>
                 <Label Content="QQ群：665973374" Foreground="White" Padding="0" FontSize="34" Canvas.Left="1330" Canvas.Top="102"></Label>
                 <Label Content="作者：琴魔一梦之队" Foreground="White" Padding="0" FontSize="34" Canvas.Left="1330" Canvas.Top="158"></Label>
-                <Button Width="100" Height="100" BorderBrush="{x:Null}" Foreground="{x:Null}" Canvas.Left="1536" Canvas.Top="10" Click="Button_Click">
-                    <Button.Background>
+                <Label Width="100" Height="100" BorderBrush="{x:Null}" Foreground="{x:Null}" Canvas.Left="1536" Canvas.Top="10" MouseDown="Label_MouseDown_12">
+                    <Label.Background>
                         <ImageBrush ImageSource="close.png"/>
-                    </Button.Background>
-                </Button>
+                    </Label.Background>
+                </Label>
             </Canvas>
         </Viewbox>
         <Image Source="border.png" Grid.Row="1" Grid.Column="0" Stretch="Fill" Height="{Binding ElementName=viewBox1,Path=ActualHeight}"/>
