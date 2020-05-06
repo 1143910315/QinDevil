@@ -547,7 +547,7 @@ namespace QinDevilServer {
                         int fail = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
                         int[] color = new int[15];
                         for (int i = 0; i < 15; i++) {
-                            color[0] = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                            color[i] = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
                         }
                         gameData.Log.InsertAfter(-1, new LogDetail() {
                             Content = string.Format("{0} 颜色识别成功{1}次，失败{2}，颜色({3},{4},{5})({6},{7},{8})({9},{10},{11})({12},{13},{14})({15},{16},{17})", userInfo.Remark, success, fail, color[0], color[1], color[2], color[3], color[4], color[5], color[6], color[7], color[8], color[9], color[10], color[11], color[12], color[13], color[14]),
