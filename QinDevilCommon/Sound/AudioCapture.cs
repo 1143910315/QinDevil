@@ -17,9 +17,9 @@ namespace QinDevilCommon.Sound {
         private AudioClient audioClient;
         private NAudio.Wave.WaveFormat mixFormat;
         private AudioCaptureClient audioCaptureClient;
-        private Action action;
+        ///private Action action;
         private DataCallback cb;
-        private bool capture = true;
+        //private bool capture = true;
         private AccurateTimerClass accurateTimer;
         private AccurateSingleTimer accurateSingleTimer;
         private int success = 0;

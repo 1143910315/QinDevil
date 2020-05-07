@@ -211,7 +211,7 @@ namespace QinDevilClient {
                                 AYUVColor[] qinKeyColor = new AYUVColor[5];
                                 qinKeyColor[0] = ARGBColor.FromRGB(192, 80, 78).ToAYUVColor();
                                 qinKeyColor[1] = ARGBColor.FromRGB(156, 188, 89).ToAYUVColor();
-                                qinKeyColor[2] = ARGBColor.FromRGB(131, 103, 164).ToAYUVColor();
+                                qinKeyColor[2] = ARGBColor.FromRGB(129, 101, 162).ToAYUVColor();
                                 qinKeyColor[3] = ARGBColor.FromRGB(75, 172, 197).ToAYUVColor();
                                 qinKeyColor[4] = ARGBColor.FromRGB(246, 150, 71).ToAYUVColor();
                                 int startX = point.x + (gameData.KillingIntentionStrip * 290 / 63);
@@ -365,7 +365,7 @@ namespace QinDevilClient {
                                     AYUVColor[] qinKeyColor = new AYUVColor[10];
                                     qinKeyColor[0] = ARGBColor.FromRGB(192, 80, 78).ToAYUVColor();
                                     qinKeyColor[1] = ARGBColor.FromRGB(156, 188, 89).ToAYUVColor();
-                                    qinKeyColor[2] = ARGBColor.FromRGB(131, 103, 164).ToAYUVColor();
+                                    qinKeyColor[2] = ARGBColor.FromRGB(129, 101, 162).ToAYUVColor();
                                     qinKeyColor[3] = ARGBColor.FromRGB(75, 172, 197).ToAYUVColor();
                                     qinKeyColor[4] = ARGBColor.FromRGB(246, 150, 71).ToAYUVColor();
                                     qinKeyColor[5] = ARGBColor.FromRGB(48, 20, 19).ToAYUVColor();
