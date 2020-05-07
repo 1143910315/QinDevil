@@ -33,6 +33,7 @@ using QinDevilCommon.ColorClass;
 using System.Windows.Forms;
 using TextBox = System.Windows.Controls.TextBox;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
+using Cursors = System.Windows.Input.Cursors;
 using MessageBox = System.Windows.MessageBox;
 #if service
 using QinDevilCommon.Keyboard;
@@ -210,7 +211,7 @@ namespace QinDevilClient {
                                 AYUVColor[] qinKeyColor = new AYUVColor[5];
                                 qinKeyColor[0] = ARGBColor.FromRGB(192, 80, 78).ToAYUVColor();
                                 qinKeyColor[1] = ARGBColor.FromRGB(156, 188, 89).ToAYUVColor();
-                                qinKeyColor[2] = ARGBColor.FromRGB(131, 103, 164).ToAYUVColor();
+                                qinKeyColor[2] = ARGBColor.FromRGB(129, 101, 162).ToAYUVColor();
                                 qinKeyColor[3] = ARGBColor.FromRGB(75, 172, 197).ToAYUVColor();
                                 qinKeyColor[4] = ARGBColor.FromRGB(246, 150, 71).ToAYUVColor();
                                 int startX = point.x + (gameData.KillingIntentionStrip * 290 / 63);
@@ -364,7 +365,7 @@ namespace QinDevilClient {
                                     AYUVColor[] qinKeyColor = new AYUVColor[10];
                                     qinKeyColor[0] = ARGBColor.FromRGB(192, 80, 78).ToAYUVColor();
                                     qinKeyColor[1] = ARGBColor.FromRGB(156, 188, 89).ToAYUVColor();
-                                    qinKeyColor[2] = ARGBColor.FromRGB(131, 103, 164).ToAYUVColor();
+                                    qinKeyColor[2] = ARGBColor.FromRGB(129, 101, 162).ToAYUVColor();
                                     qinKeyColor[3] = ARGBColor.FromRGB(75, 172, 197).ToAYUVColor();
                                     qinKeyColor[4] = ARGBColor.FromRGB(246, 150, 71).ToAYUVColor();
                                     qinKeyColor[5] = ARGBColor.FromRGB(48, 20, 19).ToAYUVColor();
@@ -1035,6 +1036,32 @@ namespace QinDevilClient {
             if (e.Key == Key.Space) {
                 e.Handled = true;
             }
+        }
+        private void Image_MouseDown(object sender, MouseButtonEventArgs e) {
+            DragMove();
+        }
+        private void Image_MouseDown_1(object sender, MouseButtonEventArgs e) {
+            if (sender is Image senderImage) {
+                _ = senderImage.CaptureMouse();
+            }
+        }
+        private void Image_MouseMove(object sender, System.Windows.Input.MouseEventArgs e) {
+            if (sender is Image senderImage && senderImage.IsMouseCaptured) {
+                Width = e.GetPosition(this).X;
+            }
+        }
+        private void Image_MouseUp(object sender, MouseButtonEventArgs e) {
+            if (sender is Image senderImage) {
+                senderImage.ReleaseMouseCapture();
+            }
+        }
+        private void Image_MouseMove_1(object sender, System.Windows.Input.MouseEventArgs e) {
+            if (sender is Image senderImage && senderImage.IsMouseCaptured) {
+                Width = (e.GetPosition(this).Y - 1.031746031746) / 0.54263565891473;
+            }
+        }
+        private void Label_MouseDown_12(object sender, MouseButtonEventArgs e) {
+            Close();
         }
     }
 }

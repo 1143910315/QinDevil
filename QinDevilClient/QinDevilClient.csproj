@@ -113,6 +113,11 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <None Include="app.manifest" />
+    <Resource Include="方正尚酷简体FZSHANGKJW.TTF" />
+    <Resource Include="方正正粗黑简体.TTF" />
+    <Resource Include="方正正大黑简体.TTF" />
+    <Resource Include="HYSHANGWEISHOUSHUJ.TTF" />
+    <Resource Include="ARIALUNI.TTF" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -133,6 +138,15 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="head.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="border.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="close.png" />
   </ItemGroup>
   <Import Project="..\QinDevilCommon\QinDevilCommon.projitems" Label="Shared" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

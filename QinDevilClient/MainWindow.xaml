@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:QinDevilClient"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
-        Title="琴魔副本工具" Height="181" Width="386" Loaded="Window_Loaded" Topmost="True">
+        Title="琴魔副本工具" Width="388" Loaded="Window_Loaded" Topmost="True" Background="{x:Null}" WindowStartupLocation="CenterScreen" WindowStyle="None" AllowsTransparency="True" SizeToContent="Height">
     <Window.Resources>
         <local:QinKeyConverter x:Key="QinKey"/>
         <sys:Int32 x:Key="one">1</sys:Int32>
@@ -38,18 +38,44 @@
         </EventTrigger>
     </Window.Triggers>-->
     <Grid x:Name="GamePanel" d:DataContext="{d:DesignInstance local:GameData}" >
-        <Viewbox Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Top">
-            <Canvas Width="378" Height="150">
-                <Label Name="ping" Content="{Binding Ping}" ContentStringFormat="Ping：{0}ms" Width="102" Height="18" Canvas.Left="10" Canvas.Top="10" Padding="0" RenderTransformOrigin="0.49,0.533"/>
-                <Label Content="一号琴" Canvas.Left="10" Canvas.Top="30" Padding="0" Width="82" HorizontalContentAlignment="Center"/>
-                <TextBox Text="{Binding No1Qin,UpdateSourceTrigger=PropertyChanged,NotifyOnSourceUpdated=True}" Width="82" Canvas.Left="10" Canvas.Top="50" InputMethod.IsInputMethodEnabled="False" PreviewTextInput="TextBox_PreviewTextInput" SourceUpdated="TextBox_SourceUpdated" PreviewKeyDown="TextBox_PreviewKeyDown"/>
-                <Label Content="二号琴" Canvas.Left="102" Canvas.Top="30" Padding="0" Width="82" HorizontalContentAlignment="Center"/>
-                <TextBox Text="{Binding No2Qin,UpdateSourceTrigger=PropertyChanged,NotifyOnSourceUpdated=True}" Width="82" Canvas.Left="102" Canvas.Top="50" InputMethod.IsInputMethodEnabled="False" PreviewTextInput="TextBox_PreviewTextInput" SourceUpdated="TextBox_SourceUpdated_1" PreviewKeyDown="TextBox_PreviewKeyDown"/>
-                <Label Content="三号琴" Canvas.Left="194" Canvas.Top="30" Padding="0" Width="82" HorizontalContentAlignment="Center"/>
-                <TextBox Text="{Binding No3Qin,UpdateSourceTrigger=PropertyChanged,NotifyOnSourceUpdated=True}" Width="82" Canvas.Left="194" Canvas.Top="50" InputMethod.IsInputMethodEnabled="False" PreviewTextInput="TextBox_PreviewTextInput" SourceUpdated="TextBox_SourceUpdated_2" PreviewKeyDown="TextBox_PreviewKeyDown"/>
-                <Label Content="四号琴" Canvas.Left="286" Canvas.Top="30" Padding="0" Width="82" HorizontalContentAlignment="Center"/>
-                <TextBox Text="{Binding No4Qin,UpdateSourceTrigger=PropertyChanged,NotifyOnSourceUpdated=True}" Width="82" Canvas.Left="286" Canvas.Top="50" InputMethod.IsInputMethodEnabled="False" PreviewTextInput="TextBox_PreviewTextInput" SourceUpdated="TextBox_SourceUpdated_3" PreviewKeyDown="TextBox_PreviewKeyDown"/>
-                <Label x:Name="OneKey0" Canvas.Left="10" Canvas.Top="72" Padding="0" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="18" MouseDown="Label_MouseDown" RenderTransformOrigin="0.5,0.5" >
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="5"></ColumnDefinition>
+            <ColumnDefinition Width="*"></ColumnDefinition>
+            <ColumnDefinition Width="5"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"></RowDefinition>
+            <RowDefinition Height="auto"></RowDefinition>
+            <RowDefinition Height="5"></RowDefinition>
+        </Grid.RowDefinitions>
+        <Viewbox Grid.ColumnSpan="3" MouseDown="Image_MouseDown">
+            <Canvas Width="1665" Height="258">
+                <Image Source="head.png"/>
+                <Label Content="琴魔副本工具" Canvas.Left="70" Canvas.Top="42" FontFamily="/琴魔副本工具;component/#HYShangWeiShouShuJ" FontSize="125" Padding="0" Foreground="White"></Label>
+                <Label Content="QQ群：665973374" Foreground="White" Padding="0" FontSize="34" Canvas.Left="1330" Canvas.Top="102"></Label>
+                <Label Content="作者：琴魔一梦之队" Foreground="White" Padding="0" FontSize="34" Canvas.Left="1330" Canvas.Top="158"></Label>
+                <Label Width="100" Height="100" BorderBrush="{x:Null}" Foreground="{x:Null}" Canvas.Left="1536" Canvas.Top="10" MouseDown="Label_MouseDown_12">
+                    <Label.Background>
+                        <ImageBrush ImageSource="close.png"/>
+                    </Label.Background>
+                </Label>
+            </Canvas>
+        </Viewbox>
+        <Image Source="border.png" Grid.Row="1" Grid.Column="0" Stretch="Fill" Height="{Binding ElementName=viewBox1,Path=ActualHeight}"/>
+        <Image Source="border.png" Grid.Row="1" Grid.Column="2" Stretch="Fill" Height="{Binding ElementName=viewBox1,Path=ActualHeight}" Cursor="SizeWE" MouseDown="Image_MouseDown_1" MouseMove="Image_MouseMove" MouseUp="Image_MouseUp"/>
+        <Image Source="border.png" Grid.Row="2" Grid.ColumnSpan="3" Stretch="UniformToFill" Cursor="SizeNS" MouseDown="Image_MouseDown_1" MouseMove="Image_MouseMove_1" MouseUp="Image_MouseUp"></Image>
+        <Viewbox Stretch="Uniform" VerticalAlignment="Top" Grid.Row="1" Grid.Column="1" x:Name="viewBox1">
+            <Canvas Width="378" Height="150" Background="White">
+                <Label Name="ping" Content="{Binding Ping}" ContentStringFormat="Ping：{0}ms" Width="102" Height="18" Canvas.Left="10" Canvas.Top="7" Padding="0" RenderTransformOrigin="0.49,0.533" FontSize="14" FontFamily="/琴魔副本工具;component/#Arial Unicode MS"/>
+                <Label Content="一号琴" Canvas.Left="10" Canvas.Top="28" Padding="0" Width="82" HorizontalContentAlignment="Center" FontFamily="/琴魔副本工具;component/#FZZhengHeiS-EB-GB" FontSize="14"/>
+                <TextBox Text="{Binding No1Qin,UpdateSourceTrigger=PropertyChanged,NotifyOnSourceUpdated=True}" Width="82" Canvas.Left="10" Canvas.Top="50" InputMethod.IsInputMethodEnabled="False" PreviewTextInput="TextBox_PreviewTextInput" SourceUpdated="TextBox_SourceUpdated" PreviewKeyDown="TextBox_PreviewKeyDown" FontFamily="/琴魔副本工具;component/#FZZhengHeiS-EB-GB"/>
+                <Label Content="二号琴" Canvas.Left="102" Canvas.Top="28" Padding="0" Width="82" HorizontalContentAlignment="Center" FontFamily="/琴魔副本工具;component/#FZZhengHeiS-EB-GB" FontSize="14"/>
+                <TextBox Text="{Binding No2Qin,UpdateSourceTrigger=PropertyChanged,NotifyOnSourceUpdated=True}" Width="82" Canvas.Left="102" Canvas.Top="50" InputMethod.IsInputMethodEnabled="False" PreviewTextInput="TextBox_PreviewTextInput" SourceUpdated="TextBox_SourceUpdated_1" PreviewKeyDown="TextBox_PreviewKeyDown" FontFamily="/琴魔副本工具;component/#FZZhengHeiS-EB-GB"/>
+                <Label Content="三号琴" Canvas.Left="194" Canvas.Top="28" Padding="0" Width="82" HorizontalContentAlignment="Center" FontFamily="/琴魔副本工具;component/#FZZhengHeiS-EB-GB" FontSize="14"/>
+                <TextBox Text="{Binding No3Qin,UpdateSourceTrigger=PropertyChanged,NotifyOnSourceUpdated=True}" Width="82" Canvas.Left="194" Canvas.Top="50" InputMethod.IsInputMethodEnabled="False" PreviewTextInput="TextBox_PreviewTextInput" SourceUpdated="TextBox_SourceUpdated_2" PreviewKeyDown="TextBox_PreviewKeyDown" FontFamily="/琴魔副本工具;component/#FZZhengHeiS-EB-GB"/>
+                <Label Content="四号琴" Canvas.Left="286" Canvas.Top="28" Padding="0" Width="82" HorizontalContentAlignment="Center" FontFamily="/琴魔副本工具;component/#FZZhengHeiS-EB-GB" FontSize="14"/>
+                <TextBox Text="{Binding No4Qin,UpdateSourceTrigger=PropertyChanged,NotifyOnSourceUpdated=True}" Width="82" Canvas.Left="286" Canvas.Top="50" InputMethod.IsInputMethodEnabled="False" PreviewTextInput="TextBox_PreviewTextInput" SourceUpdated="TextBox_SourceUpdated_3" PreviewKeyDown="TextBox_PreviewKeyDown" FontFamily="/琴魔副本工具;component/#FZZhengHeiS-EB-GB"/>
+                <Label x:Name="OneKey0" Canvas.Left="10" Canvas.Top="72" Padding="0" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="22" MouseDown="Label_MouseDown" FontFamily="/琴魔副本工具;component/#FZZhengHeiS-B-GB">
                     <Label.RenderTransform>
                         <TransformGroup>
                             <ScaleTransform/>
@@ -72,7 +98,7 @@
                         </MultiBinding>
                     </Label.Background>
                 </Label>
-                <Label x:Name="OneKey1" Canvas.Left="39" Canvas.Top="72" Padding="0" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="18" MouseDown="Label_MouseDown_1" >
+                <Label x:Name="OneKey1" Canvas.Left="39" Canvas.Top="72" Padding="0" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="22" MouseDown="Label_MouseDown_1" FontFamily="/琴魔副本工具;component/#FZZhengHeiS-B-GB">
                     <Label.RenderTransform>
                         <TransformGroup>
                             <ScaleTransform/>
@@ -95,7 +121,7 @@
                         </MultiBinding>
                     </Label.Background>
                 </Label>
-                <Label x:Name="OneKey2" Canvas.Left="68" Canvas.Top="72" Padding="0" FontWeight="Bold" Foreground="White" Width="24" Height="24" FontSize="18" MouseDown="Label_MouseDown_2" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" >
+                <Label x:Name="OneKey2" Canvas.Left="68" Canvas.Top="72" Padding="0" Foreground="White" Width="24" Height="24" FontSize="22" MouseDown="Label_MouseDown_2" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontFamily="/琴魔副本工具;component/#FZZhengHeiS-B-GB">
                     <Label.RenderTransform>
                         <TransformGroup>
                             <ScaleTransform/>
@@ -118,7 +144,7 @@
                         </MultiBinding>
                     </Label.Background>
                 </Label>
-                <Label x:Name="OneKey3" Canvas.Left="102" Canvas.Top="72" Padding="0" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="18" MouseDown="Label_MouseDown_3" >
+                <Label x:Name="OneKey3" Canvas.Left="102" Canvas.Top="72" Padding="0" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="22" MouseDown="Label_MouseDown_3" FontFamily="/琴魔副本工具;component/#FZZhengHeiS-B-GB">
                     <Label.RenderTransform>
                         <TransformGroup>
                             <ScaleTransform/>
@@ -141,7 +167,7 @@
                         </MultiBinding>
                     </Label.Background>
                 </Label>
-                <Label x:Name="OneKey4" Canvas.Left="131" Canvas.Top="72" Padding="0" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="18" MouseDown="Label_MouseDown_4" >
+                <Label x:Name="OneKey4" Canvas.Left="131" Canvas.Top="72" Padding="0" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="22" MouseDown="Label_MouseDown_4" FontFamily="/琴魔副本工具;component/#FZZhengHeiS-B-GB">
                     <Label.RenderTransform>
                         <TransformGroup>
                             <ScaleTransform/>
@@ -164,7 +190,7 @@
                         </MultiBinding>
                     </Label.Background>
                 </Label>
-                <Label x:Name="OneKey5" Canvas.Left="160" Canvas.Top="72" Padding="0" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="18" MouseDown="Label_MouseDown_5" >
+                <Label x:Name="OneKey5" Canvas.Left="160" Canvas.Top="72" Padding="0" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="22" MouseDown="Label_MouseDown_5" FontFamily="/琴魔副本工具;component/#FZZhengHeiS-B-GB">
                     <Label.RenderTransform>
                         <TransformGroup>
                             <ScaleTransform/>
@@ -187,7 +213,7 @@
                         </MultiBinding>
                     </Label.Background>
                 </Label>
-                <Label x:Name="OneKey6" Canvas.Left="194" Canvas.Top="72" Padding="0" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="18" MouseDown="Label_MouseDown_6" >
+                <Label x:Name="OneKey6" Canvas.Left="194" Canvas.Top="72" Padding="0" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="22" MouseDown="Label_MouseDown_6" FontFamily="/琴魔副本工具;component/#FZZhengHeiS-B-GB">
                     <Label.RenderTransform>
                         <TransformGroup>
                             <ScaleTransform/>
@@ -210,7 +236,7 @@
                         </MultiBinding>
                     </Label.Background>
                 </Label>
-                <Label x:Name="OneKey7" Canvas.Left="223" Canvas.Top="72" Padding="0" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="18" MouseDown="Label_MouseDown_7" >
+                <Label x:Name="OneKey7" Canvas.Left="223" Canvas.Top="72" Padding="0" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="22" MouseDown="Label_MouseDown_7" FontFamily="/琴魔副本工具;component/#FZZhengHeiS-B-GB">
                     <Label.RenderTransform>
                         <TransformGroup>
                             <ScaleTransform/>
@@ -233,7 +259,7 @@
                         </MultiBinding>
                     </Label.Background>
                 </Label>
-                <Label x:Name="OneKey8" Canvas.Left="252" Canvas.Top="72" Padding="0" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="18" MouseDown="Label_MouseDown_8" >
+                <Label x:Name="OneKey8" Canvas.Left="252" Canvas.Top="72" Padding="0" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="22" MouseDown="Label_MouseDown_8" FontFamily="/琴魔副本工具;component/#FZZhengHeiS-B-GB">
                     <Label.RenderTransform>
                         <TransformGroup>
                             <ScaleTransform/>
@@ -256,7 +282,7 @@
                         </MultiBinding>
                     </Label.Background>
                 </Label>
-                <Label x:Name="OneKey9" Canvas.Left="286" Canvas.Top="72" Padding="0" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="18" MouseDown="Label_MouseDown_9" >
+                <Label x:Name="OneKey9" Canvas.Left="286" Canvas.Top="72" Padding="0" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="22" MouseDown="Label_MouseDown_9" FontFamily="/琴魔副本工具;component/#FZZhengHeiS-B-GB">
                     <Label.RenderTransform>
                         <TransformGroup>
                             <ScaleTransform/>
@@ -279,7 +305,7 @@
                         </MultiBinding>
                     </Label.Background>
                 </Label>
-                <Label x:Name="OneKey10" Canvas.Left="315" Canvas.Top="72" Padding="0" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="18" MouseDown="Label_MouseDown_10" >
+                <Label x:Name="OneKey10" Canvas.Left="315" Canvas.Top="72" Padding="0" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="22" MouseDown="Label_MouseDown_10" FontFamily="/琴魔副本工具;component/#FZZhengHeiS-B-GB">
                     <Label.RenderTransform>
                         <TransformGroup>
                             <ScaleTransform/>
@@ -302,7 +328,7 @@
                         </MultiBinding>
                     </Label.Background>
                 </Label>
-                <Label x:Name="OneKey11" Canvas.Left="344" Canvas.Top="72" Padding="0" FontWeight="Bold" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="18" MouseDown="Label_MouseDown_11" >
+                <Label x:Name="OneKey11" Canvas.Left="344" Canvas.Top="72" Padding="0" Foreground="White" VerticalContentAlignment="Center" Width="24" Height="24" HorizontalContentAlignment="Center" FontSize="22" MouseDown="Label_MouseDown_11" FontFamily="/琴魔副本工具;component/#FZZhengHeiS-B-GB">
                     <Label.RenderTransform>
                         <TransformGroup>
                             <ScaleTransform/>
@@ -325,10 +351,21 @@
                         </MultiBinding>
                     </Label.Background>
                 </Label>
-                <Label Content="琴上剩余对比：9 8 7 6 5 4 3 2 1" Canvas.Left="10" Canvas.Top="101" Padding="0" FontSize="14"/>
-                <Label Content="{Binding HitQinKey}" ContentStringFormat="需要弹琴数字：{0}" Canvas.Left="10" Canvas.Top="124" Padding="0" FontSize="14"/>
-                <Label Content="{Binding Time}" Canvas.Left="296" Canvas.Top="10" Padding="0" Width="72" Height="18" HorizontalContentAlignment="Right"/>
-                <CheckBox x:Name="Autoplay" Content="自动弹琴" Canvas.Left="223" Canvas.Top="10" Visibility="Hidden"/>
+                <Label Content="琴上剩余对比：" Canvas.Left="10" Canvas.Top="101" Padding="0" FontSize="14" FontFamily="/琴魔副本工具;component/#FZShangKuS-R-GB"/>
+                <Label Content="9 8 7 6 5 4 3 2 1" Canvas.Left="108" Canvas.Top="101" Padding="0" FontSize="14" FontFamily="/琴魔副本工具;component/#FZZhengHeiS-EB-GB"/>
+                <Label Content="需要弹琴数字：" Canvas.Left="10" Canvas.Top="124" Padding="0" FontSize="14" FontFamily="/琴魔副本工具;component/#FZShangKuS-R-GB"/>
+                <Label Content="{Binding HitQinKey}" Canvas.Left="108" Canvas.Top="124" Padding="0" FontSize="14" FontFamily="/琴魔副本工具;component/#FZZhengHeiS-EB-GB"/>
+                <Label Content="小&#x0a;怪&#x0a;音&#x0a;符" Canvas.Left="245" Canvas.Top="99" FontSize="11" Padding="0" FontFamily="/琴魔副本工具;component/#FZShangKuS-R-GB"/>
+                <Label Content="{Binding Time}" Canvas.Left="296" Canvas.Top="7" Padding="0" Width="72" Height="18" HorizontalContentAlignment="Right" FontFamily="/琴魔副本工具;component/#FZShangKuS-R-GB"/>
+                <CheckBox x:Name="Autoplay" Content="自动弹琴" Canvas.Left="223" Canvas.Top="7" FontFamily="/琴魔副本工具;component/#FZShangKuS-R-GB" FontSize="14" UseLayoutRounding="True" Visibility="Hidden"/>
+                <Label Content="一下：" Padding="0" FontFamily="/琴魔副本工具;component/#FZShangKuS-R-GB" Canvas.Left="263" Canvas.Top="106" FontSize="14"/>
+                <Label Content="徵" Padding="0" FontFamily="/琴魔副本工具;component/#FZShangKuS-R-GB" Canvas.Left="301" Canvas.Top="106" Foreground="#FFE84653" FontSize="14"/>
+                <Label Content="两下：" Padding="0" FontFamily="/琴魔副本工具;component/#FZShangKuS-R-GB" Canvas.Left="319" Canvas.Top="106" FontSize="14"/>
+                <Label Content="商" Padding="0" FontFamily="/琴魔副本工具;component/#FZShangKuS-R-GB" Canvas.Left="354" Canvas.Top="106" Foreground="#FFE84653" FontSize="14"/>
+                <Label Content="三下：" Padding="0" FontFamily="/琴魔副本工具;component/#FZShangKuS-R-GB" Canvas.Left="263" Canvas.Top="125" FontSize="14"/>
+                <Label Content="羽" Padding="0" FontFamily="/琴魔副本工具;component/#FZShangKuS-R-GB" Canvas.Left="301" Canvas.Top="125" Foreground="#FFE84653" FontSize="14"/>
+                <Label Content="四下：" Padding="0" FontFamily="/琴魔副本工具;component/#FZShangKuS-R-GB" Canvas.Left="319" Canvas.Top="125" FontSize="14"/>
+                <Label Content="角" Padding="0" FontFamily="/琴魔副本工具;component/#FZShangKuS-R-GB" Canvas.Left="354" Canvas.Top="125" Foreground="#FFE84653" FontSize="14"/>
             </Canvas>
         </Viewbox>
     </Grid>
