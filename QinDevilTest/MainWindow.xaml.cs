@@ -5,9 +5,13 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Timers;
 using System.Windows;
@@ -54,6 +58,11 @@ namespace QinDevilTest {
             InitializeComponent();
             bool test = true;
             if (test) {
+                CheckDomain();
+                Close();
+                return;
+            }
+            if (test) {
                 new Window1().Close();
                 Close();
                 return;
@@ -85,6 +94,38 @@ namespace QinDevilTest {
             timer5.Start();
             /*Complex[] complexs = new Complex[10];
             FourierTransform.FFT(complexs, FourierTransform.Direction.Forward);*/
+        }
+        private void CheckDomain() {
+            try {
+                HttpWebRequest hwRequest = (HttpWebRequest)WebRequest.Create(@"http://ip.tool.chinaz.com/q1143910315.gicp.net");
+                //hwRequest.Timeout = 30000;
+                hwRequest.Method = "GET";
+                hwRequest.ContentType = "application/x-www-form-urlencoded";
+                using (HttpWebResponse hwResponse = (HttpWebResponse)hwRequest.GetResponse()) {
+                    using (StreamReader srReader = new StreamReader(hwResponse.GetResponseStream(), Encoding.UTF8)) {
+                        string strResult = srReader.ReadToEnd();
+                        Regex regex = new Regex("w15-0\">(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})");
+                        Match match = regex.Match(strResult);
+                        if (match.Success) {
+                            Debug.WriteLine(match.Groups[1].Value);
+                            IPHostEntry iPHostEntry = Dns.GetHostEntry("q1143910315.gicp.net");
+                            IPAddress[] addressList = iPHostEntry.AddressList;
+                            if (iPHostEntry != null && addressList != null) {
+                                for (int AddressListIndex = 0; AddressListIndex < addressList.Length; AddressListIndex++) {
+                                    if (addressList[AddressListIndex].AddressFamily == AddressFamily.InterNetwork) {
+                                        if (match.Groups[1].Value.Equals(addressList[AddressListIndex].ToString())) {
+                                            Debug.WriteLine("匹配成功");
+                                        }
+                                    }
+                                    Debug.WriteLine(addressList[AddressListIndex].ToString());
+                                }
+                            }
+
+                        }
+                    }
+                }
+            } catch (Exception) {
+            }
         }
         private void Timer5_Elapsed(object sender, ElapsedEventArgs e) {
             AYUVColor[] qinKeyColor = new AYUVColor[5];

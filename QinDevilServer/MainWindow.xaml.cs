@@ -490,29 +490,16 @@ namespace QinDevilServer {
                         break;
                     }
                 case 12: {
-                        int index = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
-                        int position = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
-                        userInfo.FiveTone[index] = position;
-                        userInfo.FiveTone = userInfo.FiveTone;
-                        switch (index) {
-                            case 0:
-                                iniFile.IniWriteValue(userInfo.MachineIdentity, "宫", position.ToString());
-                                break;
-                            case 1:
-                                iniFile.IniWriteValue(userInfo.MachineIdentity, "商", position.ToString());
-                                break;
-                            case 2:
-                                iniFile.IniWriteValue(userInfo.MachineIdentity, "角", position.ToString());
-                                break;
-                            case 3:
-                                iniFile.IniWriteValue(userInfo.MachineIdentity, "徵", position.ToString());
-                                break;
-                            case 4:
-                                iniFile.IniWriteValue(userInfo.MachineIdentity, "羽", position.ToString());
-                                break;
-                            default:
-                                break;
-                        }
+                        userInfo.FiveTone[0] = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        userInfo.FiveTone[1] = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        userInfo.FiveTone[2] = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        userInfo.FiveTone[3] = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        userInfo.FiveTone[4] = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                        iniFile.IniWriteValue(userInfo.MachineIdentity, "宫", userInfo.FiveTone[0].ToString());
+                        iniFile.IniWriteValue(userInfo.MachineIdentity, "商", userInfo.FiveTone[1].ToString());
+                        iniFile.IniWriteValue(userInfo.MachineIdentity, "角", userInfo.FiveTone[2].ToString());
+                        iniFile.IniWriteValue(userInfo.MachineIdentity, "徵", userInfo.FiveTone[3].ToString());
+                        iniFile.IniWriteValue(userInfo.MachineIdentity, "羽", userInfo.FiveTone[4].ToString());
                         break;
                     }
                 case 13: {

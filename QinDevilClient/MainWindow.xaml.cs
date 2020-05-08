@@ -35,6 +35,8 @@ using TextBox = System.Windows.Controls.TextBox;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 using Cursors = System.Windows.Input.Cursors;
 using MessageBox = System.Windows.MessageBox;
+using System.Net;
+using System.Net.Sockets;
 #if service
 using QinDevilCommon.Keyboard;
 #endif
@@ -222,37 +224,45 @@ namespace QinDevilClient {
                                 DeviceContext DC = new DeviceContext();
                                 if (DC.GetDeviceContext(IntPtr.Zero)) {
                                     _ = DC.CacheRegion(new DeviceContext.Rect { left = startX, right = endX, top = startY, bottom = endY });
-                                    AYUVColor color;
-                                    for (int i = startX; i < endX; i++) {
-                                        color = ARGBColor.FromInt(DC.GetPointColor(i, middleY)).ToAYUVColor();
-                                        for (int j = 0; j < 5; j++) {
-                                            if (i - gameData.FiveTone[j] < point.x && color.GetVariance(qinKeyColor[j]) < 25) {
+                                    int[] tempFiveTone = new int[5];
+                                    int i = endX;
+                                    for (int j = 4; j > -1;) {
+                                        for (; i > startX; i--) {
+                                            AYUVColor color = ARGBColor.FromInt(DC.GetPointColor(i, middleY)).ToAYUVColor();
+                                            if (color.GetVariance(qinKeyColor[j]) < 25) {
                                                 int matchTime = 1;
-                                                for (int k = 0; k < 5; k++) {
+                                                for (int k = 0; k < 8; k++) {
                                                     color = ARGBColor.FromInt(DC.GetPointColor(i, middleY - k - 1)).ToAYUVColor();
-                                                    if (color.GetVariance(qinKeyColor[j]) < 25) {
+                                                    if (matchTime < 8 && color.GetVariance(qinKeyColor[j]) < 25) {
                                                         matchTime += 1;
                                                     } else {
                                                         break;
                                                     }
                                                 }
-                                                for (int k = 1; k < 5; k++) {
+                                                for (int k = 1; k < 8; k++) {
                                                     color = ARGBColor.FromInt(DC.GetPointColor(i, middleY + k)).ToAYUVColor();
-                                                    if (color.GetVariance(qinKeyColor[j]) < 25) {
+                                                    if (matchTime < 8 && color.GetVariance(qinKeyColor[j]) < 25) {
                                                         matchTime += 1;
                                                     } else {
                                                         break;
                                                     }
                                                 }
-                                                if (matchTime > 5) {
-                                                    gameData.FiveTone[j] = i - point.x;
-                                                    List<byte> sendData = new List<byte>(8);
-                                                    sendData.AddRange(SerializeTool.RawSerialize(j));
-                                                    sendData.AddRange(SerializeTool.RawSerialize(gameData.FiveTone[j]));
+                                                if (matchTime > 7) {
+                                                    tempFiveTone[j] = i - point.x;
+                                                }
+                                                if (j == 0) {
+                                                    gameData.FiveTone = tempFiveTone;
+                                                    List<byte> sendData = new List<byte>(20);
+                                                    sendData.AddRange(SerializeTool.RawSerialize(gameData.FiveTone[0]));
+                                                    sendData.AddRange(SerializeTool.RawSerialize(gameData.FiveTone[1]));
+                                                    sendData.AddRange(SerializeTool.RawSerialize(gameData.FiveTone[2]));
+                                                    sendData.AddRange(SerializeTool.RawSerialize(gameData.FiveTone[3]));
+                                                    sendData.AddRange(SerializeTool.RawSerialize(gameData.FiveTone[4]));
                                                     client.SendPackage(12, sendData.ToArray());
                                                 }
                                             }
                                         }
+                                        j--;
                                     }
                                 }
                             }
@@ -394,18 +404,17 @@ namespace QinDevilClient {
                                                 return;
                                             }
                                         } else if (success + fail > 0) {
-                                            List<byte> sendData = new List<byte>(68);
-                                            sendData.AddRange(SerializeTool.RawSerialize(success));
-                                            sendData.AddRange(SerializeTool.RawSerialize(fail));
-                                            for (int i = 0; i < 5; i++) {
-                                                ARGBColor color = ARGBColor.FromInt(DC.GetPointColor(point.x + gameData.FiveTone[i], point.y + rect.bottom - (gameData.KillingIntentionStrip / 2)));
-                                                sendData.AddRange(SerializeTool.RawSerialize(color.R));
-                                                sendData.AddRange(SerializeTool.RawSerialize(color.G));
-                                                sendData.AddRange(SerializeTool.RawSerialize(color.B));
-                                            }
-                                            client.SendPackage(16, sendData.ToArray());
-                                            if (discernTimers++ > 3) {
-                                                return;
+                                            if (discernTimers++ < 5) {
+                                                List<byte> sendData = new List<byte>(68);
+                                                sendData.AddRange(SerializeTool.RawSerialize(success));
+                                                sendData.AddRange(SerializeTool.RawSerialize(fail));
+                                                for (int i = 0; i < 5; i++) {
+                                                    ARGBColor color = ARGBColor.FromInt(DC.GetPointColor(point.x + gameData.FiveTone[i], point.y + rect.bottom - (gameData.KillingIntentionStrip / 2)));
+                                                    sendData.AddRange(SerializeTool.RawSerialize(color.R));
+                                                    sendData.AddRange(SerializeTool.RawSerialize(color.G));
+                                                    sendData.AddRange(SerializeTool.RawSerialize(color.B));
+                                                }
+                                                client.SendPackage(16, sendData.ToArray());
                                             }
                                         }
                                     }
@@ -527,12 +536,143 @@ namespace QinDevilClient {
             //Debug.WriteLine("连接！" + (connected ? "成功！" : "失败!"));
             Connecting = connected;
             if (connected == false) {
+                CheckDomain();
                 gameData.Ping = 9999;
                 timer.Interval = 3000;
                 timer.Start();
             } else {
                 timer.Interval = 500;
                 timer.Start();
+            }
+        }
+        private void CheckDomain() {
+            try {
+                HttpWebRequest hwRequest = (HttpWebRequest)WebRequest.Create(@"http://ip.tool.chinaz.com/q1143910315.gicp.net");
+                //hwRequest.Timeout = 30000;
+                hwRequest.Method = "GET";
+                hwRequest.ContentType = "application/x-www-form-urlencoded";
+                using (HttpWebResponse hwResponse = (HttpWebResponse)hwRequest.GetResponse()) {
+                    using (StreamReader srReader = new StreamReader(hwResponse.GetResponseStream(), Encoding.UTF8)) {
+                        string strResult = srReader.ReadToEnd();
+                        Regex regex = new Regex("w15-0\">(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})");
+                        Match match = regex.Match(strResult);
+                        if (match.Success) {
+                            IPHostEntry iPHostEntry = Dns.GetHostEntry("q1143910315.gicp.net");
+                            IPAddress[] addressList = iPHostEntry.AddressList;
+                            if (iPHostEntry != null && addressList != null) {
+                                for (int AddressListIndex = 0; AddressListIndex < addressList.Length; AddressListIndex++) {
+                                    if (addressList[AddressListIndex].AddressFamily == AddressFamily.InterNetwork) {
+                                        if (!match.Groups[1].Value.Equals(addressList[AddressListIndex].ToString())) {
+                                            string MessageBoxText = "检测到当前网络发生了域名劫持攻击，尝试绕过域名劫持。\n正确地址应为：\nIP版本4地址：" + match.Groups[1] + "\n劫持详细信息：";
+                                            for (int i = 0; i < addressList.Length; i++) {
+                                                switch (addressList[i].AddressFamily) {
+                                                    case AddressFamily.Unknown:
+                                                        MessageBoxText += "\n未知的地址族：" + addressList[i].ToString();
+                                                        break;
+                                                    case AddressFamily.Unspecified:
+                                                        MessageBoxText += "\n未指定的地址族：" + addressList[i].ToString();
+                                                        break;
+                                                    case AddressFamily.Unix:
+                                                        MessageBoxText += "\nUnix本地主机地址：" + addressList[i].ToString();
+                                                        break;
+                                                    case AddressFamily.InterNetwork:
+                                                        MessageBoxText += "\nIP版本4地址：" + addressList[i].ToString();
+                                                        break;
+                                                    case AddressFamily.ImpLink:
+                                                        MessageBoxText += "\n当初ARPANET导入地址：" + addressList[i].ToString();
+                                                        break;
+                                                    case AddressFamily.Pup:
+                                                        MessageBoxText += "\nPUP协议的地址：" + addressList[i].ToString();
+                                                        break;
+                                                    case AddressFamily.Chaos:
+                                                        MessageBoxText += "\nMIT混乱不堪的局面协议的地址：" + addressList[i].ToString();
+                                                        break;
+                                                    case AddressFamily.NS:
+                                                        MessageBoxText += "\nXeroxNS协议的地址/IPX或SPX地址：" + addressList[i].ToString();
+                                                        break;
+                                                    case AddressFamily.Iso:
+                                                        MessageBoxText += "\n对ISO协议的地址/OSI协议的地址：" + addressList[i].ToString();
+                                                        break;
+                                                    case AddressFamily.Ecma:
+                                                        MessageBoxText += "\n欧洲计算机制造商协会(ECMA)地址：" + addressList[i].ToString();
+                                                        break;
+                                                    case AddressFamily.DataKit:
+                                                        MessageBoxText += "\nDatakit协议的地址：" + addressList[i].ToString();
+                                                        break;
+                                                    case AddressFamily.Ccitt:
+                                                        MessageBoxText += "\n对于CCITT协议，如X.25地址：" + addressList[i].ToString();
+                                                        break;
+                                                    case AddressFamily.Sna:
+                                                        MessageBoxText += "\nIBMSNA地址：" + addressList[i].ToString();
+                                                        break;
+                                                    case AddressFamily.DecNet:
+                                                        MessageBoxText += "\nDECnet地址：" + addressList[i].ToString();
+                                                        break;
+                                                    case AddressFamily.DataLink:
+                                                        MessageBoxText += "\n直接链接数据接口地址：" + addressList[i].ToString();
+                                                        break;
+                                                    case AddressFamily.Lat:
+                                                        MessageBoxText += "\nLAT地址：" + addressList[i].ToString();
+                                                        break;
+                                                    case AddressFamily.HyperChannel:
+                                                        MessageBoxText += "\nNSCHyperchannel地址：" + addressList[i].ToString();
+                                                        break;
+                                                    case AddressFamily.AppleTalk:
+                                                        MessageBoxText += "\nAppleTalk地址：" + addressList[i].ToString();
+                                                        break;
+                                                    case AddressFamily.NetBios:
+                                                        MessageBoxText += "\nNetBios地址：" + addressList[i].ToString();
+                                                        break;
+                                                    case AddressFamily.VoiceView:
+                                                        MessageBoxText += "\nVoiceView地址：" + addressList[i].ToString();
+                                                        break;
+                                                    case AddressFamily.FireFox:
+                                                        MessageBoxText += "\nFireFox地址：" + addressList[i].ToString();
+                                                        break;
+                                                    case AddressFamily.Banyan:
+                                                        MessageBoxText += "\nBanyan地址：" + addressList[i].ToString();
+                                                        break;
+                                                    case AddressFamily.Atm:
+                                                        MessageBoxText += "\n本机ATM服务地址：" + addressList[i].ToString();
+                                                        break;
+                                                    case AddressFamily.InterNetworkV6:
+                                                        MessageBoxText += "\nIP版本 6的地址：" + addressList[i].ToString();
+                                                        break;
+                                                    case AddressFamily.Cluster:
+                                                        MessageBoxText += "\n针对Microsoft群集产品的地址：" + addressList[i].ToString();
+                                                        break;
+                                                    case AddressFamily.Ieee12844:
+                                                        MessageBoxText += "\nIEEE1284.4工作组地址：" + addressList[i].ToString();
+                                                        break;
+                                                    case AddressFamily.Irda:
+                                                        MessageBoxText += "\nIrDA地址：" + addressList[i].ToString();
+                                                        break;
+                                                    case AddressFamily.NetworkDesigners:
+                                                        MessageBoxText += "\n网络设计器OSI网关启用的协议的地址：" + addressList[i].ToString();
+                                                        break;
+                                                    case AddressFamily.Max:
+                                                        MessageBoxText += "\n最大地址：" + addressList[i].ToString();
+                                                        break;
+                                                    default:
+                                                        MessageBoxText += "\n无法检测的特殊未知地址：" + addressList[i].ToString();
+                                                        break;
+                                                }
+                                            }
+                                            MessageBox.Show(MessageBoxText);
+                                            startPing = false;
+                                            timer.Stop();
+                                            sendInfoSuccess = false;
+                                            client.Connect(match.Groups[1].Value, 51814);
+                                            return;
+                                        }
+                                    }
+                                }
+                            }
+
+                        }
+                    }
+                }
+            } catch (Exception) {
             }
         }
         private void OnReceivePackage(int signal, byte[] buffer) {
@@ -846,9 +986,6 @@ namespace QinDevilClient {
                     }
                 case 16: {
                         gameData.KillingIntentionStrip = 0;
-                        for (int i = 0; i < 5; i++) {
-                            gameData.FiveTone[i] = 99999;
-                        }
                         break;
                     }
                 default:
