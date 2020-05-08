@@ -129,8 +129,8 @@ namespace QinDevilServer {
                             Time = Environment.TickCount
                         });
                         if (ctrlState) {
-                            gameData.HitQinKey += "1 ";
-                            byte[] sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey);
+                            _ = gameData.HitQinKey.Append("1 ");
+                            byte[] sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey.ToString());
                             for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
                                 UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
                                 server.SendPackage(tempUserInfo.Id, 8, sendData);
@@ -144,8 +144,8 @@ namespace QinDevilServer {
                             Time = Environment.TickCount
                         });
                         if (ctrlState) {
-                            gameData.HitQinKey += "2 ";
-                            byte[] sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey);
+                            _ = gameData.HitQinKey.Append("2 ");
+                            byte[] sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey.ToString());
                             for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
                                 UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
                                 server.SendPackage(tempUserInfo.Id, 8, sendData);
@@ -159,8 +159,8 @@ namespace QinDevilServer {
                             Time = Environment.TickCount
                         });
                         if (ctrlState) {
-                            gameData.HitQinKey += "3 ";
-                            byte[] sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey);
+                            _ = gameData.HitQinKey.Append("3 ");
+                            byte[] sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey.ToString());
                             for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
                                 UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
                                 server.SendPackage(tempUserInfo.Id, 8, sendData);
@@ -174,8 +174,8 @@ namespace QinDevilServer {
                             Time = Environment.TickCount
                         });
                         if (ctrlState) {
-                            gameData.HitQinKey += "4 ";
-                            byte[] sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey);
+                            _ = gameData.HitQinKey.Append("4 ");
+                            byte[] sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey.ToString());
                             for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
                                 UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
                                 server.SendPackage(tempUserInfo.Id, 8, sendData);
@@ -189,8 +189,8 @@ namespace QinDevilServer {
                             Time = Environment.TickCount
                         });
                         if (ctrlState) {
-                            gameData.HitQinKey += "5 ";
-                            byte[] sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey);
+                            _ = gameData.HitQinKey.Append("5 ");
+                            byte[] sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey.ToString());
                             for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
                                 UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
                                 server.SendPackage(tempUserInfo.Id, 8, sendData);
@@ -204,7 +204,8 @@ namespace QinDevilServer {
                                 Content = "补弦清屏---------------------",
                                 Time = Environment.TickCount
                             });
-                            gameData.No1Qin = gameData.No2Qin = gameData.No3Qin = gameData.No4Qin = gameData.HitQinKey = "";
+                            gameData.No1Qin = gameData.No2Qin = gameData.No3Qin = gameData.No4Qin = "";
+                            _ = gameData.HitQinKey.Clear();
                             for (int i = 0; i < 12; i++) {
                                 gameData.QinKey[i] = 0;
                             }
@@ -295,7 +296,7 @@ namespace QinDevilServer {
                             for (int i = 0; i < gameData.QinKey.Count; i++) {
                                 sendData.AddRange(SerializeTool.RawSerialize(gameData.QinKey[i]));
                             }
-                            sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey));
+                            sendData.AddRange(SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey.ToString()));
                             sendData.AddRange(SerializeTool.RawSerialize(ping));
                             server.SendPackage(id, 0, sendData.ToArray(), 0, sendData.Count);
                         }
@@ -512,7 +513,7 @@ namespace QinDevilServer {
                         break;
                     }
                 case 14: {
-                        gameData.HitQinKey = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                        _ = gameData.HitQinKey.Clear().Append(SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex));
                         for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
                             UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
                             server.SendPackage(tempUserInfo.Id, 8, buffer);
@@ -520,7 +521,12 @@ namespace QinDevilServer {
                         break;
                     }
                 case 15: {
-                        gameData.No1Qin = gameData.No2Qin = gameData.No3Qin = gameData.No4Qin = gameData.HitQinKey = "";
+                        gameData.Log.InsertAfter(-1, new LogDetail() {
+                            Content = "补弦清屏---------------------",
+                            Time = Environment.TickCount
+                        });
+                        gameData.No1Qin = gameData.No2Qin = gameData.No3Qin = gameData.No4Qin = "";
+                        _ = gameData.HitQinKey.Clear();
                         for (int i = 0; i < 12; i++) {
                             gameData.QinKey[i] = 0;
                         }

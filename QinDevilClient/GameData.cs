@@ -56,8 +56,8 @@ namespace QinDevilClient {
             set => Set(ref _hitQinKey, value);
         }
 #if service
-        private string _hitQinKeyAny = "";
-        public string HitQinKeyAny {
+        private StringBuilder _hitQinKeyAny = "";
+        public StringBuilder HitQinKeyAny {
             get => _hitQinKeyAny;
             set => Set(ref _hitQinKeyAny, value);
         }
@@ -86,6 +86,11 @@ namespace QinDevilClient {
         public int[] FiveTone {
             get => _fiveTone;
             set => Set(ref _fiveTone, value);
+        }
+        private bool _fiveToneReady = false;
+        public bool FiveToneReady {
+            get => _fiveToneReady;
+            set => Set(ref _fiveToneReady, value);
         }
     }
 }

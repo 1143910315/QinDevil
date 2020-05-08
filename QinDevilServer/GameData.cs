@@ -38,8 +38,8 @@ namespace QinDevilServer {
             get => _qinKey;
             set => Update();
         }
-        private string _hitQinKey = "";
-        public string HitQinKey {
+        private StringBuilder _hitQinKey = new StringBuilder(9);
+        public StringBuilder HitQinKey {
             get => _hitQinKey;
             set => Set(ref _hitQinKey, value);
         }

@@ -144,42 +144,42 @@ namespace QinDevilClient {
                         }
                     case KeyCode.Numeric1: {
                             if (ctrlState) {
-                                gameData.HitQinKeyAny += "1 ";
-                                client.SendPackage(14, SerializeTool.RawSerializeForUTF8String(gameData.HitQinKeyAny));
+                                _ = gameData.HitQinKey.Append("1 ");
+                                client.SendPackage(14, SerializeTool.RawSerializeForUTF8String(gameData.HitQinKeyAny.ToString()));
                             }
                             break;
                         }
                     case KeyCode.Numeric2: {
                             if (ctrlState) {
-                                gameData.HitQinKeyAny += "2 ";
-                                client.SendPackage(14, SerializeTool.RawSerializeForUTF8String(gameData.HitQinKeyAny));
+                                _ = gameData.HitQinKey.Append("2 ");
+                                client.SendPackage(14, SerializeTool.RawSerializeForUTF8String(gameData.HitQinKeyAny.ToString()));
                             }
                             break;
                         }
                     case KeyCode.Numeric3: {
                             if (ctrlState) {
-                                gameData.HitQinKeyAny += "3 ";
-                                client.SendPackage(14, SerializeTool.RawSerializeForUTF8String(gameData.HitQinKeyAny));
+                                _ = gameData.HitQinKey.Append("3 ");
+                                client.SendPackage(14, SerializeTool.RawSerializeForUTF8String(gameData.HitQinKeyAny.ToString()));
                             }
                             break;
                         }
                     case KeyCode.Numeric4: {
                             if (ctrlState) {
-                                gameData.HitQinKeyAny += "4 ";
-                                client.SendPackage(14, SerializeTool.RawSerializeForUTF8String(gameData.HitQinKeyAny));
+                                _ = gameData.HitQinKey.Append("4 ");
+                                client.SendPackage(14, SerializeTool.RawSerializeForUTF8String(gameData.HitQinKeyAny.ToString()));
                             }
                             break;
                         }
                     case KeyCode.Numeric5: {
                             if (ctrlState) {
-                                gameData.HitQinKeyAny += "5 ";
-                                client.SendPackage(14, SerializeTool.RawSerializeForUTF8String(gameData.HitQinKeyAny));
+                                _ = gameData.HitQinKey.Append("5 ");
+                                client.SendPackage(14, SerializeTool.RawSerializeForUTF8String(gameData.HitQinKeyAny.ToString()));
                             }
                             break;
                         }
                     case KeyCode.Numeric7: {
                             if (ctrlState) {
-                                gameData.HitQinKeyAny = "";
+                                _ = gameData.HitQinKeyAny.Clear();
                                 client.SendPackage(15, null);
                             }
                             break;
