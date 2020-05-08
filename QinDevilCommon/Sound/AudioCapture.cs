@@ -15,7 +15,7 @@ namespace QinDevilCommon.Sound {
         private MMDeviceEnumerator mMDeviceEnumerator;
         private MMDevice mMDevice;
         private AudioClient audioClient;
-        private NAudio.Wave.WaveFormat mixFormat;
+        private WaveFormat mixFormat;
         private AudioCaptureClient audioCaptureClient;
         ///private Action action;
         private DataCallback cb;

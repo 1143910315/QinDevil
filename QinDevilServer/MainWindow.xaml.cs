@@ -500,6 +500,7 @@ namespace QinDevilServer {
                         iniFile.IniWriteValue(userInfo.MachineIdentity, "角", userInfo.FiveTone[2].ToString());
                         iniFile.IniWriteValue(userInfo.MachineIdentity, "徵", userInfo.FiveTone[3].ToString());
                         iniFile.IniWriteValue(userInfo.MachineIdentity, "羽", userInfo.FiveTone[4].ToString());
+                        userInfo.FiveTone = userInfo.FiveTone;
                         break;
                     }
                 case 13: {

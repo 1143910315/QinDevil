@@ -99,7 +99,6 @@ namespace QinDevilCommon {
             byte[] l = BitConverter.GetBytes(count + v.Length);
             Monitor.Enter(sendLock);
             if (SendAsyncEventArgs == null) {
-                Monitor.Exit(sendLock);
                 byte[] package = new byte[count + v.Length + l.Length];
                 int index = 0;
                 for (int i = 0; i < l.Length; i++) {
@@ -112,33 +111,9 @@ namespace QinDevilCommon {
                     package[index++] = data[i];
                 }
                 SendAsyncEventArgs = new SocketAsyncEventArgs();
+                Monitor.Exit(sendLock);
                 SendAsyncEventArgs.SetBuffer(package, 0, index);
-                SendAsyncEventArgs.Completed += (s, e) => {
-                    try {
-                        if (s.Equals(socket)) {
-                            if (e.SocketError == SocketError.Success) {
-                                Monitor.Enter(sendLock);
-                                int len = sendData.Count;
-                                if (len > 0) {
-                                    byte[] temp = sendData.ToArray();
-                                    sendData.Clear();
-                                    SendAsyncEventArgs.SetBuffer(temp, 0, len);
-                                    if (socketIsOnline) {
-                                        _ = socket.SendAsync(SendAsyncEventArgs);
-                                    }
-                                } else {
-                                    onSendCompletedEvent?.Invoke();
-                                }
-                                Monitor.Exit(sendLock);
-                            } else {
-                                onConnectionBreakEvent?.Invoke();
-                                socket.Close();
-                            }
-                        }
-                    } finally {
-                        SendAsyncEventArgs = null;
-                    }
-                };
+                SendAsyncEventArgs.Completed += SendAsyncEventArgs_Completed;
                 if (socketIsOnline) {
                     try {
                         _ = socket.SendAsync(SendAsyncEventArgs);
@@ -156,6 +131,37 @@ namespace QinDevilCommon {
                 for (int i = offset; i < count; i++) {
                     sendData.Add(data[i]);
                 }
+                Monitor.Exit(sendLock);
+            }
+        }
+        private void SendAsyncEventArgs_Completed(object sender, SocketAsyncEventArgs e) {
+            try {
+                Monitor.Enter(sendLock);
+                if (sender.Equals(socket)) {
+                    if (e.SocketError == SocketError.Success) {
+                        int len = sendData.Count;
+                        if (len > 0) {
+                            SendAsyncEventArgs = new SocketAsyncEventArgs();
+                            byte[] temp = sendData.ToArray();
+                            sendData.Clear();
+                            SendAsyncEventArgs.SetBuffer(temp, 0, len);
+                            SendAsyncEventArgs.Completed += SendAsyncEventArgs_Completed;
+                            if (socketIsOnline) {
+                                _ = socket.SendAsync(SendAsyncEventArgs);
+                                return;
+                            }
+                        } else {
+                            onSendCompletedEvent?.Invoke();
+                        }
+                    } else {
+                        onConnectionBreakEvent?.Invoke();
+                        socket.Close();
+                    }
+                }
+                SendAsyncEventArgs = null;
+            } catch (Exception) {
+                SendAsyncEventArgs = null;
+            } finally {
                 Monitor.Exit(sendLock);
             }
         }
