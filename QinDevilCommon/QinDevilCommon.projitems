@@ -20,6 +20,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Keyboard\KeyboardHook.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Keyboard\KeyCode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Data\SerializeTool.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LogClass\LogManage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SocketClient.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SocketList.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SocketServer.cs" />
