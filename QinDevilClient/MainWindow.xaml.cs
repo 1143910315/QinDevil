@@ -265,6 +265,7 @@ namespace QinDevilClient {
                                     int middleY = point.y + rect.bottom - (gameData.KillingIntentionStrip / 2);
                                     int startY = middleY - 5;
                                     int endY = startY + 10;
+                                    log.Generate(string.Format("6({0},{1},{2},{3},{4})", startX, endX, middleY, startY, endY));
                                     DeviceContext DC = new DeviceContext();
                                     if (DC.GetDeviceContext(IntPtr.Zero)) {
                                         _ = DC.CacheRegion(new DeviceContext.Rect { left = startX, right = endX, top = startY, bottom = endY });

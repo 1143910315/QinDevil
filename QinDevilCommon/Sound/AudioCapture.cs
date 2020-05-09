@@ -32,7 +32,12 @@ namespace QinDevilCommon.Sound {
             mMDevice = mMDeviceEnumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Console);
             audioClient = mMDevice.AudioClient;
             mixFormat = audioClient.MixFormat;
-            Debug.WriteLine(mixFormat);
+            if(audioClient.IsFormatSupported(AudioClientShareMode.Shared,new WaveFormat(mixFormat.SampleRate, mixFormat.BitsPerSample, 1))) {
+                Debug.WriteLine("兼容");
+            } else {
+                Debug.WriteLine("不兼容");
+            }
+            //Debug.WriteLine(mixFormat);
             formatCallback?.Invoke(mixFormat);
             audioClient.Initialize(AudioClientShareMode.Shared, AudioClientStreamFlags.Loopback, 0, 0, mixFormat, Guid.Empty);
             audioCaptureClient = audioClient.AudioCaptureClient;

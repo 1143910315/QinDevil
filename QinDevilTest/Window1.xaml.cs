@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,7 +25,6 @@ namespace QinDevilTest {
     /// Window1.xaml 的交互逻辑
     /// </summary>
     public partial class Window1 : Window {
-        private AccurateTimerClass accurateTimer = new AccurateTimerClass();
         private AudioCapture.DataCallback cb;
         private WaveFileWriter waveFileWriter;
         private int len = 0;
@@ -43,6 +43,8 @@ namespace QinDevilTest {
             len += bs.Length;
         }
         private void FormatCallbackFunction(WaveFormat waveFormat) {
+            WaveFormat waveFormat1 = new WaveFormat(waveFormat.SampleRate, waveFormat.BitsPerSample, waveFormat.Channels);
+            Debug.WriteLine(waveFormat1.Encoding.ToString() + "-----" + waveFormat.Encoding.ToString());
             waveFileWriter = new WaveFileWriter("e:\\testtest4.wav", waveFormat);
         }
     }

@@ -58,12 +58,12 @@ namespace QinDevilTest {
             InitializeComponent();
             bool test = true;
             if (test) {
-                CheckDomain();
+                new Window1().Close();
                 Close();
                 return;
             }
             if (test) {
-                new Window1().Close();
+                CheckDomain();
                 Close();
                 return;
             }
