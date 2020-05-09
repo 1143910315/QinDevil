@@ -48,10 +48,5 @@ namespace QinDevilServer {
             get => _log;
             set => Update();
         }
-        private bool _autoLessKey = false;
-        public bool AutoLessKey {
-            get => _autoLessKey;
-            set => Set(ref _autoLessKey, value);
-        }
     }
 }

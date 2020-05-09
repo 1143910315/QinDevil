@@ -475,6 +475,28 @@ namespace QinDevilClient {
                                     }
                                     if (success + fail == 5) {
                                         if (fail > 0 && fail < 4) {
+                                            if (gameData.AutoLessKey) {
+                                                switch (combo.SelectedIndex) {
+                                                    case 0:
+                                                        gameData.No1Qin = lessKey;
+                                                        client.SendPackage(1, SerializeTool.RawSerializeForUTF8String(gameData.No1Qin));
+                                                        break;
+                                                    case 1:
+                                                        gameData.No2Qin = lessKey;
+                                                        client.SendPackage(2, SerializeTool.RawSerializeForUTF8String(gameData.No2Qin));
+                                                        break;
+                                                    case 2:
+                                                        gameData.No3Qin = lessKey;
+                                                        client.SendPackage(3, SerializeTool.RawSerializeForUTF8String(gameData.No3Qin));
+                                                        break;
+                                                    case 3:
+                                                        gameData.No4Qin = lessKey;
+                                                        client.SendPackage(4, SerializeTool.RawSerializeForUTF8String(gameData.No4Qin));
+                                                        break;
+                                                    default:
+                                                        break;
+                                                }
+                                            }
                                             client.SendPackage(13, SerializeTool.RawSerializeForUTF8String(lessKey));
                                             return;
                                         }
@@ -497,7 +519,22 @@ namespace QinDevilClient {
                         }
                     }
                 }
-                discernTimer.Start();
+                int noNull = 0;
+                if (!gameData.No1Qin.Equals("")) {
+                    noNull++;
+                }
+                if (!gameData.No2Qin.Equals("")) {
+                    noNull++;
+                }
+                if (!gameData.No3Qin.Equals("")) {
+                    noNull++;
+                }
+                if (!gameData.No4Qin.Equals("")) {
+                    noNull++;
+                }
+                if (noNull < 4) {
+                    discernTimer.Start();
+                }
             } catch (Exception e1) {
                 log.Generate("9 异常，异常信息：" + e1.Message);
                 throw;
@@ -996,107 +1033,12 @@ namespace QinDevilClient {
                             break;
                         }
                     case 14: {
-                            /*Process process = GetWuXiaProcess();
-                            if (process != null) {
-                                WindowInfo.Rect rect = WindowInfo.GetWindowClientRect(process.MainWindowHandle);
-                                DeviceContext DC = new DeviceContext();
-                                if (DC.GetDeviceContext(IntPtr.Zero)) {
-                                    WindowInfo.Point point = new WindowInfo.Point() {
-                                        x = rect.right / 2,
-                                        y = rect.bottom
-                                    };
-                                    WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point);
-                                    int startX = point.x - rect.right / 2, endX = point.x, startY = point.y, endY = point.y + 100;
-                                    startX = startX < 0 ? 0 : startX;
-                                    endY = endY > Screen.PrimaryScreen.Bounds.Height ? Screen.PrimaryScreen.Bounds.Height : endY;
-                                    if (startX > endX) {
-                                        startX ^= endX;
-                                        endX ^= startX;
-                                        startX ^= endX;
-                                    }
-                                    if (startY > endY) {
-                                        startY ^= endY;
-                                        endY ^= startY;
-                                        startY ^= endY;
-                                    }
-                                    if (DC.CacheRegion(new DeviceContext.Rect { left = startX, right = endX, top = startY, bottom = endY })) {
-                                        AYUVColor[] qinKeyColor = {
-                                            ARGBColor.FromRGB(192, 80, 78).ToAYUVColor(),
-                                            ARGBColor.FromRGB(156, 188, 89).ToAYUVColor(),
-                                            ARGBColor.FromRGB(131, 103, 164).ToAYUVColor(),
-                                            ARGBColor.FromRGB(75, 172, 197).ToAYUVColor(),
-                                            ARGBColor.FromRGB(246, 150, 71).ToAYUVColor()
-                                        };
-                                        int[] match = { 0, 0, 0, 0, 0 };
-                                        int matchColor = 0;
-                                        for (int x = startX; x < endX; x++) {
-                                            for (int y = startY; y < endY; y++) {
-                                                AYUVColor color = ARGBColor.FromInt(DC.GetPointColor(x, y)).ToAYUVColor();
-                                                for (int i = 0; i < 5; i++) {
-                                                    if (match[i] < 10) {
-                                                        if (color.GetVariance(qinKeyColor[i]) < 25) {
-                                                            match[i]++;
-                                                            if (match[i] == 10) {
-                                                                matchColor |= 1 << i;
-                                                            }
-                                                        } else {
-                                                            match[i] = 0;
-                                                        }
-                                                    }
-                                                }
-                                                if (matchColor == 31) {
-                                                    //break
-                                                    y = 9999999;
-                                                    x = 9999999;
-                                                }
-                                            }
-                                        }
-                                        gameData.MatchColor = matchColor;
-                                    }
-                                }
-                            }*/
-                            /*Process process = GetWuXiaProcess();
-                            if (process != null) {
-                                WindowInfo.Rect rect = WindowInfo.GetWindowClientRect(process.MainWindowHandle);
-                                DeviceContext DC = new DeviceContext();
-                                AYUVColor[] qinKeyColor = {
-                                    ARGBColor.FromRGB(192, 80, 78).ToAYUVColor(),
-                                    ARGBColor.FromRGB(156, 188, 89).ToAYUVColor(),
-                                    ARGBColor.FromRGB(131, 103, 164).ToAYUVColor(),
-                                    ARGBColor.FromRGB(75, 172, 197).ToAYUVColor(),
-                                    ARGBColor.FromRGB(246, 150, 71).ToAYUVColor()
-                                };
-                                int[] match = { 0, 0, 0, 0, 0 };
-                                int matchColor = 0;
-                                for (int x = rect.right / 2; x > 0; x--) {
-                                    for (int y = 0; y < 100; y++) {
-                                        WindowInfo.Point point = new WindowInfo.Point() {
-                                            x = x,
-                                            y = rect.bottom - y
-                                        };
-                                        WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point);
-                                        AYUVColor color = ARGBColor.FromInt(DC.GetPointColor(point.x, point.y)).ToAYUVColor();
-                                        for (int i = 0; i < 5; i++) {
-                                            if (match[i] < 10) {
-                                                if (color.GetVariance(qinKeyColor[i]) < 25) {
-                                                    match[i]++;
-                                                    if (match[i] == 10) {
-                                                        matchColor |= 1 << i;
-                                                    }
-                                                } else {
-                                                    match[i] = 0;
-                                                }
-                                            }
-                                        }
-                                        if (matchColor == 31) {
-                                            //break
-                                            y = 200;
-                                            x = 0;
-                                        }
-                                    }
-                                }
-                                gameData.MatchColor = matchColor;
-                            }*/
+                            byte b = SerializeTool.RawDeserialize<byte>(buffer, ref startIndex);
+                            timeLabel.Dispatcher.Invoke(() => {
+                                timeLabel.Visibility = b != 0 ? Visibility.Hidden : Visibility.Visible;
+                                combo.Visibility = b == 0 ? Visibility.Hidden : Visibility.Visible;
+                                gameData.AutoLessKey = b != 0;
+                            });
                             break;
                         }
                     case 15: {

@@ -92,5 +92,10 @@ namespace QinDevilClient {
             get => _fiveToneReady;
             set => Set(ref _fiveToneReady, value);
         }
+        private bool _autoLessKey = false;
+        public bool AutoLessKey {
+            get => _autoLessKey;
+            set => Set(ref _autoLessKey, value);
+        }
     }
 }

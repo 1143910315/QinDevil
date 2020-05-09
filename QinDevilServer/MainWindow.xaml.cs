@@ -86,7 +86,12 @@ namespace QinDevilServer {
             }
         }
         private void AllowAutoLessKey_Click(object sender, RoutedEventArgs e) {
-            gameData.AutoLessKey = !gameData.AutoLessKey;
+            if (sender is MenuItem menuItem) {
+                for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
+                    byte[] sendData = menuItem.IsChecked ? SerializeTool.RawSerialize((byte)1) : SerializeTool.RawSerialize((byte)0);
+                    server.SendPackage(gameData.ClientInfo.Get(i).Id, 14, null);
+                }
+            }
         }
         private void PrintScreenAll_Click(object sender, EventArgs e) {
             for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
