@@ -134,8 +134,11 @@ namespace QinDevilServer {
                             Time = Environment.TickCount
                         });
                         if (ctrlState) {
-                            _ = gameData.HitQinKey.Append("1 ");
-                            byte[] sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey.ToString());
+                            byte[] sendData;
+                            lock (gameData.HitQinKey) {
+                                _ = gameData.HitQinKey.Append("1 ");
+                                sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey.ToString());
+                            }
                             for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
                                 UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
                                 server.SendPackage(tempUserInfo.Id, 8, sendData);
@@ -149,8 +152,11 @@ namespace QinDevilServer {
                             Time = Environment.TickCount
                         });
                         if (ctrlState) {
-                            _ = gameData.HitQinKey.Append("2 ");
-                            byte[] sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey.ToString());
+                            byte[] sendData;
+                            lock (gameData.HitQinKey) {
+                                _ = gameData.HitQinKey.Append("2 ");
+                                sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey.ToString());
+                            }
                             for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
                                 UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
                                 server.SendPackage(tempUserInfo.Id, 8, sendData);
@@ -164,8 +170,11 @@ namespace QinDevilServer {
                             Time = Environment.TickCount
                         });
                         if (ctrlState) {
-                            _ = gameData.HitQinKey.Append("3 ");
-                            byte[] sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey.ToString());
+                            byte[] sendData;
+                            lock (gameData.HitQinKey) {
+                                _ = gameData.HitQinKey.Append("3 ");
+                                sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey.ToString());
+                            }
                             for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
                                 UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
                                 server.SendPackage(tempUserInfo.Id, 8, sendData);
@@ -179,8 +188,11 @@ namespace QinDevilServer {
                             Time = Environment.TickCount
                         });
                         if (ctrlState) {
-                            _ = gameData.HitQinKey.Append("4 ");
-                            byte[] sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey.ToString());
+                            byte[] sendData;
+                            lock (gameData.HitQinKey) {
+                                _ = gameData.HitQinKey.Append("4 ");
+                                sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey.ToString());
+                            }
                             for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
                                 UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
                                 server.SendPackage(tempUserInfo.Id, 8, sendData);
@@ -194,8 +206,11 @@ namespace QinDevilServer {
                             Time = Environment.TickCount
                         });
                         if (ctrlState) {
-                            _ = gameData.HitQinKey.Append("5 ");
-                            byte[] sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey.ToString());
+                            byte[] sendData;
+                            lock (gameData.HitQinKey) {
+                                _ = gameData.HitQinKey.Append("5 ");
+                                sendData = SerializeTool.RawSerializeForUTF8String(gameData.HitQinKey.ToString());
+                            }
                             for (int i = 0; i < gameData.ClientInfo.GetSize(); i++) {
                                 UserInfo tempUserInfo = gameData.ClientInfo.Get(i);
                                 server.SendPackage(tempUserInfo.Id, 8, sendData);
