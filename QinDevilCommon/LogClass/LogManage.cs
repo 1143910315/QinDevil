@@ -12,7 +12,8 @@ namespace QinDevilCommon.LogClass {
             tw = TextWriter.Synchronized(sw);
         }
         public void Generate(string log) {
-            tw.WriteLineAsync(log);
+            tw.WriteLineAsync(log).Wait();
+            tw.Flush();
         }
     }
 }

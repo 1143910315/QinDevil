@@ -58,6 +58,36 @@ namespace QinDevilTest {
             InitializeComponent();
             bool test = true;
             if (test) {
+                List<string> docList = new List<string>();
+                for (int i = 0; i < 9000000; i++) {
+                    docList.Add(Guid.NewGuid().ToString());
+                }
+                Stopwatch sw = new Stopwatch();
+                StringBuilder sres = new StringBuilder();
+                StringBuilder sfor = new StringBuilder();
+                StringBuilder smy = new StringBuilder();
+                sw.Start();
+                foreach (string d in docList) {
+                    sres.Append(d);
+                }
+                sw.Stop();
+                Debug.WriteLine(string.Format("foreach take times {0}ms", sw.ElapsedMilliseconds));
+                sw.Restart();
+                for (int i = 0; i < docList.Count; i++) {
+                    sfor.Append(docList[i]);
+                }
+                sw.Stop();
+                Debug.WriteLine(string.Format("for take times {0}ms", sw.ElapsedMilliseconds));
+                sw.Restart();
+                docList.ForEach(p =>
+                {
+                    smy.Append(p);
+                });
+                sw.Stop();
+                Debug.WriteLine(string.Format("Linq Foreach take times {0}ms", sw.ElapsedMilliseconds));
+                return;
+            }
+            if (test) {
                 new Window1().Close();
                 Close();
                 return;
