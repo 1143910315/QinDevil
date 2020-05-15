@@ -48,6 +48,13 @@ namespace QinDevilClient {
     /// MainWindow.xaml 的交互逻辑
     /// </summary>
     public partial class MainWindow : Window {
+        private const int SW_HIDE = 0; //隐藏任务栏
+        private const int SW_RESTORE = 9;//显示任务栏
+
+        [DllImport("user32.dll")]
+        public static extern int ShowWindow(int hwnd, int nCmdShow);
+        [DllImport("user32.dll")]
+        public static extern int FindWindow(string lpClassName, string lpWindowName);
         [DllImport("Psapi.dll", EntryPoint = "GetModuleFileNameEx")]
         public static extern int GetModuleFileNameEx(IntPtr handle, IntPtr hModule, [Out] StringBuilder lpszFileName, int nSize);
         [DllImport("Kernel32.dll", EntryPoint = "QueryFullProcessImageNameA")]
@@ -57,7 +64,7 @@ namespace QinDevilClient {
         public static extern void Keybd_event(int bVk, int bScan, int dwFlags, int dwExtraInfo);
         [DllImport("User32.dll", EntryPoint = "MapVirtualKeyA")]
         public static extern int MapVirtualKeyA(int uCode, int uMapType);
-        private SocketClient client;
+        private readonly SocketClient client;
         private readonly Timer timer = new Timer();
         private readonly Timer pingTimer = new Timer();
         private readonly Timer discernTimer = new Timer();
@@ -1481,6 +1488,32 @@ namespace QinDevilClient {
                 throw;
             } finally {
                 log.Generate("40 退出");
+            }
+        }
+        private void Window_Activated(object sender, EventArgs e) {
+            headTitle.Visibility = Visibility.Visible;
+            WindowInfo.Rect screen = WindowInfo.GetWindowClientRect(IntPtr.Zero);
+            IntPtr topWindow = WindowInfo.GetTopWindow();
+            while (!topWindow.Equals(IntPtr.Zero)) {
+                WindowInfo.Rect rect = WindowInfo.GetWindowClientRect(topWindow);
+                if (screen.Equals(rect)) {
+                    _ = ShowWindow(FindWindow("Shell_TrayWnd", null), SW_HIDE);
+                    return;
+                }
+                topWindow = WindowInfo.GetWindow(topWindow, WindowInfo.GettingType.GW_HWNDNEXT);
+            }
+        }
+        private void Window_Deactivated(object sender, EventArgs e) {
+            _ = ShowWindow(FindWindow("Shell_TrayWnd", null), SW_RESTORE); 
+            WindowInfo.Rect screen = WindowInfo.GetWindowClientRect(IntPtr.Zero);
+            IntPtr topWindow = WindowInfo.GetTopWindow();
+            while (!topWindow.Equals(IntPtr.Zero)) {
+                WindowInfo.Rect rect = WindowInfo.GetWindowClientRect(topWindow);
+                if (screen.Equals(rect)) {
+                    headTitle.Visibility = Visibility.Hidden;
+                    return;
+                }
+                topWindow = WindowInfo.GetWindow(topWindow, WindowInfo.GettingType.GW_HWNDNEXT);
             }
         }
     }

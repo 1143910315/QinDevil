@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:QinDevilClient"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
-        Title="琴魔副本工具" Width="388" Topmost="True" Background="{x:Null}" WindowStartupLocation="CenterScreen" WindowStyle="None" AllowsTransparency="True" SizeToContent="Height">
+        Title="琴魔副本工具" Width="388" Topmost="True" Background="{x:Null}" WindowStartupLocation="CenterScreen" WindowStyle="None" AllowsTransparency="True" SizeToContent="Height" Activated="Window_Activated" Deactivated="Window_Deactivated">
     <Window.Resources>
         <local:QinKeyConverter x:Key="QinKey"/>
         <local:HitQinKeyContentConverter x:Key="HitQinKeyContent"/>
@@ -49,7 +49,7 @@
             <RowDefinition Height="auto"></RowDefinition>
             <RowDefinition Height="5"></RowDefinition>
         </Grid.RowDefinitions>
-        <Viewbox Grid.ColumnSpan="3" MouseDown="Image_MouseDown">
+        <Viewbox Grid.ColumnSpan="3" MouseDown="Image_MouseDown" x:Name="headTitle">
             <Canvas Width="600" Height="93">
                 <Image Source="head.png"/>
                 <Label Content="琴魔副本工具" Canvas.Left="25" Canvas.Top="15" FontFamily="/琴魔副本工具;component/#HYShangWeiShouShuJ" FontSize="45" Padding="0" Foreground="White"></Label>
