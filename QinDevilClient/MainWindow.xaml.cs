@@ -38,6 +38,7 @@ using MessageBox = System.Windows.MessageBox;
 using System.Net;
 using System.Net.Sockets;
 using QinDevilCommon.LogClass;
+using QinDevilCommon.Keyboard;
 #if service
 using QinDevilCommon.Keyboard;
 #endif
@@ -77,10 +78,8 @@ namespace QinDevilClient {
         private readonly Random r = new Random();
         private int discernTimers = 0;
         private readonly LogManage log = new LogManage(".\\工具日志-" + Environment.TickCount.ToString() + ".log");
-#if service
-        private readonly KeyboardHook hook = new KeyboardHook();
+        private KeyboardHook hook;
         private bool ctrlState;
-#endif
         public MainWindow() {
             try {
                 log.Generate("1 进入");
@@ -118,10 +117,6 @@ namespace QinDevilClient {
                 secondTimer.Interval = 1000;
                 secondTimer.Elapsed += SecondTimer_Elapsed;
                 secondTimer.AutoReset = true;
-#if service
-                hook.KeyDownEvent += KeyDownCallbak;
-                hook.KeyUpEvent += KeyUpCallbak;
-#endif
                 Connect();
             } catch (Exception e1) {
                 log.Generate("1 异常，异常信息：" + e1.Message);
@@ -143,87 +138,6 @@ namespace QinDevilClient {
                 log.Generate("2 退出");
             }
         }
-#if service
-        private void KeyDownCallbak(KeyCode keyCode) {
-            try {
-                log.Generate("3 进入");
-                switch (keyCode) {
-                    case KeyCode.VK_LCONTROL: {
-                            ctrlState = true;
-                            break;
-                        }
-                    case KeyCode.Numeric1: {
-                            if (ctrlState) {
-                                _ = gameData.HitQinKey.Append("1 ");
-                                client.SendPackage(14, SerializeTool.RawSerializeForUTF8String(gameData.HitQinKeyAny.ToString()));
-                            }
-                            break;
-                        }
-                    case KeyCode.Numeric2: {
-                            if (ctrlState) {
-                                _ = gameData.HitQinKey.Append("2 ");
-                                client.SendPackage(14, SerializeTool.RawSerializeForUTF8String(gameData.HitQinKeyAny.ToString()));
-                            }
-                            break;
-                        }
-                    case KeyCode.Numeric3: {
-                            if (ctrlState) {
-                                _ = gameData.HitQinKey.Append("3 ");
-                                client.SendPackage(14, SerializeTool.RawSerializeForUTF8String(gameData.HitQinKeyAny.ToString()));
-                            }
-                            break;
-                        }
-                    case KeyCode.Numeric4: {
-                            if (ctrlState) {
-                                _ = gameData.HitQinKey.Append("4 ");
-                                client.SendPackage(14, SerializeTool.RawSerializeForUTF8String(gameData.HitQinKeyAny.ToString()));
-                            }
-                            break;
-                        }
-                    case KeyCode.Numeric5: {
-                            if (ctrlState) {
-                                _ = gameData.HitQinKey.Append("5 ");
-                                client.SendPackage(14, SerializeTool.RawSerializeForUTF8String(gameData.HitQinKeyAny.ToString()));
-                            }
-                            break;
-                        }
-                    case KeyCode.Numeric7: {
-                            if (ctrlState) {
-                                _ = gameData.HitQinKeyAny.Clear();
-                                client.SendPackage(15, null);
-                            }
-                            break;
-                        }
-                    default:
-                        break;
-                }
-            } catch (Exception e1) {
-                log.Generate("3 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("3 退出");
-            }
-        }
-        private void KeyUpCallbak(KeyCode keyCode) {
-            try {
-                log.Generate("4 进入");
-                switch (keyCode) {
-                    case KeyCode.VK_LCONTROL:
-                        ctrlState = false;
-                        break;
-                    default:
-                        break;
-                }
-            } catch (Exception e1) {
-                log.Generate("4 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("4 退出");
-            }
-        }
-#endif
         private void SecondTimer_Elapsed(object sender, ElapsedEventArgs e) {
             try {
                 log.Generate("5 进入");
@@ -1020,6 +934,27 @@ namespace QinDevilClient {
                             }
                             break;
                         }
+                    case 19: {
+                            gameData.Line = SerializeTool.ByteToInt(buffer, ref startIndex);
+                            sendInfoSuccess = false;
+                            break;
+                        }
+                    case 20: {
+                            switch (buffer[startIndex++]) {
+                                case 0:
+                                    hook = null;
+                                    break;
+                                case 1:
+                                    ctrlState = false;
+                                    hook = new KeyboardHook();
+                                    hook.KeyDownEvent += Hook_KeyDownEvent;
+                                    hook.KeyUpEvent += Hook_KeyUpEvent;
+                                    break;
+                                default:
+                                    break;
+                            }
+                            break;
+                        }
                     default:
                         break;
                 }
@@ -1052,6 +987,144 @@ namespace QinDevilClient {
                 throw;
             } finally {
                 log.Generate("16 退出");
+            }
+        }
+        private void Hook_KeyUpEvent(KeyCode keyCode) {
+            try {
+                log.Generate("4 进入");
+                switch (keyCode) {
+                    case KeyCode.VK_LCONTROL:
+                        ctrlState = false;
+                        break;
+                    default:
+                        break;
+                }
+            } catch (Exception e1) {
+                log.Generate("4 异常，异常信息：" + e1.Message);
+                log.Flush();
+                throw;
+            } finally {
+                log.Generate("4 退出");
+            }
+        }
+        private void Hook_KeyDownEvent(KeyCode keyCode) {
+            try {
+                log.Generate("3 进入");
+                switch (keyCode) {
+                    case KeyCode.VK_LCONTROL: {
+                            ctrlState = true;
+                            break;
+                        }
+                    case KeyCode.Numeric1: {
+                            if (ctrlState) {
+                                int i = 0;
+                                for (; i < gameData.HitQinKey.Length; i++) {
+                                    if (gameData.HitQinKey[i] == 0) {
+                                        break;
+                                    }
+                                }
+                                if (i < gameData.HitQinKey.Length) {
+                                    gameData.HitQinKey[i++] = 1;
+                                    if (i < gameData.HitQinKey.Length) {
+                                        gameData.HitQinKey[i] = 0;
+                                    }
+                                }
+                                gameData.HitQinKey = gameData.HitQinKey;
+                                client.SendPackage(14, gameData.HitQinKey);
+                            }
+                            break;
+                        }
+                    case KeyCode.Numeric2: {
+                            if (ctrlState) {
+                                int i = 0;
+                                for (; i < gameData.HitQinKey.Length; i++) {
+                                    if (gameData.HitQinKey[i] == 0) {
+                                        break;
+                                    }
+                                }
+                                if (i < gameData.HitQinKey.Length) {
+                                    gameData.HitQinKey[i++] = 2;
+                                    if (i < gameData.HitQinKey.Length) {
+                                        gameData.HitQinKey[i] = 0;
+                                    }
+                                }
+                                gameData.HitQinKey = gameData.HitQinKey;
+                                client.SendPackage(14, gameData.HitQinKey);
+                            }
+                            break;
+                        }
+                    case KeyCode.Numeric3: {
+                            if (ctrlState) {
+                                int i = 0;
+                                for (; i < gameData.HitQinKey.Length; i++) {
+                                    if (gameData.HitQinKey[i] == 0) {
+                                        break;
+                                    }
+                                }
+                                if (i < gameData.HitQinKey.Length) {
+                                    gameData.HitQinKey[i++] = 3;
+                                    if (i < gameData.HitQinKey.Length) {
+                                        gameData.HitQinKey[i] = 0;
+                                    }
+                                }
+                                gameData.HitQinKey = gameData.HitQinKey;
+                                client.SendPackage(14, gameData.HitQinKey);
+                            }
+                            break;
+                        }
+                    case KeyCode.Numeric4: {
+                            if (ctrlState) {
+                                int i = 0;
+                                for (; i < gameData.HitQinKey.Length; i++) {
+                                    if (gameData.HitQinKey[i] == 0) {
+                                        break;
+                                    }
+                                }
+                                if (i < gameData.HitQinKey.Length) {
+                                    gameData.HitQinKey[i++] = 4;
+                                    if (i < gameData.HitQinKey.Length) {
+                                        gameData.HitQinKey[i] = 0;
+                                    }
+                                }
+                                gameData.HitQinKey = gameData.HitQinKey;
+                                client.SendPackage(14, gameData.HitQinKey);
+                            }
+                            break;
+                        }
+                    case KeyCode.Numeric5: {
+                            if (ctrlState) {
+                                int i = 0;
+                                for (; i < gameData.HitQinKey.Length; i++) {
+                                    if (gameData.HitQinKey[i] == 0) {
+                                        break;
+                                    }
+                                }
+                                if (i < gameData.HitQinKey.Length) {
+                                    gameData.HitQinKey[i++] = 5;
+                                    if (i < gameData.HitQinKey.Length) {
+                                        gameData.HitQinKey[i] = 0;
+                                    }
+                                }
+                                gameData.HitQinKey = gameData.HitQinKey;
+                                client.SendPackage(14, gameData.HitQinKey);
+                            }
+                            break;
+                        }
+                    case KeyCode.Numeric7: {
+                            if (ctrlState) {
+                                client.SendPackage(15, null);
+                            }
+                            break;
+                        }
+                    default:
+                        break;
+                }
+            } catch (Exception e1) {
+                log.Generate("3 异常，异常信息：" + e1.Message);
+                log.Flush();
+                throw;
+            } finally {
+                log.Generate("3 退出");
             }
         }
         private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e) {

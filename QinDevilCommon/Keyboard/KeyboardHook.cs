@@ -26,8 +26,8 @@ namespace QinDevilCommon.Keyboard {
         public delegate int HookProc(int idHook, int wParam, IntPtr lParam);
         public delegate void KeyDown(KeyCode keyCode);
         public delegate void KeyUp(KeyCode keyCode);
-        public KeyDown KeyDownEvent;
-        public KeyDown KeyUpEvent;
+        public event KeyDown KeyDownEvent;
+        public event KeyDown KeyUpEvent;
         private HookProc hookProc;
         private const int HC_ACTION = 0;
         private const int WH_KEYBOARD_LL = 13;

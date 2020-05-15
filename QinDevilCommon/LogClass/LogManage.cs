@@ -18,7 +18,6 @@ namespace QinDevilCommon.LogClass {
             tw.Flush();
         }
         ~LogManage() {
-            tw.Flush();
         }
     }
 }

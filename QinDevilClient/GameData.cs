@@ -48,18 +48,11 @@ namespace QinDevilClient {
             get => _qinKey;
             set => Update();
         }
-        private byte[] _hitQinKey = new byte[9];
+        private readonly byte[] _hitQinKey = new byte[9];
         public byte[] HitQinKey {
             get => _hitQinKey;
             set => Update();
         }
-#if service
-        private StringBuilder _hitQinKeyAny = "";
-        public StringBuilder HitQinKeyAny {
-            get => _hitQinKeyAny;
-            set => Set(ref _hitQinKeyAny, value);
-        }
-#endif
         private string _matchColor = "未就绪";
         public string MatchColor {
             get => _matchColor;

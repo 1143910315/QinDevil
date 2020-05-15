@@ -45,11 +45,6 @@ namespace QinDevilServer {
             get => _hitQinKey;
             set => Set(ref _hitQinKey, value);
         }
-        private int _hitQinKeyLength = 0;
-        public int HitQinKeyLength {
-            get => _hitQinKeyLength;
-            set => Set(ref _hitQinKeyLength, value);
-        }
         public readonly ReaderWriterLockSlim LogLock = new ReaderWriterLockSlim();
         private readonly NotifyLinkedList<LogDetail> _log = new NotifyLinkedList<LogDetail>();
         public NotifyLinkedList<LogDetail> Log {

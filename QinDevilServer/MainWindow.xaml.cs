@@ -154,8 +154,17 @@ namespace QinDevilServer {
                 case KeyCode.Numeric1:
                     PopLog(current, "数字键 1被按下，" + (ctrlState ? "按下了ctrl。" : "没按ctrl。"));
                     if (ctrlState) {
-                        if (gameData[current].HitQinKeyLength < gameData[current].HitQinKey.Length) {
-                            gameData[current].HitQinKey[gameData[current].HitQinKeyLength++] = 1;
+                        int i = 0;
+                        for (; i < gameData[current].HitQinKey.Length; i++) {
+                            if (gameData[current].HitQinKey[i] == 0) {
+                                break;
+                            }
+                        }
+                        if (i < gameData[current].HitQinKey.Length) {
+                            gameData[current].HitQinKey[i++] = 1;
+                            if (i < gameData[current].HitQinKey.Length) {
+                                gameData[current].HitQinKey[i] = 0;
+                            }
                         }
                         gameData[current].ClientInfoLock.EnterReadLock();
                         try {
@@ -170,8 +179,17 @@ namespace QinDevilServer {
                 case KeyCode.Numeric2:
                     PopLog(current, "数字键 2被按下，" + (ctrlState ? "按下了ctrl。" : "没按ctrl。"));
                     if (ctrlState) {
-                        if (gameData[current].HitQinKeyLength < gameData[current].HitQinKey.Length) {
-                            gameData[current].HitQinKey[gameData[current].HitQinKeyLength++] = 2;
+                        int i = 0;
+                        for (; i < gameData[current].HitQinKey.Length; i++) {
+                            if (gameData[current].HitQinKey[i] == 0) {
+                                break;
+                            }
+                        }
+                        if (i < gameData[current].HitQinKey.Length) {
+                            gameData[current].HitQinKey[i++] = 2;
+                            if (i < gameData[current].HitQinKey.Length) {
+                                gameData[current].HitQinKey[i] = 0;
+                            }
                         }
                         gameData[current].ClientInfoLock.EnterReadLock();
                         try {
@@ -186,8 +204,17 @@ namespace QinDevilServer {
                 case KeyCode.Numeric3:
                     PopLog(current, "数字键 3被按下，" + (ctrlState ? "按下了ctrl。" : "没按ctrl。"));
                     if (ctrlState) {
-                        if (gameData[current].HitQinKeyLength < gameData[current].HitQinKey.Length) {
-                            gameData[current].HitQinKey[gameData[current].HitQinKeyLength++] = 3;
+                        int i = 0;
+                        for (; i < gameData[current].HitQinKey.Length; i++) {
+                            if (gameData[current].HitQinKey[i] == 0) {
+                                break;
+                            }
+                        }
+                        if (i < gameData[current].HitQinKey.Length) {
+                            gameData[current].HitQinKey[i++] = 3;
+                            if (i < gameData[current].HitQinKey.Length) {
+                                gameData[current].HitQinKey[i] = 0;
+                            }
                         }
                         gameData[current].ClientInfoLock.EnterReadLock();
                         try {
@@ -202,8 +229,17 @@ namespace QinDevilServer {
                 case KeyCode.Numeric4:
                     PopLog(current, "数字键 4被按下，" + (ctrlState ? "按下了ctrl。" : "没按ctrl。"));
                     if (ctrlState) {
-                        if (gameData[current].HitQinKeyLength < gameData[current].HitQinKey.Length) {
-                            gameData[current].HitQinKey[gameData[current].HitQinKeyLength++] = 4;
+                        int i = 0;
+                        for (; i < gameData[current].HitQinKey.Length; i++) {
+                            if (gameData[current].HitQinKey[i] == 0) {
+                                break;
+                            }
+                        }
+                        if (i < gameData[current].HitQinKey.Length) {
+                            gameData[current].HitQinKey[i++] = 4;
+                            if (i < gameData[current].HitQinKey.Length) {
+                                gameData[current].HitQinKey[i] = 0;
+                            }
                         }
                         gameData[current].ClientInfoLock.EnterReadLock();
                         try {
@@ -218,8 +254,17 @@ namespace QinDevilServer {
                 case KeyCode.Numeric5:
                     PopLog(current, "数字键 5被按下，" + (ctrlState ? "按下了ctrl。" : "没按ctrl。"));
                     if (ctrlState) {
-                        if (gameData[current].HitQinKeyLength < gameData[current].HitQinKey.Length) {
-                            gameData[current].HitQinKey[gameData[current].HitQinKeyLength++] = 5;
+                        int i = 0;
+                        for (; i < gameData[current].HitQinKey.Length; i++) {
+                            if (gameData[current].HitQinKey[i] == 0) {
+                                break;
+                            }
+                        }
+                        if (i < gameData[current].HitQinKey.Length) {
+                            gameData[current].HitQinKey[i++] = 5;
+                            if (i < gameData[current].HitQinKey.Length) {
+                                gameData[current].HitQinKey[i] = 0;
+                            }
                         }
                         gameData[current].ClientInfoLock.EnterReadLock();
                         try {
@@ -236,7 +281,6 @@ namespace QinDevilServer {
                         PopLog(current, "补弦清屏---------------------");
                         gameData[current].No1Qin = gameData[current].No2Qin = gameData[current].No3Qin = gameData[current].No4Qin = "";
                         gameData[current].HitQinKey[0] = 0;
-                        gameData[current].HitQinKeyLength = 0;
                         for (int i = 0; i < 12; i++) {
                             gameData[current].QinKey[i] = 0;
                         }
@@ -546,7 +590,9 @@ namespace QinDevilServer {
                             gameData[userInfo.Line].ClientInfoLock.EnterReadLock();
                             try {
                                 foreach (UserInfo tempUserInfo in gameData[userInfo.Line].ClientInfo) {
-                                    server.SendPackage(tempUserInfo.Id, 8, gameData[userInfo.Line].HitQinKey);
+                                    if (tempUserInfo.Id != id) {
+                                        server.SendPackage(tempUserInfo.Id, 8, gameData[userInfo.Line].HitQinKey);
+                                    }
                                 }
                             } finally {
                                 gameData[userInfo.Line].ClientInfoLock.ExitReadLock();
@@ -558,7 +604,6 @@ namespace QinDevilServer {
                             ExpandLog(userInfo.Line, userInfo.Remark + " 补弦清屏---------------------");
                             gameData[userInfo.Line].No1Qin = gameData[userInfo.Line].No2Qin = gameData[userInfo.Line].No3Qin = gameData[userInfo.Line].No4Qin = "";
                             gameData[userInfo.Line].HitQinKey[0] = 0;
-                            gameData[userInfo.Line].HitQinKeyLength = 0;
                             for (int i = 0; i < 12; i++) {
                                 gameData[userInfo.Line].QinKey[i] = 0;
                             }
@@ -700,6 +745,23 @@ namespace QinDevilServer {
             } finally {
                 gameData[i].LogLock.ExitWriteLock();
             }
+        }
+        private void TextBox_TextChanged(object sender, TextChangedEventArgs e) {
+            System.Windows.Controls.TextBox sourceTextBox = (System.Windows.Controls.TextBox)e.Source;
+            UserInfo userInfo = ((ContentPresenter)sourceTextBox.TemplatedParent).Content as UserInfo;
+            int line = gameData[userInfo.Line].Line;
+            try {
+                line = int.Parse(sourceTextBox.Text);
+            } catch (Exception) {
+            }
+            server.SendPackage(userInfo.Id, 19, SerializeTool.IntToByte(line));
+        }
+        private void CheckBox_SourceUpdated(object sender, DataTransferEventArgs e) {
+            System.Windows.Controls.TextBox sourceTextBox = (System.Windows.Controls.TextBox)e.Source;
+            UserInfo userInfo = ((ContentPresenter)sourceTextBox.TemplatedParent).Content as UserInfo;
+            byte[] b = new byte[1];
+            b[0] = userInfo.Manager ? (byte)1 : (byte)0;
+            server.SendPackage(userInfo.Id, 20, b);
         }
     }
 }

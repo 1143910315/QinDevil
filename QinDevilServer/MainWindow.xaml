@@ -45,6 +45,20 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
+                    <GridViewColumn Header="用户线路" Width="50">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBox Text="{Binding Line,Mode=OneWay}" TextChanged="TextBox_TextChanged"></TextBox>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                    <GridViewColumn Header="管理者" Width="50">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox Checked="{Binding Manager,Mode=TwoWay,NotifyOnSourceUpdated=True}" SourceUpdated="CheckBox_SourceUpdated"></CheckBox>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
                     <GridViewColumn Header="最后接收时间" Width="85">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
