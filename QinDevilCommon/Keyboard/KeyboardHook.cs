@@ -19,11 +19,11 @@ namespace QinDevilCommon.Keyboard {
         [DllImport("user32.dll")]
         public static extern int SetWindowsHookEx(int idHook, HookProc lpfn, IntPtr hInstance, int threadId);
         [DllImport("user32.dll")]
-        public static extern int CallNextHookEx(int hHook, int ncode, int wParam, int lParam);
+        public static extern int CallNextHookEx(int hHook, int ncode, int wParam, IntPtr lParam);
         [DllImport("user32.dll")]
         public static extern int UnhookWindowsHookEx(int hHook);
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-        public delegate int HookProc(int idHook, int wParam, int lParam);
+        public delegate int HookProc(int idHook, int wParam, IntPtr lParam);
         public delegate void KeyDown(KeyCode keyCode);
         public delegate void KeyUp(KeyCode keyCode);
         public KeyDown KeyDownEvent;
@@ -38,19 +38,15 @@ namespace QinDevilCommon.Keyboard {
             hookProc = HookCallback;
             hHook = SetWindowsHookEx(WH_KEYBOARD_LL, hookProc, Marshal.GetHINSTANCE(Assembly.GetExecutingAssembly().ManifestModule), 0);
         }
-        private int HookCallback(int idHook, int wParam, int lParam) {
+        private int HookCallback(int idHook, int wParam, IntPtr lParam) {
             if (idHook == HC_ACTION) {
-                KeyboardHookStruct keyboardHookStruct = Marshal.PtrToStructure<KeyboardHookStruct>(new IntPtr(lParam));
+                KeyboardHookStruct keyboardHookStruct = Marshal.PtrToStructure<KeyboardHookStruct>(lParam);
                 switch (wParam) {
                     case WM_KEYDOWN:
-                        new Task((keycode) => {
-                            KeyDownEvent?.Invoke((KeyCode)keycode);
-                        }, keyboardHookStruct.vkCode).Start();
+                        KeyDownEvent?.Invoke((KeyCode)keyboardHookStruct.vkCode);
                         break;
                     case WM_KEYUP:
-                        new Task((keycode) => {
-                            KeyUpEvent?.Invoke((KeyCode)keycode);
-                        }, keyboardHookStruct.vkCode).Start();
+                        KeyUpEvent?.Invoke((KeyCode)keyboardHookStruct.vkCode);
                         break;
                     default:
                         break;

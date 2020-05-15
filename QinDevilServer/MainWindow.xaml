@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:QinDevilServer"
         mc:Ignorable="d"
-        Title="琴魔副本工具服务器" Height="450" Width="800" Loaded="Window_Loaded" Closing="Window_Closing">
+        Title="琴魔副本工具服务器" Height="450" Width="800" Closing="Window_Closing">
     <Grid x:Name="GamePanel" d:DataContext="{d:DesignInstance local:GameData}">
         <ListView x:Name="clientListView" Height="348" Margin="10,10,0,0" Width="772" ItemsSource="{Binding ClientInfo}" HorizontalAlignment="Left" VerticalAlignment="Top">
             <ListView.ItemContainerStyle>
@@ -104,6 +104,8 @@
                 </GridView>
             </ListView.View>
         </ListView>
-        <TextBox x:Name="colorTextBox" HorizontalAlignment="Left" Height="46" Margin="10,363,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" Width="772"/>
+        <ComboBox x:Name="chooseLine" HorizontalAlignment="Left" Height="22" Margin="56,373,0,0" VerticalAlignment="Top" Width="89" SelectedIndex="0" SelectionChanged="ChooseLine_SelectionChanged">
+            <ComboBoxItem Content="默认线路" Tag="0"/>
+        </ComboBox>
     </Grid>
 </Window>

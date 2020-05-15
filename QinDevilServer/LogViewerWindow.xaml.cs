@@ -17,7 +17,7 @@ namespace QinDevilServer {
     /// LogViewerWindow.xaml 的交互逻辑
     /// </summary>
     public partial class LogViewerWindow : Window {
-        public LogViewerWindow(List<LogDetail> logDetail) {
+        public LogViewerWindow(LogDetail[] logDetail) {
             InitializeComponent();
             logList.ItemsSource = logDetail;
         }

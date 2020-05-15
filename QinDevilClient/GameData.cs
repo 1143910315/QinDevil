@@ -8,12 +8,10 @@ using System.Threading.Tasks;
 
 namespace QinDevilClient {
     public class GameData : ViewModelBase {
-        public GameData() {
-        }
-        private int _failTimes;
-        public int FailTimes {
-            get => _failTimes;
-            set => Set(ref _failTimes, value);
+        private int _line;
+        public int Line {
+            get => _line;
+            set => Set(ref _line, value);
         }
         private int _ping = 9999;
         public int Ping {
@@ -50,10 +48,10 @@ namespace QinDevilClient {
             get => _qinKey;
             set => Update();
         }
-        private string _hitQinKey = "";
-        public string HitQinKey {
+        private byte[] _hitQinKey = new byte[9];
+        public byte[] HitQinKey {
             get => _hitQinKey;
-            set => Set(ref _hitQinKey, value);
+            set => Update();
         }
 #if service
         private StringBuilder _hitQinKeyAny = "";

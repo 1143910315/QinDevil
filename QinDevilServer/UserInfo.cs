@@ -13,15 +13,15 @@ namespace QinDevilServer {
             get => _id;
             set => Set(ref _id, value);
         }
+        private int _line;
+        public int Line {
+            get => _line;
+            set => Set(ref _line, value);
+        }
         private DateTime _lastReceiveTime;
         public DateTime LastReceiveTime {
             get => _lastReceiveTime;
             set => Set(ref _lastReceiveTime, value);
-        }
-        private string _ipAndPort;
-        public string IpAndPort {
-            get => _ipAndPort;
-            set => Set(ref _ipAndPort, value);
         }
         private string _machineIdentity = "";
         public string MachineIdentity {

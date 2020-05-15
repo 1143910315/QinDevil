@@ -8,62 +8,98 @@ namespace QinDevilCommon.Data {
     public class SerializeTool {
         private SerializeTool() {
         }
-        //序列化
-        public static byte[] RawSerialize(object obj) {
-            int rawsize = Marshal.SizeOf(obj);
-            IntPtr buffer = Marshal.AllocHGlobal(rawsize);
-            Marshal.StructureToPtr(obj, buffer, false);
-            byte[] rawdatas = new byte[rawsize];
-            Marshal.Copy(buffer, rawdatas, 0, rawsize);
-            Marshal.FreeHGlobal(buffer);
+        public static void IntToByte(int i, byte[] rawdatas, int startIndex) {
+            rawdatas[startIndex++] = (byte)i;
+            rawdatas[startIndex++] = (byte)(i >> 8);
+            rawdatas[startIndex++] = (byte)(i >> 16);
+            rawdatas[startIndex++] = (byte)(i >> 24);
+        }
+        public static byte[] IntToByte(int i) {
+            byte[] rawdatas = new byte[4];
+            rawdatas[0] = (byte)i;
+            rawdatas[1] = (byte)(i >> 8);
+            rawdatas[2] = (byte)(i >> 16);
+            rawdatas[3] = (byte)(i >> 24);
             return rawdatas;
         }
-        //反序列化
-        public static T RawDeserialize<T>(byte[] rawdatas, ref int startIndex) {
-            int rawsize = Marshal.SizeOf<T>();
-            if (startIndex + rawsize > rawdatas.Length) {
-                throw new Exception("byte数组长度不足读取该类型！");
-            }
-            IntPtr buffer = Marshal.AllocHGlobal(rawsize);
-            Marshal.Copy(rawdatas, startIndex, buffer, rawsize);
-            T retobj = Marshal.PtrToStructure<T>(buffer);
-            Marshal.FreeHGlobal(buffer);
-            startIndex += rawsize;
-            return retobj;
+        public static void IntToByteList(int i, List<byte> list) {
+            list.Add((byte)i);
+            list.Add((byte)(i >> 8));
+            list.Add((byte)(i >> 16));
+            list.Add((byte)(i >> 24));
         }
-        //专为字符串序列化
-        public static byte[] RawSerializeForUTF8String(string str) {
-            byte[] stringBytes = Encoding.UTF8.GetBytes(str);
-            byte[] rawdatas = new byte[4 + stringBytes.Length];
-            rawdatas[0] = (byte)(stringBytes.Length & 0xFF);
-            rawdatas[1] = (byte)((stringBytes.Length >> 8) & 0xFF);
-            rawdatas[2] = (byte)((stringBytes.Length >> 16) & 0xFF);
-            rawdatas[3] = (byte)((stringBytes.Length >> 24) & 0xFF);
-            stringBytes.CopyTo(rawdatas, 4);
+        public static int ByteToInt(byte[] rawdatas, ref int startIndex) {
+            return rawdatas[startIndex++] | (rawdatas[startIndex++] << 8) | (rawdatas[startIndex++] << 16) | (rawdatas[startIndex++] << 24);
+        }
+        public static byte[] LongToByte(long i) {
+            byte[] rawdatas = new byte[8];
+            rawdatas[0] = (byte)i;
+            rawdatas[1] = (byte)(i >> 8);
+            rawdatas[2] = (byte)(i >> 16);
+            rawdatas[3] = (byte)(i >> 24);
+            rawdatas[4] = (byte)(i >> 32);
+            rawdatas[5] = (byte)(i >> 40);
+            rawdatas[6] = (byte)(i >> 48);
+            rawdatas[7] = (byte)(i >> 56);
             return rawdatas;
         }
-        //专为字符串反序列化
-        public static string RawDeserializeForUTF8String(byte[] rawdatas, ref int startIndex) {
+        public static void LongToByte(long i, byte[] rawdatas, int startIndex) {
+            rawdatas[startIndex++] = (byte)i;
+            rawdatas[startIndex++] = (byte)(i >> 8);
+            rawdatas[startIndex++] = (byte)(i >> 16);
+            rawdatas[startIndex++] = (byte)(i >> 24);
+            rawdatas[startIndex++] = (byte)(i >> 32);
+            rawdatas[startIndex++] = (byte)(i >> 40);
+            rawdatas[startIndex++] = (byte)(i >> 48);
+            rawdatas[startIndex++] = (byte)(i >> 56);
+        }
+        public static void LongToByteList(long i, List<byte> list) {
+            list.Add((byte)i);
+            list.Add((byte)(i >> 8));
+            list.Add((byte)(i >> 16));
+            list.Add((byte)(i >> 24));
+            list.Add((byte)(i >> 32));
+            list.Add((byte)(i >> 40));
+            list.Add((byte)(i >> 48));
+            list.Add((byte)(i >> 56));
+        }
+        public static long ByteToLong(byte[] rawdatas, ref int startIndex) {
+            long i = rawdatas[startIndex++];
+            i += (long)rawdatas[startIndex++] << 8;
+            i += (long)rawdatas[startIndex++] << 16;
+            i += (long)rawdatas[startIndex++] << 24;
+            i += (long)rawdatas[startIndex++] << 32;
+            i += (long)rawdatas[startIndex++] << 40;
+            i += (long)rawdatas[startIndex++] << 48;
+            i += (long)rawdatas[startIndex++] << 56;
+            return i;
+        }
+        public static void StringToByteList(string str, List<byte> list) {
+            byte[] rawdatas = Encoding.UTF8.GetBytes(str);
+            list.Add((byte)rawdatas.Length);
+            list.Add((byte)(rawdatas.Length >> 8));
+            list.Add((byte)(rawdatas.Length >> 16));
+            list.Add((byte)(rawdatas.Length >> 24));
+            list.AddRange(rawdatas);
+        }
+        public static byte[] StringToByte(string str) {
+            byte[] rawdatas = new byte[4 + Encoding.UTF8.GetByteCount(str)];
+            int len = rawdatas.Length - 4;
+            rawdatas[0] = (byte)len;
+            rawdatas[1] = (byte)(len >> 8);
+            rawdatas[2] = (byte)(len >> 16);
+            rawdatas[3] = (byte)(len >> 24);
+            _ = Encoding.UTF8.GetBytes(str, 0, str.Length, rawdatas, 4);
+            return rawdatas;
+        }
+        public static string ByteToString(byte[] rawdatas, ref int startIndex) {
             int length = rawdatas[startIndex++]
-                | (rawdatas[startIndex++] >> 8)
-                | (rawdatas[startIndex++] >> 16)
-                | (rawdatas[startIndex++] >> 24);
+                | (rawdatas[startIndex++] << 8)
+                | (rawdatas[startIndex++] << 16)
+                | (rawdatas[startIndex++] << 24);
             string str = Encoding.UTF8.GetString(rawdatas, startIndex, length);
             startIndex += length;
             return str;
-        }
-        //从文件流当前位置反序列化一个对象
-        public static T RawDeserializeFromFileStream<T>(FileStream fileStream) {
-            int rawsize = Marshal.SizeOf<T>();
-            byte[] rawdatas = new byte[rawsize];
-            if (fileStream.Read(rawdatas, 0, rawdatas.Length) < rawsize) {
-                throw new Exception("意外到达文件尾！");
-            }
-            IntPtr buffer = Marshal.AllocHGlobal(rawsize);
-            Marshal.Copy(rawdatas, 0, buffer, rawsize);
-            T retobj = Marshal.PtrToStructure<T>(buffer);
-            Marshal.FreeHGlobal(buffer);
-            return retobj;
         }
     }
 }

@@ -63,20 +63,21 @@ namespace QinDevilClient {
         private readonly Timer hitKeyTimer = new Timer();
         private readonly Timer colorDiscriminateTimer = new Timer();
         private readonly Timer secondTimer = new Timer();
-        private bool Connecting = false;
+        private readonly Timer connectTimer = new Timer();
         private readonly GameData gameData = new GameData();
         private readonly Regex QinKeyLessMatch = new Regex("^(?![1-5]*?([1-5])[1-5]*?\\1)[1-5]{0,3}$");
         private MemoryStream pictureStream = null;
         private MemoryStream pngStream = null;
         private readonly byte[] bigBuffer = new byte[8000];
+        private readonly List<byte> sendData = new List<byte>();
         private bool startPing = false;
         private bool sitOn = false;
         private int lastPing;
-        private readonly string macAndCpu = SystemInfo.GetMacAddress() + SystemInfo.GetCpuID();
+        private readonly byte[] machineIdentity;
         private bool sendInfoSuccess = false;
         private readonly Random r = new Random();
         private int discernTimers = 0;
-        private readonly LogManage log = new LogManage(".\\工具日志（可删除）.log");
+        private readonly LogManage log = new LogManage(".\\工具日志.log");
 #if service
         private readonly KeyboardHook hook = new KeyboardHook();
         private bool ctrlState;
@@ -85,24 +86,21 @@ namespace QinDevilClient {
             try {
                 log.Generate("1 进入");
                 InitializeComponent();
-            } catch (Exception e1) {
-                log.Generate("1 异常，异常信息：" + e1.Message);
-                throw;
-            } finally {
-                log.Generate("1 退出");
-            }
-        }
-        private void Window_Loaded(object sender, RoutedEventArgs e) {
-            try {
-                log.Generate("2 进入");
+                MD5 md5 = MD5.Create();
+                byte[] hash = md5.ComputeHash(Encoding.UTF8.GetBytes(SystemInfo.GetMacAddress() + SystemInfo.GetCpuID()));
+                StringBuilder sb = new StringBuilder();
+                foreach (byte b in hash) {
+                    _ = sb.Append(b.ToString("X2"));
+                }
+                machineIdentity = SerializeTool.StringToByte(sb.ToString());
                 GamePanel.DataContext = gameData;
                 client = new SocketClient();
-                client.onConnectedEvent += OnConnected;
-                client.onReceivePackageEvent += OnReceivePackage;
-                client.onConnectionBreakEvent += OnConnectionBreak;
+                client.OnConnectedEvent += OnConnected;
+                client.OnReceivePackageEvent += OnReceivePackage;
+                client.OnConnectionBreakEvent += OnConnectionBreak;
+                connectTimer.Elapsed += ConnectTimer_Elapsed;
                 timer.Elapsed += Timer_Elapsed;
                 timer.AutoReset = false;
-                timer.Stop();
                 pingTimer.Interval = 150;
                 pingTimer.Elapsed += PingTimer_Elapsed;
                 pingTimer.AutoReset = true;
@@ -127,7 +125,20 @@ namespace QinDevilClient {
 #endif
                 Connect();
             } catch (Exception e1) {
+                log.Generate("1 异常，异常信息：" + e1.Message);
+                log.Flush();
+                throw;
+            } finally {
+                log.Generate("1 退出");
+            }
+        }
+        private void ConnectTimer_Elapsed(object sender, ElapsedEventArgs e) {
+            try {
+                log.Generate("2 进入");
+                Connect();
+            } catch (Exception e1) {
                 log.Generate("2 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("2 退出");
@@ -189,6 +200,7 @@ namespace QinDevilClient {
                 }
             } catch (Exception e1) {
                 log.Generate("3 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("3 退出");
@@ -206,6 +218,7 @@ namespace QinDevilClient {
                 }
             } catch (Exception e1) {
                 log.Generate("4 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("4 退出");
@@ -218,6 +231,7 @@ namespace QinDevilClient {
                 gameData.Time += 1;
             } catch (Exception e1) {
                 log.Generate("5 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("5 退出");
@@ -249,7 +263,7 @@ namespace QinDevilClient {
                                             AYUVColor color2 = ARGBColor.FromInt(DC.GetPointColor(startX, i)).ToAYUVColor();
                                             if (color.GetVariance(color2) < 5) {
                                                 gameData.KillingIntentionStrip = rect.bottom - i + point.y;
-                                                client.SendPackage(11, SerializeTool.RawSerialize(gameData.KillingIntentionStrip));
+                                                client.SendPackage(11, SerializeTool.IntToByte(gameData.KillingIntentionStrip));
                                             }
                                         }
                                     }
@@ -297,13 +311,15 @@ namespace QinDevilClient {
                                                         if (j == 0) {
                                                             gameData.FiveTone = tempFiveTone;
                                                             gameData.FiveToneReady = true;
-                                                            List<byte> sendData = new List<byte>(20);
-                                                            sendData.AddRange(SerializeTool.RawSerialize(gameData.FiveTone[0]));
-                                                            sendData.AddRange(SerializeTool.RawSerialize(gameData.FiveTone[1]));
-                                                            sendData.AddRange(SerializeTool.RawSerialize(gameData.FiveTone[2]));
-                                                            sendData.AddRange(SerializeTool.RawSerialize(gameData.FiveTone[3]));
-                                                            sendData.AddRange(SerializeTool.RawSerialize(gameData.FiveTone[4]));
-                                                            client.SendPackage(12, sendData.ToArray());
+                                                            lock (sendData) {
+                                                                sendData.Clear();
+                                                                SerializeTool.IntToByteList(gameData.FiveTone[0], sendData);
+                                                                SerializeTool.IntToByteList(gameData.FiveTone[1], sendData);
+                                                                SerializeTool.IntToByteList(gameData.FiveTone[2], sendData);
+                                                                SerializeTool.IntToByteList(gameData.FiveTone[3], sendData);
+                                                                SerializeTool.IntToByteList(gameData.FiveTone[4], sendData);
+                                                                client.SendPackage(12, sendData.ToArray());
+                                                            }
                                                             return;
                                                         }
                                                         break;
@@ -321,6 +337,7 @@ namespace QinDevilClient {
                 colorDiscriminateTimer.Start();
             } catch (Exception e1) {
                 log.Generate("6 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("6 退出");
@@ -329,61 +346,57 @@ namespace QinDevilClient {
         private void HitKeyTimer_Elapsed(object sender, ElapsedEventArgs e) {
             try {
                 log.Generate("7 进入");
-                //if (sitOn) {
-                //hitKeyTimer.Interval = 150;
-                if (gameData.HitQinKey.Length > gameData.HitKeyIndex * 2) {
-                    bool canHit = Autoplay.Dispatcher.Invoke(() => {
-                        return Autoplay.IsChecked.HasValue && Autoplay.IsChecked.Value;
-                    });
-                    if (canHit) {
-                        sitOn = JudgeSitOn();
-                        if (sitOn) {
-                            char c = gameData.HitQinKey[gameData.HitKeyIndex * 2];
-                            gameData.HitKeyIndex++;
-                            switch (c) {
-                                case '1': {
-                                        Keybd_event(49, MapVirtualKeyA(49, 0), 8, 0);
-                                        Thread.Sleep(r.Next(20, 60));
-                                        Keybd_event(49, MapVirtualKeyA(49, 0), 10, 0);
-                                        break;
-                                    }
-                                case '2': {
-                                        Keybd_event(50, MapVirtualKeyA(50, 0), 8, 0);
-                                        Thread.Sleep(r.Next(20, 60));
-                                        Keybd_event(50, MapVirtualKeyA(50, 0), 10, 0);
-                                        break;
-                                    }
-                                case '3': {
-                                        Keybd_event(51, MapVirtualKeyA(51, 0), 8, 0);
-                                        Thread.Sleep(r.Next(20, 60));
-                                        Keybd_event(51, MapVirtualKeyA(51, 0), 10, 0);
-                                        break;
-                                    }
-                                case '4': {
-                                        Keybd_event(52, MapVirtualKeyA(52, 0), 8, 0);
-                                        Thread.Sleep(r.Next(20, 60));
-                                        Keybd_event(52, MapVirtualKeyA(52, 0), 10, 0);
-                                        break;
-                                    }
-                                case '5': {
-                                        Keybd_event(53, MapVirtualKeyA(53, 0), 8, 0);
-                                        Thread.Sleep(r.Next(20, 60));
-                                        Keybd_event(53, MapVirtualKeyA(53, 0), 10, 0);
-                                        break;
-                                    }
-                                default:
+                bool canHit = Autoplay.Dispatcher.Invoke(() => {
+                    return Autoplay.IsChecked.HasValue && Autoplay.IsChecked.Value;
+                });
+                if (canHit) {
+                    int i = 0;
+                    for (; i < gameData.HitQinKey.Length; i++) {
+                        if (gameData.HitQinKey[i] == 0) {
+                            break;
+                        }
+                    }
+                    if (i > gameData.HitKeyIndex) {
+                        switch (gameData.HitQinKey[gameData.HitKeyIndex++]) {
+                            case 1: {
+                                    Keybd_event(49, MapVirtualKeyA(49, 0), 8, 0);
+                                    Thread.Sleep(r.Next(20, 60));
+                                    Keybd_event(49, MapVirtualKeyA(49, 0), 10, 0);
                                     break;
-                            }
+                                }
+                            case 2: {
+                                    Keybd_event(50, MapVirtualKeyA(50, 0), 8, 0);
+                                    Thread.Sleep(r.Next(20, 60));
+                                    Keybd_event(50, MapVirtualKeyA(50, 0), 10, 0);
+                                    break;
+                                }
+                            case 3: {
+                                    Keybd_event(51, MapVirtualKeyA(51, 0), 8, 0);
+                                    Thread.Sleep(r.Next(20, 60));
+                                    Keybd_event(51, MapVirtualKeyA(51, 0), 10, 0);
+                                    break;
+                                }
+                            case 4: {
+                                    Keybd_event(52, MapVirtualKeyA(52, 0), 8, 0);
+                                    Thread.Sleep(r.Next(20, 60));
+                                    Keybd_event(52, MapVirtualKeyA(52, 0), 10, 0);
+                                    break;
+                                }
+                            case 5: {
+                                    Keybd_event(53, MapVirtualKeyA(53, 0), 8, 0);
+                                    Thread.Sleep(r.Next(20, 60));
+                                    Keybd_event(53, MapVirtualKeyA(53, 0), 10, 0);
+                                    break;
+                                }
+                            default:
+                                break;
                         }
                     }
                 }
-                //} else {
-                //hitKeyTimer.Interval = 400;
-                //sitOn = JudgeSitOn();
-                //}
                 hitKeyTimer.Start();
             } catch (Exception e1) {
                 log.Generate("7 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("7 退出");
@@ -417,6 +430,7 @@ namespace QinDevilClient {
                 return true;
             } catch (Exception e1) {
                 log.Generate("8 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("8 退出");
@@ -475,7 +489,7 @@ namespace QinDevilClient {
                                     }
                                     if (success + fail == 5) {
                                         if (fail > 0 && fail < 4) {
-                                            if (gameData.AutoLessKey) {
+                                            /*if (gameData.AutoLessKey) {
                                                 switch (combo.SelectedIndex) {
                                                     case 0:
                                                         gameData.No1Qin = lessKey;
@@ -496,22 +510,24 @@ namespace QinDevilClient {
                                                     default:
                                                         break;
                                                 }
-                                            }
-                                            client.SendPackage(13, SerializeTool.RawSerializeForUTF8String(lessKey));
+                                            }*/
+                                            client.SendPackage(13, SerializeTool.StringToByte(lessKey));
                                             return;
                                         }
                                     } else if (success + fail > 0) {
                                         if (discernTimers++ < 5) {
-                                            List<byte> sendData = new List<byte>(68);
-                                            sendData.AddRange(SerializeTool.RawSerialize(success));
-                                            sendData.AddRange(SerializeTool.RawSerialize(fail));
-                                            for (int i = 0; i < 5; i++) {
-                                                ARGBColor color = ARGBColor.FromInt(DC.GetPointColor(point.x + gameData.FiveTone[i], point.y + rect.bottom - (gameData.KillingIntentionStrip / 2)));
-                                                sendData.AddRange(SerializeTool.RawSerialize(color.R));
-                                                sendData.AddRange(SerializeTool.RawSerialize(color.G));
-                                                sendData.AddRange(SerializeTool.RawSerialize(color.B));
+                                            lock (sendData) {
+                                                sendData.Clear();
+                                                SerializeTool.IntToByteList(success, sendData);
+                                                SerializeTool.IntToByteList(fail, sendData);
+                                                for (int i = 0; i < 5; i++) {
+                                                    ARGBColor color = ARGBColor.FromInt(DC.GetPointColor(point.x + gameData.FiveTone[i], point.y + rect.bottom - (gameData.KillingIntentionStrip / 2)));
+                                                    SerializeTool.IntToByteList(color.R, sendData);
+                                                    SerializeTool.IntToByteList(color.G, sendData);
+                                                    SerializeTool.IntToByteList(color.B, sendData);
+                                                }
+                                                client.SendPackage(16, sendData.ToArray());
                                             }
-                                            client.SendPackage(16, sendData.ToArray());
                                         }
                                     }
                                 }
@@ -532,11 +548,12 @@ namespace QinDevilClient {
                 if (!gameData.No4Qin.Equals("")) {
                     noNull++;
                 }
-                if (noNull < 4) {
+                if (noNull < 3) {
                     discernTimer.Start();
                 }
             } catch (Exception e1) {
                 log.Generate("9 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("9 退出");
@@ -557,6 +574,7 @@ namespace QinDevilClient {
                 }
             } catch (Exception e1) {
                 log.Generate("10 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("10 退出");
@@ -565,70 +583,52 @@ namespace QinDevilClient {
         private void Timer_Elapsed(object sender, ElapsedEventArgs e) {
             try {
                 log.Generate("11 进入");
-                if (Connecting) {
-                    if (sendInfoSuccess) {
-                        List<byte> sendData = new List<byte>(64);
-                        sendData.AddRange(SerializeTool.RawSerialize(0));
-                        sendData.AddRange(SerializeTool.RawSerialize(0));
-                        if (startPing == false) {
-                            lastPing = Environment.TickCount;
-                            startPing = true;
-                            sendData.AddRange(SerializeTool.RawSerialize(lastPing));
-                        } else {
-                            sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
-                        }
-                        client.SendPackage(0, sendData.ToArray(), 0, sendData.Count);
+                if (sendInfoSuccess) {
+                    if (startPing == false) {
+                        lastPing = Environment.TickCount;
+                        startPing = true;
+                        client.SendPackage(10, SerializeTool.IntToByte(lastPing));
                     } else {
-                        List<byte> sendData = new List<byte>(64);
-                        MD5 md5 = MD5.Create();
-                        byte[] hash = md5.ComputeHash(Encoding.UTF8.GetBytes(macAndCpu));
-                        StringBuilder sb = new StringBuilder();
-                        foreach (byte b in hash) {
-                            _ = sb.Append(b.ToString("X2"));
-                        }
-                        byte[] machineIdentity = Encoding.UTF8.GetBytes(sb.ToString());
-                        sendData.AddRange(BitConverter.GetBytes(machineIdentity.Length));
+                        client.SendPackage(10, SerializeTool.IntToByte(Environment.TickCount));
+                    }
+                } else {
+                    lock (sendData) {
+                        sendData.Clear();
+                        SerializeTool.IntToByteList(gameData.Line, sendData);
                         sendData.AddRange(machineIdentity);
                         Process process = GetWuXiaProcess();
                         if (process != null) {
-                            try {
-                                int i = 0;
-                                int length;
-                                StringBuilder stringBuilder;
-                                do {
-                                    i++;
-                                    length = i * 260;
-                                    stringBuilder = new StringBuilder(length);
-                                    _ = QueryFullProcessImageNameA(process.Handle, 0, stringBuilder, ref length);
-                                    if (length == 0) {
-                                        stringBuilder = stringBuilder.Clear();
-                                    }
-                                } while (i * 260 == length);
-                                sendData.AddRange(SerializeTool.RawSerializeForUTF8String(stringBuilder.ToString()));
-                            } catch (Exception e1) {
-                                sendData.AddRange(SerializeTool.RawSerializeForUTF8String("获取游戏路径失败，错误：" + e1.Message));
-                            }
+                            int i = 0;
+                            int length;
+                            StringBuilder stringBuilder;
+                            do {
+                                i++;
+                                length = i * 260;
+                                stringBuilder = new StringBuilder(length);
+                                _ = QueryFullProcessImageNameA(process.Handle, 0, stringBuilder, ref length);
+                                if (length == 0) {
+                                    stringBuilder = stringBuilder.Clear();
+                                }
+                            } while (i * 260 == length);
+                            SerializeTool.StringToByteList(stringBuilder.ToString(), sendData);
                         } else {
-                            sendData.AddRange(SerializeTool.RawSerialize(0));
+                            SerializeTool.IntToByteList(0, sendData);
                         }
                         if (startPing == false) {
                             lastPing = Environment.TickCount;
                             startPing = true;
-                            sendData.AddRange(SerializeTool.RawSerialize(lastPing));
+                            SerializeTool.IntToByteList(lastPing, sendData);
                         } else {
-                            sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+                            SerializeTool.IntToByteList(Environment.TickCount, sendData);
                         }
-                        client.SendPackage(0, sendData.ToArray(), 0, sendData.Count);
+                        client.SendPackage(0, sendData.ToArray());
                     }
-                    timer.Interval = 2000;
-                    timer.Start();
-                } else {
-                    //Debug.WriteLine("掉线！连接！");
-                    Connect();
-                    gameData.FailTimes++;
                 }
+                timer.Interval = 3000;
+                timer.Start();
             } catch (Exception e1) {
                 log.Generate("11 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("11 退出");
@@ -643,7 +643,7 @@ namespace QinDevilClient {
                 }
                 if (process.Length > 0) {
                     Process temp = process[0];
-                    if (process.Length > 0) {
+                    if (process.Length > 1) {
                         IntPtr topWindow = WindowInfo.GetTopWindow();
                         while (!topWindow.Equals(IntPtr.Zero)) {
                             for (int i = 0; i < process.Length; i++) {
@@ -659,6 +659,7 @@ namespace QinDevilClient {
                 return null;
             } catch (Exception e1) {
                 log.Generate("12 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("12 退出");
@@ -667,9 +668,6 @@ namespace QinDevilClient {
         private void Connect() {
             try {
                 log.Generate("13 进入");
-                startPing = false;
-                timer.Stop();
-                sendInfoSuccess = false;
 #if DEBUG
                 //client.Connect("q1143910315.gicp.net", 51814);
                 client.Connect("127.0.0.1", 13748);
@@ -678,6 +676,7 @@ namespace QinDevilClient {
 #endif
             } catch (Exception e1) {
                 log.Generate("13 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("13 退出");
@@ -686,20 +685,18 @@ namespace QinDevilClient {
         private void OnConnected(bool connected) {
             try {
                 log.Generate("14 进入");
-                startPing = false;
-                //Debug.WriteLine("连接！" + (connected ? "成功！" : "失败!"));
-                Connecting = connected;
                 if (connected == false) {
                     gameData.Ping = 9999;
-                    timer.Interval = 3000;
-                    timer.Start();
+                    connectTimer.Interval = 3000;
+                    connectTimer.Start();
                     CheckDomain();
                 } else {
-                    timer.Interval = 500;
+                    timer.Interval = 200;
                     timer.Start();
                 }
             } catch (Exception e1) {
                 log.Generate("14 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("14 退出");
@@ -819,9 +816,7 @@ namespace QinDevilClient {
                                                 }
                                             }
                                             MessageBox.Show(MessageBoxText);
-                                            startPing = false;
-                                            timer.Stop();
-                                            sendInfoSuccess = false;
+                                            connectTimer.Stop();
                                             client.Connect(match.Groups[1].Value, 51814);
                                             return;
                                         }
@@ -840,61 +835,57 @@ namespace QinDevilClient {
                 log.Generate("15 进入");
                 timer.Stop();
                 timer.Start();
-                gameData.FailTimes = 0;
                 int startIndex = 0;
                 switch (signal) {
                     case 0: {
-                            byte b = SerializeTool.RawDeserialize<byte>(buffer, ref startIndex);
-                            if (b == 0) {
-                                int ping = Environment.TickCount - SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
-                                startPing = false;
-                                gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
-                                sendInfoSuccess = true;
-                            } else {
-                                int licence = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
-                                if (!gameData.Licence.Contains(licence)) {
-                                    gameData.Licence.Add(licence);
-                                }
-                                gameData.No1Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
-                                gameData.No2Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
-                                gameData.No3Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
-                                gameData.No4Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
-                                for (int i = 0; i < 12; i++) {
-                                    gameData.QinKey[i] = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
-                                }
-                                gameData.QinKey = gameData.QinKey;
-                                gameData.HitQinKey = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
-                                int ping = Environment.TickCount - SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
-                                startPing = false;
-                                gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
-                                sendInfoSuccess = (b & 0b10) == 0;
+                            int licence = SerializeTool.ByteToInt(buffer, ref startIndex);
+                            if (!gameData.Licence.Contains(licence)) {
+                                gameData.Licence.Add(licence);
                             }
+                            gameData.No1Qin = SerializeTool.ByteToString(buffer, ref startIndex);
+                            gameData.No2Qin = SerializeTool.ByteToString(buffer, ref startIndex);
+                            gameData.No3Qin = SerializeTool.ByteToString(buffer, ref startIndex);
+                            gameData.No4Qin = SerializeTool.ByteToString(buffer, ref startIndex);
+                            for (int i = 0; i < 12; i++) {
+                                gameData.QinKey[i] = SerializeTool.ByteToInt(buffer, ref startIndex);
+                            }
+                            gameData.QinKey = gameData.QinKey;
+                            for (int i = 0; i < gameData.HitQinKey.Length; i++) {
+                                gameData.HitQinKey[i] = buffer[startIndex++];
+                            }
+                            gameData.HitQinKey = gameData.HitQinKey;
+                            int ping = Environment.TickCount - SerializeTool.ByteToInt(buffer, ref startIndex);
+                            startPing = false;
+                            gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
+                            sendInfoSuccess = true;
                             break;
                         }
                     case 1: {
-                            gameData.No1Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                            gameData.No1Qin = SerializeTool.ByteToString(buffer, ref startIndex);
                             break;
                         }
                     case 2: {
-                            gameData.No2Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                            gameData.No2Qin = SerializeTool.ByteToString(buffer, ref startIndex);
                             break;
                         }
                     case 3: {
-                            gameData.No3Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                            gameData.No3Qin = SerializeTool.ByteToString(buffer, ref startIndex);
                             break;
                         }
                     case 4: {
-                            gameData.No4Qin = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                            gameData.No4Qin = SerializeTool.ByteToString(buffer, ref startIndex);
                             break;
                         }
                     case 5: {
                             gameData.Licence.Clear();
-                            gameData.Licence.Add(SerializeTool.RawDeserialize<int>(buffer, ref startIndex));
-                            gameData.No1Qin = gameData.No2Qin = gameData.No3Qin = gameData.No4Qin = gameData.HitQinKey = "";
+                            gameData.Licence.Add(SerializeTool.ByteToInt(buffer, ref startIndex));
+                            gameData.No1Qin = gameData.No2Qin = gameData.No3Qin = gameData.No4Qin = "";
                             for (int i = 0; i < 12; i++) {
                                 gameData.QinKey[i] = 0;
                             }
                             gameData.QinKey = gameData.QinKey;
+                            gameData.HitQinKey[0] = 0;
+                            gameData.HitQinKey = gameData.HitQinKey;
                             gameData.HitKeyIndex = gameData.Time = 0;
                             secondTimer.Stop();
                             secondTimer.Start();
@@ -904,74 +895,48 @@ namespace QinDevilClient {
                         }
                     case 6: {
                             for (int i = 0; i < 12; i++) {
-                                gameData.QinKey[i] = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                                gameData.QinKey[i] = SerializeTool.ByteToInt(buffer, ref startIndex);
                             }
                             gameData.QinKey = gameData.QinKey;
                             break;
                         }
                     case 7: {
                             for (int i = 0; i < 12; i++) {
-                                gameData.QinKey[i] = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
+                                gameData.QinKey[i] = SerializeTool.ByteToInt(buffer, ref startIndex);
                             }
                             gameData.QinKey = gameData.QinKey;
-                            int keyIndex = SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
-                            int ping = Environment.TickCount - SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
-                            startPing = false;
-                            gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
+                            int keyIndex = SerializeTool.ByteToInt(buffer, ref startIndex);
                             if (!gameData.Licence.Contains(gameData.QinKey[keyIndex])) {
                                 SystemSounds.Asterisk.Play();
-                                _ = ThreadPool.QueueUserWorkItem(delegate {
-                                    Dispatcher.Invoke(() => {
-                                        Storyboard Storyboard1 = FindResource("Storyboard1") as Storyboard;
-                                        Storyboard1.Stop();
-                                        Storyboard.SetTargetName(Storyboard1, "OneKey" + keyIndex.ToString());
-                                        Storyboard1.Begin();
-                                    });
+                                Dispatcher.Invoke(() => {
+                                    Storyboard Storyboard1 = FindResource("Storyboard1") as Storyboard;
+                                    Storyboard1.Stop();
+                                    Storyboard.SetTargetName(Storyboard1, "OneKey" + keyIndex.ToString());
+                                    Storyboard1.Begin();
                                 });
                             }
                             break;
                         }
                     case 8: {
-                            gameData.HitQinKey = SerializeTool.RawDeserializeForUTF8String(buffer, ref startIndex);
+                            for (int i = 0; i < gameData.HitQinKey.Length; i++) {
+                                gameData.HitQinKey[i] = buffer[startIndex++];
+                            }
+                            gameData.HitQinKey = gameData.HitQinKey;
                             break;
                         }
                     case 9: {
                             pictureStream = new MemoryStream(102400);
                             _ = ImageFormatConverser.BitmapToJpeg(SystemScreen.CaptureScreen(), pictureStream, 35);
-                            List<byte> sendData = new List<byte>();
-                            sendData.AddRange(SerializeTool.RawSerialize(pictureStream.Length));
-                            if (startPing == false) {
-                                lastPing = Environment.TickCount;
-                                startPing = true;
-                                sendData.AddRange(SerializeTool.RawSerialize(lastPing));
-                            } else {
-                                sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
-                            }
-                            client.SendPackage(6, sendData.ToArray());
+                            client.SendPackage(6, SerializeTool.LongToByte(pictureStream.Length));
                             break;
                         }
                     case 10: {
-                            long position = SerializeTool.RawDeserialize<long>(buffer, ref startIndex);
-                            int ping = Environment.TickCount - SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
-                            startPing = false;
-                            gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
-                            pictureStream.Position = position;
+                            pictureStream.Position = SerializeTool.ByteToLong(buffer, ref startIndex);
                             if (pictureStream.Position != pictureStream.Length) {
                                 lock (bigBuffer) {
-                                    byte[] temp = SerializeTool.RawSerialize(pictureStream.Position);
-                                    temp.CopyTo(bigBuffer, 0);
-                                    byte[] temp1;
-                                    if (startPing == false) {
-                                        lastPing = Environment.TickCount;
-                                        startPing = true;
-                                        temp1 = SerializeTool.RawSerialize(lastPing);
-                                    } else {
-                                        temp1 = SerializeTool.RawSerialize(Environment.TickCount);
-                                    }
-                                    temp1.CopyTo(bigBuffer, temp.Length);
-                                    int realLength = pictureStream.Read(bigBuffer, temp.Length + temp1.Length, bigBuffer.Length - temp.Length - temp1.Length);
-                                    //Debug.WriteLine(realLength);
-                                    client.SendPackage(7, bigBuffer, 0, realLength + temp.Length + temp1.Length);
+                                    SerializeTool.LongToByte(pictureStream.Position, bigBuffer, 0);
+                                    int realLength = pictureStream.Read(bigBuffer, 8, bigBuffer.Length - 8);
+                                    client.SendPackage(7, bigBuffer, 0, realLength + 8);
                                 }
                             } else {
                                 pictureStream.Close();
@@ -983,40 +948,16 @@ namespace QinDevilClient {
                             pngStream = new MemoryStream(204800);
                             System.Drawing.Bitmap bitmap = SystemScreen.CaptureScreen();
                             bitmap.Save(pngStream, ImageFormat.Png);
-                            List<byte> sendData = new List<byte>();
-                            sendData.AddRange(SerializeTool.RawSerialize(pngStream.Length));
-                            if (startPing == false) {
-                                lastPing = Environment.TickCount;
-                                startPing = true;
-                                sendData.AddRange(SerializeTool.RawSerialize(lastPing));
-                            } else {
-                                sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
-                            }
-                            client.SendPackage(8, sendData.ToArray());
+                            client.SendPackage(8, SerializeTool.LongToByte(pngStream.Length));
                             break;
                         }
                     case 12: {
-                            long position = SerializeTool.RawDeserialize<long>(buffer, ref startIndex);
-                            int ping = Environment.TickCount - SerializeTool.RawDeserialize<int>(buffer, ref startIndex);
-                            startPing = false;
-                            gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
-                            pngStream.Position = position;
+                            pngStream.Position = SerializeTool.ByteToLong(buffer, ref startIndex);
                             if (pngStream.Position != pngStream.Length) {
                                 lock (bigBuffer) {
-                                    byte[] temp = SerializeTool.RawSerialize(pngStream.Position);
-                                    temp.CopyTo(bigBuffer, 0);
-                                    byte[] temp1;
-                                    if (startPing == false) {
-                                        lastPing = Environment.TickCount;
-                                        startPing = true;
-                                        temp1 = SerializeTool.RawSerialize(lastPing);
-                                    } else {
-                                        temp1 = SerializeTool.RawSerialize(Environment.TickCount);
-                                    }
-                                    temp1.CopyTo(bigBuffer, temp.Length);
-                                    int realLength = pngStream.Read(bigBuffer, temp.Length + temp1.Length, bigBuffer.Length - temp.Length - temp1.Length);
-                                    //Debug.WriteLine(realLength);
-                                    client.SendPackage(9, bigBuffer, 0, realLength + temp.Length + temp1.Length);
+                                    SerializeTool.LongToByte(pngStream.Position, bigBuffer, 0);
+                                    int realLength = pngStream.Read(bigBuffer, 8, bigBuffer.Length - 8);
+                                    client.SendPackage(9, bigBuffer, 0, realLength + 8);
                                 }
                             } else {
                                 pngStream.Close();
@@ -1025,25 +966,23 @@ namespace QinDevilClient {
                             break;
                         }
                     case 13: {
-                            _ = ThreadPool.QueueUserWorkItem(delegate {
-                                Dispatcher.Invoke(() => {
-                                    Close();
-                                });
+                            Dispatcher.Invoke(() => {
+                                Close();
                             });
                             break;
                         }
                     case 14: {
-                            byte b = SerializeTool.RawDeserialize<byte>(buffer, ref startIndex);
-                            timeLabel.Dispatcher.Invoke(() => {
-                                timeLabel.Visibility = b != 0 ? Visibility.Hidden : Visibility.Visible;
-                                combo.Visibility = b == 0 ? Visibility.Hidden : Visibility.Visible;
-                                gameData.AutoLessKey = b != 0;
+                            byte b = buffer[startIndex++];
+                            Dispatcher.Invoke(() => {
+                                //timeLabel.Visibility = b != 0 ? Visibility.Hidden : Visibility.Visible;
+                                //combo.Visibility = b == 0 ? Visibility.Hidden : Visibility.Visible;
+                                //gameData.AutoLessKey = b != 0;
                             });
                             break;
                         }
                     case 15: {
-                            byte b = SerializeTool.RawDeserialize<byte>(buffer, ref startIndex);
-                            Autoplay.Dispatcher.Invoke(() => {
+                            byte b = buffer[startIndex++];
+                            Dispatcher.Invoke(() => {
                                 Autoplay.Visibility = b == 0 ? Visibility.Hidden : Visibility.Visible;
                                 if (Autoplay.Visibility == Visibility.Hidden) {
                                     Autoplay.IsChecked = false;
@@ -1057,11 +996,18 @@ namespace QinDevilClient {
                             colorDiscriminateTimer.Start();
                             break;
                         }
+                    case 17: {
+                            int ping = Environment.TickCount - SerializeTool.ByteToInt(buffer, ref startIndex);
+                            startPing = false;
+                            gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
+                            break;
+                        }
                     default:
                         break;
                 }
             } catch (Exception e1) {
                 log.Generate("15 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("15 退出");
@@ -1070,14 +1016,16 @@ namespace QinDevilClient {
         private void OnConnectionBreak() {
             try {
                 log.Generate("16 进入");
-                //Debug.WriteLine("断开！");
+                timer.Stop();
+                sendInfoSuccess = false;
                 startPing = false;
-                Connecting = false;
                 gameData.Ping = 9999;
-                timer.Interval = 500;
-                timer.Start();
+                discernTimer.Stop();
+                connectTimer.Interval = 200;
+                connectTimer.Start();
             } catch (Exception e1) {
                 log.Generate("16 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("16 退出");
@@ -1099,6 +1047,7 @@ namespace QinDevilClient {
                 //bool v6 = new Regex("^(?![1-5]*?([1-5])[1-5]*?\\1)[1-5]{0,3}$").IsMatch("6");//false
             } catch (Exception e1) {
                 log.Generate("17 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("17 退出");
@@ -1107,9 +1056,10 @@ namespace QinDevilClient {
         private void TextBox_SourceUpdated(object sender, DataTransferEventArgs e) {
             try {
                 log.Generate("18 进入");
-                client.SendPackage(1, SerializeTool.RawSerializeForUTF8String(gameData.No1Qin));
+                client.SendPackage(1, SerializeTool.StringToByte(gameData.No1Qin));
             } catch (Exception e1) {
                 log.Generate("18 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("18 退出");
@@ -1118,9 +1068,10 @@ namespace QinDevilClient {
         private void TextBox_SourceUpdated_1(object sender, DataTransferEventArgs e) {
             try {
                 log.Generate("19 进入");
-                client.SendPackage(2, SerializeTool.RawSerializeForUTF8String(gameData.No2Qin));
+                client.SendPackage(2, SerializeTool.StringToByte(gameData.No2Qin));
             } catch (Exception e1) {
                 log.Generate("19 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("19 退出");
@@ -1129,9 +1080,10 @@ namespace QinDevilClient {
         private void TextBox_SourceUpdated_2(object sender, DataTransferEventArgs e) {
             try {
                 log.Generate("20 进入");
-                client.SendPackage(3, SerializeTool.RawSerializeForUTF8String(gameData.No3Qin));
+                client.SendPackage(3, SerializeTool.StringToByte(gameData.No3Qin));
             } catch (Exception e1) {
                 log.Generate("20 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("20 退出");
@@ -1140,9 +1092,10 @@ namespace QinDevilClient {
         private void TextBox_SourceUpdated_3(object sender, DataTransferEventArgs e) {
             try {
                 log.Generate("21 进入");
-                client.SendPackage(4, SerializeTool.RawSerializeForUTF8String(gameData.No4Qin));
+                client.SendPackage(4, SerializeTool.StringToByte(gameData.No4Qin));
             } catch (Exception e1) {
                 log.Generate("21 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("21 退出");
@@ -1151,18 +1104,14 @@ namespace QinDevilClient {
         private void Label_MouseDown(object sender, MouseButtonEventArgs e) {
             try {
                 log.Generate("22 进入");
-                List<byte> sendData = new List<byte>(8);
-                sendData.AddRange(SerializeTool.RawSerialize(0));
-                if (startPing == false) {
-                    lastPing = Environment.TickCount;
-                    startPing = true;
-                    sendData.AddRange(SerializeTool.RawSerialize(lastPing));
-                } else {
-                    sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+                if (e.ChangedButton == MouseButton.Left) {
+                    client.SendPackage(5, SerializeTool.IntToByte(0));
+                } else if (e.ChangedButton == MouseButton.Right) {
+                    client.SendPackage(17, SerializeTool.IntToByte(0));
                 }
-                client.SendPackage(5, sendData.ToArray());
             } catch (Exception e1) {
                 log.Generate("22 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("22 退出");
@@ -1171,18 +1120,14 @@ namespace QinDevilClient {
         private void Label_MouseDown_1(object sender, MouseButtonEventArgs e) {
             try {
                 log.Generate("23 进入");
-                List<byte> sendData = new List<byte>(8);
-                sendData.AddRange(SerializeTool.RawSerialize(1));
-                if (startPing == false) {
-                    lastPing = Environment.TickCount;
-                    startPing = true;
-                    sendData.AddRange(SerializeTool.RawSerialize(lastPing));
-                } else {
-                    sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+                if (e.ChangedButton == MouseButton.Left) {
+                    client.SendPackage(5, SerializeTool.IntToByte(1));
+                } else if (e.ChangedButton == MouseButton.Right) {
+                    client.SendPackage(17, SerializeTool.IntToByte(1));
                 }
-                client.SendPackage(5, sendData.ToArray());
             } catch (Exception e1) {
                 log.Generate("23 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("23 退出");
@@ -1191,18 +1136,14 @@ namespace QinDevilClient {
         private void Label_MouseDown_2(object sender, MouseButtonEventArgs e) {
             try {
                 log.Generate("24 进入");
-                List<byte> sendData = new List<byte>(8);
-                sendData.AddRange(SerializeTool.RawSerialize(2));
-                if (startPing == false) {
-                    lastPing = Environment.TickCount;
-                    startPing = true;
-                    sendData.AddRange(SerializeTool.RawSerialize(lastPing));
-                } else {
-                    sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+                if (e.ChangedButton == MouseButton.Left) {
+                    client.SendPackage(5, SerializeTool.IntToByte(2));
+                } else if (e.ChangedButton == MouseButton.Right) {
+                    client.SendPackage(17, SerializeTool.IntToByte(2));
                 }
-                client.SendPackage(5, sendData.ToArray());
             } catch (Exception e1) {
                 log.Generate("24 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("24 退出");
@@ -1211,18 +1152,14 @@ namespace QinDevilClient {
         private void Label_MouseDown_3(object sender, MouseButtonEventArgs e) {
             try {
                 log.Generate("25 进入");
-                List<byte> sendData = new List<byte>(8);
-                sendData.AddRange(SerializeTool.RawSerialize(3));
-                if (startPing == false) {
-                    lastPing = Environment.TickCount;
-                    startPing = true;
-                    sendData.AddRange(SerializeTool.RawSerialize(lastPing));
-                } else {
-                    sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+                if (e.ChangedButton == MouseButton.Left) {
+                    client.SendPackage(5, SerializeTool.IntToByte(3));
+                } else if (e.ChangedButton == MouseButton.Right) {
+                    client.SendPackage(17, SerializeTool.IntToByte(3));
                 }
-                client.SendPackage(5, sendData.ToArray());
             } catch (Exception e1) {
                 log.Generate("25 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("25 退出");
@@ -1231,18 +1168,14 @@ namespace QinDevilClient {
         private void Label_MouseDown_4(object sender, MouseButtonEventArgs e) {
             try {
                 log.Generate("26 进入");
-                List<byte> sendData = new List<byte>(8);
-                sendData.AddRange(SerializeTool.RawSerialize(4));
-                if (startPing == false) {
-                    lastPing = Environment.TickCount;
-                    startPing = true;
-                    sendData.AddRange(SerializeTool.RawSerialize(lastPing));
-                } else {
-                    sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+                if (e.ChangedButton == MouseButton.Left) {
+                    client.SendPackage(5, SerializeTool.IntToByte(4));
+                } else if (e.ChangedButton == MouseButton.Right) {
+                    client.SendPackage(17, SerializeTool.IntToByte(4));
                 }
-                client.SendPackage(5, sendData.ToArray());
             } catch (Exception e1) {
                 log.Generate("26 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("26 退出");
@@ -1251,18 +1184,14 @@ namespace QinDevilClient {
         private void Label_MouseDown_5(object sender, MouseButtonEventArgs e) {
             try {
                 log.Generate("27 进入");
-                List<byte> sendData = new List<byte>(8);
-                sendData.AddRange(SerializeTool.RawSerialize(5));
-                if (startPing == false) {
-                    lastPing = Environment.TickCount;
-                    startPing = true;
-                    sendData.AddRange(SerializeTool.RawSerialize(lastPing));
-                } else {
-                    sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+                if (e.ChangedButton == MouseButton.Left) {
+                    client.SendPackage(5, SerializeTool.IntToByte(5));
+                } else if (e.ChangedButton == MouseButton.Right) {
+                    client.SendPackage(17, SerializeTool.IntToByte(5));
                 }
-                client.SendPackage(5, sendData.ToArray());
             } catch (Exception e1) {
                 log.Generate("27 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("27 退出");
@@ -1271,18 +1200,14 @@ namespace QinDevilClient {
         private void Label_MouseDown_6(object sender, MouseButtonEventArgs e) {
             try {
                 log.Generate("28 进入");
-                List<byte> sendData = new List<byte>(8);
-                sendData.AddRange(SerializeTool.RawSerialize(6));
-                if (startPing == false) {
-                    lastPing = Environment.TickCount;
-                    startPing = true;
-                    sendData.AddRange(SerializeTool.RawSerialize(lastPing));
-                } else {
-                    sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+                if (e.ChangedButton == MouseButton.Left) {
+                    client.SendPackage(5, SerializeTool.IntToByte(6));
+                } else if (e.ChangedButton == MouseButton.Right) {
+                    client.SendPackage(17, SerializeTool.IntToByte(6));
                 }
-                client.SendPackage(5, sendData.ToArray());
             } catch (Exception e1) {
                 log.Generate("28 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("28 退出");
@@ -1291,18 +1216,14 @@ namespace QinDevilClient {
         private void Label_MouseDown_7(object sender, MouseButtonEventArgs e) {
             try {
                 log.Generate("29 进入");
-                List<byte> sendData = new List<byte>(8);
-                sendData.AddRange(SerializeTool.RawSerialize(7));
-                if (startPing == false) {
-                    lastPing = Environment.TickCount;
-                    startPing = true;
-                    sendData.AddRange(SerializeTool.RawSerialize(lastPing));
-                } else {
-                    sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+                if (e.ChangedButton == MouseButton.Left) {
+                    client.SendPackage(5, SerializeTool.IntToByte(7));
+                } else if (e.ChangedButton == MouseButton.Right) {
+                    client.SendPackage(17, SerializeTool.IntToByte(7));
                 }
-                client.SendPackage(5, sendData.ToArray());
             } catch (Exception e1) {
                 log.Generate("29 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("29 退出");
@@ -1311,18 +1232,14 @@ namespace QinDevilClient {
         private void Label_MouseDown_8(object sender, MouseButtonEventArgs e) {
             try {
                 log.Generate("30 进入");
-                List<byte> sendData = new List<byte>(8);
-                sendData.AddRange(SerializeTool.RawSerialize(8));
-                if (startPing == false) {
-                    lastPing = Environment.TickCount;
-                    startPing = true;
-                    sendData.AddRange(SerializeTool.RawSerialize(lastPing));
-                } else {
-                    sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+                if (e.ChangedButton == MouseButton.Left) {
+                    client.SendPackage(5, SerializeTool.IntToByte(8));
+                } else if (e.ChangedButton == MouseButton.Right) {
+                    client.SendPackage(17, SerializeTool.IntToByte(8));
                 }
-                client.SendPackage(5, sendData.ToArray());
             } catch (Exception e1) {
                 log.Generate("30 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("30 退出");
@@ -1331,18 +1248,14 @@ namespace QinDevilClient {
         private void Label_MouseDown_9(object sender, MouseButtonEventArgs e) {
             try {
                 log.Generate("31 进入");
-                List<byte> sendData = new List<byte>(8);
-                sendData.AddRange(SerializeTool.RawSerialize(9));
-                if (startPing == false) {
-                    lastPing = Environment.TickCount;
-                    startPing = true;
-                    sendData.AddRange(SerializeTool.RawSerialize(lastPing));
-                } else {
-                    sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+                if (e.ChangedButton == MouseButton.Left) {
+                    client.SendPackage(5, SerializeTool.IntToByte(9));
+                } else if (e.ChangedButton == MouseButton.Right) {
+                    client.SendPackage(17, SerializeTool.IntToByte(9));
                 }
-                client.SendPackage(5, sendData.ToArray());
             } catch (Exception e1) {
                 log.Generate("31 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("31 退出");
@@ -1351,18 +1264,14 @@ namespace QinDevilClient {
         private void Label_MouseDown_10(object sender, MouseButtonEventArgs e) {
             try {
                 log.Generate("32 进入");
-                List<byte> sendData = new List<byte>(8);
-                sendData.AddRange(SerializeTool.RawSerialize(10));
-                if (startPing == false) {
-                    lastPing = Environment.TickCount;
-                    startPing = true;
-                    sendData.AddRange(SerializeTool.RawSerialize(lastPing));
-                } else {
-                    sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+                if (e.ChangedButton == MouseButton.Left) {
+                    client.SendPackage(5, SerializeTool.IntToByte(10));
+                } else if (e.ChangedButton == MouseButton.Right) {
+                    client.SendPackage(17, SerializeTool.IntToByte(10));
                 }
-                client.SendPackage(5, sendData.ToArray());
             } catch (Exception e1) {
                 log.Generate("32 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("32 退出");
@@ -1371,18 +1280,14 @@ namespace QinDevilClient {
         private void Label_MouseDown_11(object sender, MouseButtonEventArgs e) {
             try {
                 log.Generate("33 进入");
-                List<byte> sendData = new List<byte>(8);
-                sendData.AddRange(SerializeTool.RawSerialize(11));
-                if (startPing == false) {
-                    lastPing = Environment.TickCount;
-                    startPing = true;
-                    sendData.AddRange(SerializeTool.RawSerialize(lastPing));
-                } else {
-                    sendData.AddRange(SerializeTool.RawSerialize(Environment.TickCount));
+                if (e.ChangedButton == MouseButton.Left) {
+                    client.SendPackage(5, SerializeTool.IntToByte(11));
+                } else if (e.ChangedButton == MouseButton.Right) {
+                    client.SendPackage(17, SerializeTool.IntToByte(11));
                 }
-                client.SendPackage(5, sendData.ToArray());
             } catch (Exception e1) {
                 log.Generate("33 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("33 退出");
@@ -1396,6 +1301,7 @@ namespace QinDevilClient {
                 }
             } catch (Exception e1) {
                 log.Generate("34 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("34 退出");
@@ -1407,6 +1313,7 @@ namespace QinDevilClient {
                 DragMove();
             } catch (Exception e1) {
                 log.Generate("35 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("35 退出");
@@ -1420,6 +1327,7 @@ namespace QinDevilClient {
                 }
             } catch (Exception e1) {
                 log.Generate("36 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("36 退出");
@@ -1433,6 +1341,7 @@ namespace QinDevilClient {
                 }
             } catch (Exception e1) {
                 log.Generate("37 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("37 退出");
@@ -1446,6 +1355,7 @@ namespace QinDevilClient {
                 }
             } catch (Exception e1) {
                 log.Generate("38 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("38 退出");
@@ -1459,6 +1369,7 @@ namespace QinDevilClient {
                 }
             } catch (Exception e1) {
                 log.Generate("39 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("39 退出");
@@ -1470,6 +1381,7 @@ namespace QinDevilClient {
                 Close();
             } catch (Exception e1) {
                 log.Generate("40 异常，异常信息：" + e1.Message);
+                log.Flush();
                 throw;
             } finally {
                 log.Generate("40 退出");

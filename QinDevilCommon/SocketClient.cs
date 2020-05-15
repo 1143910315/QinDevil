@@ -9,82 +9,54 @@ using System.Threading;
 
 namespace QinDevilCommon {
     public class SocketClient {
+        public delegate void OnConnected(bool connected);
+        public delegate void OnReceivePackage(int signal, byte[] buffer);
+        public delegate void OnConnectionBreak();
+        public delegate void OnSocketException(SocketException socketException);
+        public event OnConnected OnConnectedEvent;
+        public event OnReceivePackage OnReceivePackageEvent;
+        public event OnConnectionBreak OnConnectionBreakEvent;
+        public event OnSocketException OnSocketExceptionEvent;
         private Socket socket;
-        private readonly byte[] buffer = new byte[512];
-        private readonly List<byte> list = new List<byte>();
+        private readonly SocketAsyncEventArgs receiveEventArgs;
+        private readonly SocketAsyncEventArgs[] sendEventArgs = new SocketAsyncEventArgs[] { new SocketAsyncEventArgs(), new SocketAsyncEventArgs() };
+        private readonly byte[] recvBuffer = new byte[255];
+        private readonly byte[] sendBuffer = new byte[255];
+        private readonly List<byte> recvData = new List<byte>();
         private readonly List<byte> sendData = new List<byte>();
-        public delegate void OnConnectedEvent(bool connected);
-        public delegate void OnReceivePackageEvent(int signal, byte[] buffer);
-        public delegate void OnConnectionBreakEvent();
-        public delegate void OnSendCompletedEvent();
-        public OnConnectedEvent onConnectedEvent;
-        public OnConnectionBreakEvent onConnectionBreakEvent;
-        public OnReceivePackageEvent onReceivePackageEvent;
-        public OnSendCompletedEvent onSendCompletedEvent;
-        private SocketAsyncEventArgs SendAsyncEventArgs = null;
-        private bool socketIsOnline = false;
-        private readonly object sendLock = new object();
+        private byte state = 0;
         public SocketClient() {
+            if (!Socket.OSSupportsIPv4) {
+                throw new NotSupportedException("系统不支持IPv4网络！");
+            }
+            receiveEventArgs = new SocketAsyncEventArgs();
+            receiveEventArgs.SetBuffer(recvBuffer, 0, recvBuffer.Length);
+            receiveEventArgs.Completed += ReceiveEventArgs_Completed;
+            sendEventArgs[0].Completed += SendEventArgs_Completed;
+            sendEventArgs[1].Completed += SendEventArgs_Completed;
         }
         public void Connect(string host, int port) {
-            IPHostEntry entry = Dns.GetHostEntry(host);
-            if (entry != null && entry.AddressList != null) {
-                for (int AddressListIndex = 0; AddressListIndex < entry.AddressList.Length; AddressListIndex++) {
-                    if (entry.AddressList[AddressListIndex].AddressFamily == AddressFamily.InterNetwork) {
-                        socketIsOnline = false;
-                        socket?.Close();
-                        socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                        SocketAsyncEventArgs connectEventArgs = new SocketAsyncEventArgs {
-                            UserToken = this,
-                            RemoteEndPoint = new IPEndPoint(entry.AddressList[AddressListIndex], port)
-                        };
-                        connectEventArgs.Completed += (t, e) => {
-                            SocketClient thisclass = e.UserToken as SocketClient;
-                            if (t.Equals(thisclass.socket)) {
-                                Socket s = t as Socket;
-                                onConnectedEvent?.Invoke(s.Connected);
-                                if (s.Connected) {
-                                    socketIsOnline = true;
-                                    SocketAsyncEventArgs receiveEventArgs = new SocketAsyncEventArgs {
-                                        UserToken = e.UserToken
-                                    };
-                                    receiveEventArgs.SetBuffer(buffer, 0, 512);
-                                    receiveEventArgs.Completed += (t1, e1) => {
-                                        SocketClient thisclass1 = e1.UserToken as SocketClient;
-                                        if (t1.Equals(thisclass1.socket)) {
-                                            int len = e1.BytesTransferred;
-                                            if (len > 0 && e1.SocketError == SocketError.Success) {
-                                                for (int i = 0; i < len; i++) {
-                                                    list.Add(buffer[i]);
-                                                }
-                                                while (list.Count >= 8) {
-                                                    byte[] v1 = list.GetRange(0, 8).ToArray();
-                                                    int v = BitConverter.ToInt32(v1, 0);
-                                                    if (list.Count - 4 >= v) {
-                                                        onReceivePackageEvent?.Invoke(BitConverter.ToInt32(v1, 4), list.GetRange(8, v - 4).ToArray());
-                                                        list.RemoveRange(0, v + 4);
-                                                    } else {
-                                                        break;
-                                                    }
-                                                }
-                                                ((Socket)t1).ReceiveAsync(receiveEventArgs);
-                                            } else {
-                                                socketIsOnline = false;
-                                                onConnectionBreakEvent?.Invoke();
-                                                thisclass1.socket.Close();
-                                            }
-                                        }
-                                    };
-                                    socket.ReceiveAsync(receiveEventArgs);
-                                } else {
-                                    socketIsOnline = false;
-                                }
+            try {
+                IPHostEntry entry = Dns.GetHostEntry(host);
+                if (entry != null && entry.AddressList != null) {
+                    for (int AddressListIndex = 0; AddressListIndex < entry.AddressList.Length; AddressListIndex++) {
+                        if (entry.AddressList[AddressListIndex].AddressFamily == AddressFamily.InterNetwork) {
+                            socket?.Close(1000);
+                            socket?.Dispose();
+                            socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                            SocketAsyncEventArgs connectEventArgs = new SocketAsyncEventArgs();
+                            connectEventArgs.Completed += ConnectEventArgs_Completed;
+                            connectEventArgs.RemoteEndPoint = new IPEndPoint(entry.AddressList[AddressListIndex], port);
+                            if (!socket.ConnectAsync(connectEventArgs)) {
+                                ConnectEventArgs_Completed(socket, connectEventArgs);
                             }
-                        };
-                        socket.ConnectAsync(connectEventArgs);
-                        break;
+                            break;
+                        }
                     }
                 }
+            } catch (SocketException se) {
+                OnConnectedEvent?.Invoke(false);
+                OnSocketExceptionEvent?.Invoke(se);
             }
         }
         public void SendPackage(int signal, byte[] data) {
@@ -95,79 +67,145 @@ namespace QinDevilCommon {
             }
         }
         public void SendPackage(int signal, byte[] data, int offset, int count) {
-            byte[] v = BitConverter.GetBytes(signal);
-            byte[] l = BitConverter.GetBytes(count + v.Length);
-            Monitor.Enter(sendLock);
-            if (SendAsyncEventArgs == null) {
-                byte[] package = new byte[count + v.Length + l.Length];
-                int index = 0;
-                for (int i = 0; i < l.Length; i++) {
-                    package[index++] = l[i];
-                }
-                for (int i = 0; i < v.Length; i++) {
-                    package[index++] = v[i];
-                }
-                for (int i = offset; i < count; i++) {
-                    package[index++] = data[i];
-                }
-                SendAsyncEventArgs = new SocketAsyncEventArgs();
-                Monitor.Exit(sendLock);
-                SendAsyncEventArgs.SetBuffer(package, 0, index);
-                SendAsyncEventArgs.Completed += SendAsyncEventArgs_Completed;
-                if (socketIsOnline) {
-                    try {
-                        _ = socket.SendAsync(SendAsyncEventArgs);
-                    } catch (Exception) {
-                        SendAsyncEventArgs = null;
-                    }
-                }
-            } else {
-                for (int i = 0; i < l.Length; i++) {
-                    sendData.Add(l[i]);
-                }
-                for (int i = 0; i < v.Length; i++) {
-                    sendData.Add(v[i]);
-                }
-                for (int i = offset; i < count; i++) {
-                    sendData.Add(data[i]);
-                }
-                Monitor.Exit(sendLock);
-            }
-        }
-        private void SendAsyncEventArgs_Completed(object sender, SocketAsyncEventArgs e) {
-            try {
-                Monitor.Enter(sendLock);
-                if (sender.Equals(socket)) {
-                    if (e.SocketError == SocketError.Success) {
-                        int len = sendData.Count;
-                        if (len > 0) {
-                            SendAsyncEventArgs = new SocketAsyncEventArgs();
-                            byte[] temp = sendData.ToArray();
-                            sendData.Clear();
-                            SendAsyncEventArgs.SetBuffer(temp, 0, len);
-                            SendAsyncEventArgs.Completed += SendAsyncEventArgs_Completed;
-                            if (socketIsOnline) {
-                                _ = socket.SendAsync(SendAsyncEventArgs);
-                                return;
+            lock (sendData) {
+                try {
+                    int len = count + 4;
+                    if ((state & 0b10) == 0) {
+                        state |= 0b10;
+                        sendBuffer[0] = (byte)len;
+                        sendBuffer[1] = (byte)(len >> 8);
+                        sendBuffer[2] = (byte)(len >> 16);
+                        sendBuffer[3] = (byte)(len >> 24);
+                        sendBuffer[4] = (byte)signal;
+                        sendBuffer[5] = (byte)(signal >> 8);
+                        sendBuffer[6] = (byte)(signal >> 16);
+                        sendBuffer[7] = (byte)(signal >> 24);
+                        if (sendData.Capacity < count - sendBuffer.Length + 8) {
+                            sendData.Capacity = count - sendBuffer.Length + 8;
+                        }
+                        for (int i = 0; i < count; i++) {
+                            if (i + 8 < sendBuffer.Length) {
+                                sendBuffer[i + 8] = data[i + offset];
+                            } else {
+                                sendData.Add(data[i + offset]);
                             }
-                        } else {
-                            onSendCompletedEvent?.Invoke();
+                        }
+                        sendEventArgs[state & 1].SetBuffer(sendBuffer, 0, count + 8);
+                        if (!socket.SendAsync(sendEventArgs[state & 1])) {
+                            SendEventArgs_Completed(socket, sendEventArgs[state & 1]);
                         }
                     } else {
-                        onConnectionBreakEvent?.Invoke();
-                        socket.Close();
+                        if (sendData.Capacity < count - sendBuffer.Length + 8 + sendData.Count) {
+                            sendData.Capacity = count - sendBuffer.Length + 8 + sendData.Count;
+                        }
+                        sendData.Add((byte)len);
+                        sendData.Add((byte)(len >> 8));
+                        sendData.Add((byte)(len >> 16));
+                        sendData.Add((byte)(len >> 24));
+                        sendData.Add((byte)signal);
+                        sendData.Add((byte)(signal >> 8));
+                        sendData.Add((byte)(signal >> 16));
+                        sendData.Add((byte)(signal >> 24));
+                        for (int i = 0; i < count; i++) {
+                            sendData.Add(data[i + offset]);
+                        }
+                    }
+                } catch (SocketException se) {
+                    socket.Close();
+                    sendData.Clear();
+                    OnConnectionBreakEvent?.Invoke();
+                    OnSocketExceptionEvent?.Invoke(se);
+                }
+            }
+        }
+        private void ConnectEventArgs_Completed(object sender, SocketAsyncEventArgs e) {
+            if (sender is Socket s) {
+                try {
+                    OnConnectedEvent?.Invoke(s.Connected);
+                    if (s.Connected && !socket.ReceiveAsync(receiveEventArgs)) {
+                        ReceiveEventArgs_Completed(socket, receiveEventArgs);
+                    }
+                    e.Dispose();
+                } catch (SocketException se) {
+                    s?.Close();
+                    OnConnectionBreakEvent?.Invoke();
+                    OnSocketExceptionEvent?.Invoke(se);
+                }
+            }
+        }
+        private void ReceiveEventArgs_Completed(object sender, SocketAsyncEventArgs e) {
+            if (sender is Socket s) {
+                try {
+                    int len = e.BytesTransferred;
+                    if (len > 0 && e.SocketError == SocketError.Success) {
+                        if (recvData.Capacity < recvData.Count + len) {
+                            recvData.Capacity = recvData.Count + len;
+                        }
+                        for (int i = 0; i < len; i++) {
+                            recvData.Add(recvBuffer[i + e.Offset]);
+                        }
+                        while (recvData.Count >= 8) {
+                            int dataLen = recvData[0] | (recvData[1] << 8) | (recvData[2] << 16) | (recvData[3] << 24);
+                            if (recvData.Count - 4 >= dataLen) {
+                                int signal = recvData[4] | (recvData[5] << 8) | (recvData[6] << 16) | (recvData[7] << 24);
+                                OnReceivePackageEvent?.Invoke(signal, recvData.GetRange(8, dataLen - 4).ToArray());
+                                recvData.RemoveRange(0, dataLen + 4);
+                            } else {
+                                break;
+                            }
+                        }
+                        if (!s.ReceiveAsync(receiveEventArgs)) {
+                            ReceiveEventArgs_Completed(s, e);
+                        }
+                    } else {
+                        s.Close();
+                        OnConnectionBreakEvent?.Invoke();
+                    }
+                } catch (SocketException se) {
+                    s.Close();
+                    OnConnectionBreakEvent?.Invoke();
+                    OnSocketExceptionEvent?.Invoke(se);
+                }
+            }
+        }
+        private void SendEventArgs_Completed(object sender, SocketAsyncEventArgs e) {
+            lock (sendData) {
+                if (sender is Socket s) {
+                    try {
+                        if (e.SocketError == SocketError.Success) {
+                            int len = sendData.Count;
+                            if (len > 0) {
+                                if ((state & 0b1) == 0) {
+                                    state |= 0b1;
+                                } else {
+                                    state &= 0b10;
+                                }
+                                int count = len > sendBuffer.Length ? sendBuffer.Length : len;
+                                sendData.CopyTo(0, sendBuffer, 0, count);
+                                sendData.RemoveRange(0, count);
+                                sendEventArgs[state & 1].SetBuffer(sendBuffer, 0, count);
+                                if (!socket.SendAsync(sendEventArgs[state & 1])) {
+                                    SendEventArgs_Completed(socket, sendEventArgs[state & 1]);
+                                }
+                            } else {
+                                state &= 1;
+                            }
+                        } else {
+                            s.Close();
+                            sendData.Clear();
+                            OnConnectionBreakEvent?.Invoke();
+                        }
+                    } catch (SocketException se) {
+                        s.Close();
+                        sendData.Clear();
+                        OnConnectionBreakEvent?.Invoke();
+                        OnSocketExceptionEvent?.Invoke(se);
                     }
                 }
-                SendAsyncEventArgs = null;
-            } catch (Exception) {
-                SendAsyncEventArgs = null;
-            } finally {
-                Monitor.Exit(sendLock);
             }
         }
         ~SocketClient() {
-            socket.Close();
-            socket = null;
+            socket?.Close();
         }
     }
 }

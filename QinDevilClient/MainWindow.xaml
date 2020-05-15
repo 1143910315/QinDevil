@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:QinDevilClient"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
-        Title="琴魔副本工具" Width="388" Loaded="Window_Loaded" Topmost="True" Background="{x:Null}" WindowStartupLocation="CenterScreen" WindowStyle="None" AllowsTransparency="True" SizeToContent="Height">
+        Title="琴魔副本工具" Width="388" Topmost="True" Background="{x:Null}" WindowStartupLocation="CenterScreen" WindowStyle="None" AllowsTransparency="True" SizeToContent="Height">
     <Window.Resources>
         <local:QinKeyConverter x:Key="QinKey"/>
         <sys:Int32 x:Key="one">1</sys:Int32>
@@ -54,7 +54,7 @@
                 <Label Content="琴魔副本工具" Canvas.Left="25" Canvas.Top="15" FontFamily="/琴魔副本工具;component/#HYShangWeiShouShuJ" FontSize="45" Padding="0" Foreground="White"></Label>
                 <Label Content="QQ群：665973374" Foreground="White" Padding="0" FontSize="12" Canvas.Left="479" Canvas.Top="36"></Label>
                 <Label Content="作者：琴魔一梦之队" Foreground="White" Padding="0" FontSize="12" Canvas.Left="479" Canvas.Top="57"></Label>
-                <Label Width="36" Height="36" Canvas.Left="553" Canvas.Top="3" MouseDown="Label_MouseDown_12">
+                <Label Width="30" Height="30" Canvas.Left="553" Canvas.Top="3" MouseDown="Label_MouseDown_12">
                     <Label.Background>
                         <ImageBrush ImageSource="close.png"/>
                     </Label.Background>

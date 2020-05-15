@@ -13,6 +13,11 @@ namespace QinDevilCommon.LogClass {
         }
         public void Generate(string log) {
             tw.WriteLineAsync(log).Wait();
+        }
+        public void Flush() {
+            tw.Flush();
+        }
+        ~LogManage() {
             tw.Flush();
         }
     }

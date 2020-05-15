@@ -5,13 +5,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace QinDevilServer {
     public class GameData : ViewModelBase {
-        private DoubleLinkList<UserInfo> _clientInfo = new DoubleLinkList<UserInfo>();
-        public DoubleLinkList<UserInfo> ClientInfo {
+        public readonly ReaderWriterLockSlim ClientInfoLock = new ReaderWriterLockSlim();
+        private readonly NotifyLinkedList<UserInfo> _clientInfo = new NotifyLinkedList<UserInfo>();
+        public NotifyLinkedList<UserInfo> ClientInfo {
             get => _clientInfo;
-            set => Set(ref _clientInfo, value);
+            set => Update();
         }
         private string _no1Qin = "";
         public string No1Qin {
@@ -38,15 +40,31 @@ namespace QinDevilServer {
             get => _qinKey;
             set => Update();
         }
-        private StringBuilder _hitQinKey = new StringBuilder(9);
-        public StringBuilder HitQinKey {
+        private byte[] _hitQinKey = new byte[9];
+        public byte[] HitQinKey {
             get => _hitQinKey;
             set => Set(ref _hitQinKey, value);
         }
-        private readonly DoubleLinkList<LogDetail> _log = new DoubleLinkList<LogDetail>();
-        public DoubleLinkList<LogDetail> Log {
+        private int _hitQinKeyLength = 0;
+        public int HitQinKeyLength {
+            get => _hitQinKeyLength;
+            set => Set(ref _hitQinKeyLength, value);
+        }
+        public readonly ReaderWriterLockSlim LogLock = new ReaderWriterLockSlim();
+        private readonly NotifyLinkedList<LogDetail> _log = new NotifyLinkedList<LogDetail>();
+        public NotifyLinkedList<LogDetail> Log {
             get => _log;
             set => Update();
+        }
+        private Stack<LinkedListNode<LogDetail>> _logBack = new Stack<LinkedListNode<LogDetail>>();
+        public Stack<LinkedListNode<LogDetail>> LogBack {
+            get => _logBack;
+            set => Set(ref _logBack, value);
+        }
+        private int _line;
+        public int Line {
+            get => _line;
+            set => Set(ref _line, value);
         }
     }
 }
