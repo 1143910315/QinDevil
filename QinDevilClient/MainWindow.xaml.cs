@@ -71,13 +71,12 @@ namespace QinDevilClient {
         private readonly byte[] bigBuffer = new byte[8000];
         private readonly List<byte> sendData = new List<byte>();
         private bool startPing = false;
-        private bool sitOn = false;
         private int lastPing;
         private readonly byte[] machineIdentity;
         private bool sendInfoSuccess = false;
         private readonly Random r = new Random();
         private int discernTimers = 0;
-        private readonly LogManage log = new LogManage(".\\工具日志.log");
+        private readonly LogManage log = new LogManage(".\\工具日志-" + Environment.TickCount.ToString() + ".log");
 #if service
         private readonly KeyboardHook hook = new KeyboardHook();
         private bool ctrlState;
@@ -567,7 +566,6 @@ namespace QinDevilClient {
                     if (ping > gameData.Ping) {
                         gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
                         if (gameData.Ping == 9999) {
-                            //Debug.WriteLine("超时，连接！");
                             Connect();
                         }
                     }
@@ -833,8 +831,6 @@ namespace QinDevilClient {
         private void OnReceivePackage(int signal, byte[] buffer) {
             try {
                 log.Generate("15 进入");
-                timer.Stop();
-                timer.Start();
                 int startIndex = 0;
                 switch (signal) {
                     case 0: {
@@ -1017,12 +1013,17 @@ namespace QinDevilClient {
             try {
                 log.Generate("16 进入");
                 timer.Stop();
+                if (sendInfoSuccess) {
+                    connectTimer.Interval = 200;
+                    connectTimer.Start();
+                } else {
+                    connectTimer.Interval = 3000;
+                    connectTimer.Start();
+                }
                 sendInfoSuccess = false;
                 startPing = false;
                 gameData.Ping = 9999;
                 discernTimer.Stop();
-                connectTimer.Interval = 200;
-                connectTimer.Start();
             } catch (Exception e1) {
                 log.Generate("16 异常，异常信息：" + e1.Message);
                 log.Flush();
