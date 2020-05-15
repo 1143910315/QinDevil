@@ -55,6 +55,11 @@ namespace QinDevilClient {
         public static extern int ShowWindow(int hwnd, int nCmdShow);
         [DllImport("user32.dll")]
         public static extern int FindWindow(string lpClassName, string lpWindowName);
+        [DllImport("user32.dll")]
+        public static extern int GetWindowTextA(IntPtr hWnd, [Out] StringBuilder lpString, int nMaxCount);
+        [DllImport("User32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool IsWindowVisible(IntPtr hWnd);
         [DllImport("Psapi.dll", EntryPoint = "GetModuleFileNameEx")]
         public static extern int GetModuleFileNameEx(IntPtr handle, IntPtr hModule, [Out] StringBuilder lpszFileName, int nSize);
         [DllImport("Kernel32.dll", EntryPoint = "QueryFullProcessImageNameA")]
@@ -104,6 +109,7 @@ namespace QinDevilClient {
                 client.OnReceivePackageEvent += OnReceivePackage;
                 client.OnConnectionBreakEvent += OnConnectionBreak;
                 connectTimer.Elapsed += ConnectTimer_Elapsed;
+                connectTimer.AutoReset = false;
                 timer.Elapsed += Timer_Elapsed;
                 timer.AutoReset = false;
                 pingTimer.Interval = 150;
@@ -588,10 +594,10 @@ namespace QinDevilClient {
             try {
                 log.Generate("13 进入");
 #if DEBUG
-                //client.Connect("q1143910315.gicp.net", 51814);
-                client.Connect("127.0.0.1", 13748);
+                client.Connect("q1143910315.gicp.net", 28739);
+                //client.Connect("127.0.0.1", 12148);
 #else
-                client.Connect("q1143910315.gicp.net", 51814);
+                client.Connect("q1143910315.gicp.net", 28739);
 #endif
             } catch (Exception e1) {
                 log.Generate("13 异常，异常信息：" + e1.Message);
@@ -1492,28 +1498,52 @@ namespace QinDevilClient {
         }
         private void Window_Activated(object sender, EventArgs e) {
             headTitle.Visibility = Visibility.Visible;
-            WindowInfo.Rect screen = WindowInfo.GetWindowClientRect(IntPtr.Zero);
-            IntPtr topWindow = WindowInfo.GetTopWindow();
-            while (!topWindow.Equals(IntPtr.Zero)) {
-                WindowInfo.Rect rect = WindowInfo.GetWindowClientRect(topWindow);
+            WindowInfo.Rect screen = new WindowInfo.Rect {
+                left = 0,
+                top = 0,
+                right = SystemScreen.ScreenWidth(),
+                bottom = SystemScreen.ScreenHeight()
+            };
+            Process[] process = Process.GetProcessesByName("WuXia_Client_x64");
+            for (int i = 0; i < process.Length; i++) {
+                WindowInfo.Rect rect = WindowInfo.GetWindowClientRect(process[i].MainWindowHandle);
                 if (screen.Equals(rect)) {
                     _ = ShowWindow(FindWindow("Shell_TrayWnd", null), SW_HIDE);
                     return;
                 }
-                topWindow = WindowInfo.GetWindow(topWindow, WindowInfo.GettingType.GW_HWNDNEXT);
+            }
+            process = Process.GetProcessesByName("WuXia_Client");
+            for (int i = 0; i < process.Length; i++) {
+                WindowInfo.Rect rect = WindowInfo.GetWindowClientRect(process[i].MainWindowHandle);
+                if (screen.Equals(rect)) {
+                    _ = ShowWindow(FindWindow("Shell_TrayWnd", null), SW_HIDE);
+                    return;
+                }
             }
         }
         private void Window_Deactivated(object sender, EventArgs e) {
-            _ = ShowWindow(FindWindow("Shell_TrayWnd", null), SW_RESTORE); 
-            WindowInfo.Rect screen = WindowInfo.GetWindowClientRect(IntPtr.Zero);
-            IntPtr topWindow = WindowInfo.GetTopWindow();
-            while (!topWindow.Equals(IntPtr.Zero)) {
-                WindowInfo.Rect rect = WindowInfo.GetWindowClientRect(topWindow);
+            _ = ShowWindow(FindWindow("Shell_TrayWnd", null), SW_RESTORE);
+            WindowInfo.Rect screen = new WindowInfo.Rect {
+                left = 0,
+                top = 0,
+                right = SystemScreen.ScreenWidth(),
+                bottom = SystemScreen.ScreenHeight()
+            };
+            Process[] process = Process.GetProcessesByName("WuXia_Client_x64");
+            for (int i = 0; i < process.Length; i++) {
+                WindowInfo.Rect rect = WindowInfo.GetWindowClientRect(process[i].MainWindowHandle);
                 if (screen.Equals(rect)) {
                     headTitle.Visibility = Visibility.Hidden;
                     return;
                 }
-                topWindow = WindowInfo.GetWindow(topWindow, WindowInfo.GettingType.GW_HWNDNEXT);
+            }
+            process = Process.GetProcessesByName("WuXia_Client");
+            for (int i = 0; i < process.Length; i++) {
+                WindowInfo.Rect rect = WindowInfo.GetWindowClientRect(process[i].MainWindowHandle);
+                if (screen.Equals(rect)) {
+                    headTitle.Visibility = Visibility.Hidden;
+                    return;
+                }
             }
         }
     }

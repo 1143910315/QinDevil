@@ -55,7 +55,7 @@
                     <GridViewColumn Header="管理者" Width="50">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <CheckBox Checked="{Binding Manager,Mode=TwoWay,NotifyOnSourceUpdated=True}" SourceUpdated="CheckBox_SourceUpdated"></CheckBox>
+                                <CheckBox IsChecked="{Binding Manager,Mode=TwoWay,NotifyOnSourceUpdated=True}" SourceUpdated="CheckBox_SourceUpdated"></CheckBox>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>

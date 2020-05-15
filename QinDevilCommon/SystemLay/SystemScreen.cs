@@ -8,6 +8,12 @@ using System.Windows.Forms;
 
 namespace QinDevilCommon.SystemLay {
     public class SystemScreen {
+        public static int ScreenWidth() {
+            return Screen.PrimaryScreen.Bounds.Width;
+        }
+        public static int ScreenHeight() {
+            return Screen.PrimaryScreen.Bounds.Height;
+        }
         public static Bitmap CaptureScreen() {
             Bitmap baseImage = new Bitmap(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height);
             Graphics g = Graphics.FromImage(baseImage);
