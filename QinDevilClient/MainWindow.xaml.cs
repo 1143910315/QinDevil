@@ -617,6 +617,7 @@ namespace QinDevilClient {
                     connectTimer.Start();
                     CheckDomain();
                 } else {
+                    connectTimer.Stop();
                     timer.Interval = 200;
                     timer.Start();
                 }
@@ -741,9 +742,9 @@ namespace QinDevilClient {
                                                         break;
                                                 }
                                             }
-                                            MessageBox.Show(MessageBoxText);
                                             connectTimer.Stop();
-                                            client.Connect(match.Groups[1].Value, 51814);
+                                            MessageBox.Show(MessageBoxText);
+                                            client.Connect(match.Groups[1].Value, 28739);
                                             return;
                                         }
                                     }
