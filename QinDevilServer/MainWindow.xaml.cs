@@ -677,8 +677,8 @@ namespace QinDevilServer {
                     gameData[user.Value.Line].ClientInfoLock.EnterWriteLock();
                     try {
                         gameData[user.Value.Line].ClientInfo.Remove(user);
-                    } finally {
                         gameData[user.Value.Line].ClientInfo.ChangeComplete();
+                    } finally {
                         gameData[user.Value.Line].ClientInfoLock.ExitWriteLock();
                     }
                 });

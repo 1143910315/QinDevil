@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -28,12 +29,12 @@ namespace QinDevilCommon.Keyboard {
         public delegate void KeyUp(KeyCode keyCode);
         public event KeyDown KeyDownEvent;
         public event KeyDown KeyUpEvent;
-        private HookProc hookProc;
+        private readonly HookProc hookProc;
         private const int HC_ACTION = 0;
         private const int WH_KEYBOARD_LL = 13;
         private const int WM_KEYDOWN = 256;
         private const int WM_KEYUP = 257;
-        private readonly int hHook;
+        private int hHook;
         public KeyboardHook() {
             hookProc = HookCallback;
             hHook = SetWindowsHookEx(WH_KEYBOARD_LL, hookProc, Marshal.GetHINSTANCE(Assembly.GetExecutingAssembly().ManifestModule), 0);
@@ -54,8 +55,16 @@ namespace QinDevilCommon.Keyboard {
             }
             return CallNextHookEx(hHook, idHook, wParam, lParam);
         }
+        public void Close() {
+            if (hHook != 0) {
+                UnhookWindowsHookEx(hHook);
+                hHook = 0;
+            }
+        }
         ~KeyboardHook() {
-            UnhookWindowsHookEx(hHook);
+            if (hHook != 0) {
+                UnhookWindowsHookEx(hHook);
+            }
         }
     }
 }

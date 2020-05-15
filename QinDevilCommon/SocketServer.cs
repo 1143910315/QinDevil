@@ -103,13 +103,14 @@ namespace QinDevilCommon {
             }
         }
         internal void CloseClient(int id) {
-            ClientStruct client;
             lock (socketHashtable) {
-                client = (ClientStruct)socketHashtable[id];
-                socketHashtable.Remove(id);
+                if (socketHashtable.ContainsKey(id)) {
+                    ClientStruct client = (ClientStruct)socketHashtable[id];
+                    socketHashtable.Remove(id);
+                    client.s.Close();
+                    OnLeaveEvent?.Invoke(client.id, client.userToken);
+                }
             }
-            client.s.Close();
-            OnLeaveEvent?.Invoke(client.id, client.userToken);
         }
         private void ReceiveEventArgs_Completed(object sender, SocketAsyncEventArgs e) {
             if (e.UserToken is ClientStruct client) {
@@ -144,10 +145,12 @@ namespace QinDevilCommon {
                     }
                 } catch (Exception) {
                     lock (socketHashtable) {
-                        socketHashtable.Remove(client.id);
+                        if (socketHashtable.ContainsKey(client.id)) {
+                            socketHashtable.Remove(client.id);
+                            client.s.Close();
+                            OnLeaveEvent?.Invoke(client.id, client.userToken);
+                        }
                     }
-                    client.s.Close();
-                    OnLeaveEvent?.Invoke(client.id, client.userToken);
                 }
             }
         }
@@ -178,10 +181,12 @@ namespace QinDevilCommon {
                         }
                     } catch (Exception) {
                         lock (socketHashtable) {
-                            socketHashtable.Remove(client.id);
+                            if (socketHashtable.ContainsKey(client.id)) {
+                                socketHashtable.Remove(client.id);
+                                client.s.Close();
+                                OnLeaveEvent?.Invoke(client.id, client.userToken);
+                            }
                         }
-                        client.s.Close();
-                        OnLeaveEvent?.Invoke(client.id, client.userToken);
                     }
                 }
             }
@@ -245,10 +250,12 @@ namespace QinDevilCommon {
                         }
                     } catch (Exception) {
                         lock (socketHashtable) {
-                            socketHashtable.Remove(client.id);
+                            if (socketHashtable.ContainsKey(client.id)) {
+                                socketHashtable.Remove(client.id);
+                                client.s.Close();
+                                OnLeaveEvent?.Invoke(client.id, client.userToken);
+                            }
                         }
-                        client.s.Close();
-                        OnLeaveEvent?.Invoke(client.id, client.userToken);
                     }
                 }
             }

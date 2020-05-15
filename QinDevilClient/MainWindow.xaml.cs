@@ -957,13 +957,15 @@ namespace QinDevilClient {
                     case 20: {
                             switch (buffer[startIndex++]) {
                                 case 0:
-                                    hook = null;
+                                    hook.Close();
                                     break;
                                 case 1:
                                     ctrlState = false;
-                                    hook = new KeyboardHook();
-                                    hook.KeyDownEvent += Hook_KeyDownEvent;
-                                    hook.KeyUpEvent += Hook_KeyUpEvent;
+                                    Dispatcher.Invoke(() => {
+                                        hook = new KeyboardHook();
+                                        hook.KeyDownEvent += Hook_KeyDownEvent;
+                                        hook.KeyUpEvent += Hook_KeyUpEvent;
+                                    });
                                     break;
                                 default:
                                     break;
@@ -1230,7 +1232,7 @@ namespace QinDevilClient {
         }
         private void Label_MouseDown_1(object sender, MouseButtonEventArgs e) {
             try {
-                log.Generate("23 进入"); 
+                log.Generate("23 进入");
                 if (e.ChangedButton == MouseButton.Left) {
                     client.SendPackage(5, SerializeTool.IntToByte(1));
                 } else if (e.ChangedButton == MouseButton.Right) {
