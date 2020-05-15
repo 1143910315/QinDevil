@@ -45,7 +45,7 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    <GridViewColumn Header="用户线路" Width="50">
+                    <GridViewColumn Header="用户线路" Width="60">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBox Text="{Binding Line,Mode=OneWay}" TextChanged="TextBox_TextChanged"></TextBox>

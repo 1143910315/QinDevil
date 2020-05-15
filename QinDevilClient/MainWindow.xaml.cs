@@ -39,6 +39,7 @@ using System.Net;
 using System.Net.Sockets;
 using QinDevilCommon.LogClass;
 using QinDevilCommon.Keyboard;
+using Label = System.Windows.Controls.Label;
 #if service
 using QinDevilCommon.Keyboard;
 #endif
@@ -594,8 +595,8 @@ namespace QinDevilClient {
             try {
                 log.Generate("13 进入");
 #if DEBUG
-                client.Connect("q1143910315.gicp.net", 28739);
-                //client.Connect("127.0.0.1", 12148);
+                //client.Connect("q1143910315.gicp.net", 28739);
+                client.Connect("127.0.0.1", 12148);
 #else
                 client.Connect("q1143910315.gicp.net", 28739);
 #endif
@@ -1228,7 +1229,7 @@ namespace QinDevilClient {
         }
         private void Label_MouseDown_1(object sender, MouseButtonEventArgs e) {
             try {
-                log.Generate("23 进入");
+                log.Generate("23 进入"); 
                 if (e.ChangedButton == MouseButton.Left) {
                     client.SendPackage(5, SerializeTool.IntToByte(1));
                 } else if (e.ChangedButton == MouseButton.Right) {
@@ -1545,6 +1546,9 @@ namespace QinDevilClient {
                     return;
                 }
             }
+        }
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e) {
+            hitKeyTimer.Stop();
         }
     }
 }

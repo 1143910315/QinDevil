@@ -757,7 +757,7 @@ namespace QinDevilServer {
             server.SendPackage(userInfo.Id, 19, SerializeTool.IntToByte(line));
         }
         private void CheckBox_SourceUpdated(object sender, DataTransferEventArgs e) {
-            System.Windows.Controls.TextBox sourceTextBox = (System.Windows.Controls.TextBox)e.Source;
+            System.Windows.Controls.CheckBox sourceTextBox = (System.Windows.Controls.CheckBox)e.Source;
             UserInfo userInfo = ((ContentPresenter)sourceTextBox.TemplatedParent).Content as UserInfo;
             byte[] b = new byte[1];
             b[0] = userInfo.Manager ? (byte)1 : (byte)0;
