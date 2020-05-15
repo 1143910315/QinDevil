@@ -68,5 +68,10 @@ namespace QinDevilServer {
             get => _fiveTone;
             set => Update();
         }
+        private bool _manager = false;
+        public bool Manager {
+            get => _manager;
+            set => Set(ref _manager, value);
+        }
     }
 }

@@ -512,7 +512,11 @@ namespace QinDevilServer {
                         }
                         break;
                     case 10:
-                        server.SendPackage(id, 17, buffer);
+                        if (userInfo.GamePath.Length == 0) {
+                            server.SendPackage(id, 18, buffer);
+                        } else {
+                            server.SendPackage(id, 17, buffer);
+                        }
                         break;
                     case 11:
                         userInfo.KillingIntentionStrip = SerializeTool.ByteToInt(buffer, ref startIndex);
@@ -535,35 +539,39 @@ namespace QinDevilServer {
                         ExpandLog(userInfo.Line, userInfo.Remark + " 推测缺 " + SerializeTool.ByteToString(buffer, ref startIndex));
                         break;
                     case 14:
-                        for (int i = 0; i < gameData[userInfo.Line].HitQinKey.Length; i++) {
-                            gameData[userInfo.Line].HitQinKey[i] = buffer[startIndex++];
-                        }
-                        gameData[userInfo.Line].ClientInfoLock.EnterReadLock();
-                        try {
-                            foreach (UserInfo tempUserInfo in gameData[userInfo.Line].ClientInfo) {
-                                server.SendPackage(tempUserInfo.Id, 8, gameData[userInfo.Line].HitQinKey);
+                        if (userInfo.Manager) {
+                            for (int i = 0; i < gameData[userInfo.Line].HitQinKey.Length; i++) {
+                                gameData[userInfo.Line].HitQinKey[i] = buffer[startIndex++];
                             }
-                        } finally {
-                            gameData[userInfo.Line].ClientInfoLock.ExitReadLock();
+                            gameData[userInfo.Line].ClientInfoLock.EnterReadLock();
+                            try {
+                                foreach (UserInfo tempUserInfo in gameData[userInfo.Line].ClientInfo) {
+                                    server.SendPackage(tempUserInfo.Id, 8, gameData[userInfo.Line].HitQinKey);
+                                }
+                            } finally {
+                                gameData[userInfo.Line].ClientInfoLock.ExitReadLock();
+                            }
                         }
                         break;
                     case 15:
-                        ExpandLog(userInfo.Line, userInfo.Remark + " 补弦清屏---------------------");
-                        gameData[userInfo.Line].No1Qin = gameData[userInfo.Line].No2Qin = gameData[userInfo.Line].No3Qin = gameData[userInfo.Line].No4Qin = "";
-                        gameData[userInfo.Line].HitQinKey[0] = 0;
-                        gameData[userInfo.Line].HitQinKeyLength = 0;
-                        for (int i = 0; i < 12; i++) {
-                            gameData[userInfo.Line].QinKey[i] = 0;
-                        }
-                        gameData[userInfo.Line].ClientInfoLock.EnterReadLock();
-                        try {
-                            byte[] intByte = new byte[4];
-                            foreach (UserInfo tempUserInfo in gameData[userInfo.Line].ClientInfo) {
-                                SerializeTool.IntToByte(tempUserInfo.Id, intByte, 0);
-                                server.SendPackage(tempUserInfo.Id, 5, intByte);
+                        if (userInfo.Manager) {
+                            ExpandLog(userInfo.Line, userInfo.Remark + " 补弦清屏---------------------");
+                            gameData[userInfo.Line].No1Qin = gameData[userInfo.Line].No2Qin = gameData[userInfo.Line].No3Qin = gameData[userInfo.Line].No4Qin = "";
+                            gameData[userInfo.Line].HitQinKey[0] = 0;
+                            gameData[userInfo.Line].HitQinKeyLength = 0;
+                            for (int i = 0; i < 12; i++) {
+                                gameData[userInfo.Line].QinKey[i] = 0;
                             }
-                        } finally {
-                            gameData[userInfo.Line].ClientInfoLock.ExitReadLock();
+                            gameData[userInfo.Line].ClientInfoLock.EnterReadLock();
+                            try {
+                                byte[] intByte = new byte[4];
+                                foreach (UserInfo tempUserInfo in gameData[userInfo.Line].ClientInfo) {
+                                    SerializeTool.IntToByte(tempUserInfo.Id, intByte, 0);
+                                    server.SendPackage(tempUserInfo.Id, 5, intByte);
+                                }
+                            } finally {
+                                gameData[userInfo.Line].ClientInfoLock.ExitReadLock();
+                            }
                         }
                         break;
                     case 16:
@@ -607,6 +615,9 @@ namespace QinDevilServer {
                         } finally {
                             gameData[userInfo.Line].ClientInfoLock.ExitReadLock();
                         }
+                        break;
+                    case 18:
+                        userInfo.GamePath = SerializeTool.ByteToString(buffer, ref startIndex);
                         break;
                     default:
                         break;

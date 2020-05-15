@@ -998,6 +998,28 @@ namespace QinDevilClient {
                             gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
                             break;
                         }
+                    case 18: {
+                            int ping = Environment.TickCount - SerializeTool.ByteToInt(buffer, ref startIndex);
+                            startPing = false;
+                            gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
+                            Process process = GetWuXiaProcess();
+                            if (process != null) {
+                                int i = 0;
+                                int length;
+                                StringBuilder stringBuilder;
+                                do {
+                                    i++;
+                                    length = i * 260;
+                                    stringBuilder = new StringBuilder(length);
+                                    _ = QueryFullProcessImageNameA(process.Handle, 0, stringBuilder, ref length);
+                                    if (length == 0) {
+                                        return;
+                                    }
+                                } while (i * 260 == length);
+                                client.SendPackage(18, SerializeTool.StringToByte(stringBuilder.ToString()));
+                            }
+                            break;
+                        }
                     default:
                         break;
                 }
