@@ -84,14 +84,16 @@ namespace QinDevilCommon {
                             if (sendData.Capacity < count - sendBuffer.Length + 8) {
                                 sendData.Capacity = count - sendBuffer.Length + 8;
                             }
+                            len = 8;
                             for (int i = 0; i < count; i++) {
                                 if (i + 8 < sendBuffer.Length) {
                                     sendBuffer[i + 8] = data[i + offset];
+                                    len++;
                                 } else {
                                     sendData.Add(data[i + offset]);
                                 }
                             }
-                            sendEventArgs[state & 1].SetBuffer(sendBuffer, 0, count + 8);
+                            sendEventArgs[state & 1].SetBuffer(sendBuffer, 0, len);
                             if (!socket.SendAsync(sendEventArgs[state & 1])) {
                                 SendEventArgs_Completed(socket, sendEventArgs[state & 1]);
                             }

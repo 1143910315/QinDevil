@@ -58,6 +58,11 @@ namespace QinDevilTest {
             InitializeComponent();
             bool test = true;
             if (test) {
+                new Window1().Close();
+                Close();
+                return;
+            }
+            if (test) {
                 List<string> docList = new List<string>();
                 for (int i = 0; i < 9000000; i++) {
                     docList.Add(Guid.NewGuid().ToString());
@@ -85,11 +90,6 @@ namespace QinDevilTest {
                 });
                 sw.Stop();
                 Debug.WriteLine(string.Format("Linq Foreach take times {0}ms", sw.ElapsedMilliseconds));
-                return;
-            }
-            if (test) {
-                new Window1().Close();
-                Close();
                 return;
             }
             if (test) {

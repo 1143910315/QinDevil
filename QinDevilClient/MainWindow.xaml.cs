@@ -759,7 +759,7 @@ namespace QinDevilClient {
         }
         private void OnReceivePackage(int signal, byte[] buffer) {
             try {
-                log.Generate("15 进入");
+                log.Generate("15 " + signal.ToString() + " 进入");
                 int startIndex = 0;
                 switch (signal) {
                     case 0: {
@@ -976,11 +976,11 @@ namespace QinDevilClient {
                         break;
                 }
             } catch (Exception e1) {
-                log.Generate("15 异常，异常信息：" + e1.Message);
+                log.Generate("15 " + signal.ToString() + " 异常，异常信息：" + e1.Message);
                 log.Flush();
                 throw;
             } finally {
-                log.Generate("15 退出");
+                log.Generate("15 " + signal.ToString() + " 退出");
             }
         }
         private void OnConnectionBreak() {
