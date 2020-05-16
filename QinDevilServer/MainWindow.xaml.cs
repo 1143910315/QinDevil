@@ -24,6 +24,14 @@ namespace QinDevilServer {
     /// MainWindow.xaml 的交互逻辑
     /// </summary>
     public partial class MainWindow : Window {
+        private class ConvertUserToken : IConvertUserToken {
+            public object IdToUserToken(int id) {
+                return new LinkedListNode<UserInfo>(new UserInfo() {
+                    Id = id,
+                    LastReceiveTime = DateTime.Now
+                });
+            }
+        }
         private readonly SocketServer server;
         private readonly List<GameData> gameData;
         private readonly List<byte> sendData = new List<byte>();
@@ -46,7 +54,7 @@ namespace QinDevilServer {
             contextMenuStrip.Items.Add("扫描当前玩家缺弦").Click += Scanning_Click;
             contextMenuStrip.Items.Add("判断当前玩家杀意条").Click += KillingIntentionStrip_Click;
             contextMenuStrip.Items.Add("断开当前玩家").Click += CloseClient_Click;
-            server = new SocketServer();
+            server = new SocketServer(new ConvertUserToken());
             server.OnAcceptSuccessEvent += OnAcceptSuccess;
             server.OnReceivePackageEvent += OnReceivePackage;
             server.OnLeaveEvent += OnLeave;
@@ -309,15 +317,12 @@ namespace QinDevilServer {
                     break;
             }
         }
-        private object OnAcceptSuccess(int id) {
-            return Dispatcher.Invoke(() => {
+        private void OnAcceptSuccess(int id, object userToken) {
+            Dispatcher.Invoke(() => {
                 PopLog(0, "客户 " + id.ToString() + "进入。");
                 gameData[0].ClientInfoLock.EnterWriteLock();
                 try {
-                    return gameData[0].ClientInfo.AddLast(new UserInfo() {
-                        Id = id,
-                        LastReceiveTime = DateTime.Now
-                    });
+                    gameData[0].ClientInfo.AddLast(userToken as LinkedListNode<UserInfo>);
                 } finally {
                     gameData[0].ClientInfo.ChangeComplete();
                     gameData[0].ClientInfoLock.ExitWriteLock();

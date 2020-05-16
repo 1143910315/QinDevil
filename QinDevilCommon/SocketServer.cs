@@ -6,8 +6,12 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Collections;
 using System.Threading;
+using System.Diagnostics;
 
 namespace QinDevilCommon {
+    public interface IConvertUserToken {
+        object IdToUserToken(int id);
+    }
     public class SocketServer {
         private class ClientInfo {
             public byte[] recvBuffer;
@@ -20,7 +24,7 @@ namespace QinDevilCommon {
             public byte state;
             public SocketAsyncEventArgs[] sendEventArgs;
         }
-        public delegate object OnAcceptSuccess(int id);
+        public delegate void OnAcceptSuccess(int id, object userToken);
         public delegate void OnLeave(int id, object userToken);
         public delegate void OnReceivePackage(int id, int signal, byte[] buffer, object userToken);
         public event OnAcceptSuccess OnAcceptSuccessEvent;
@@ -30,10 +34,12 @@ namespace QinDevilCommon {
         private readonly Hashtable socketHashtable = new Hashtable();
         private int connectNum = 1;
         private bool repeat = false;
-        public SocketServer() {
+        private readonly IConvertUserToken convertUserToken;
+        public SocketServer(IConvertUserToken convert) {
             if (!Socket.OSSupportsIPv4) {
                 throw new NotSupportedException("系统不支持IPv4网络！");
             }
+            convertUserToken = convert;
         }
         public void Start(int port) {
             socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -46,8 +52,6 @@ namespace QinDevilCommon {
             }
         }
         private void AcceptEventArgs_Completed(object sender, SocketAsyncEventArgs e) {
-            SocketAsyncEventArgs acceptEventArgs;
-            SocketAsyncEventArgs receiveEventArgs;
             switch (e.SocketError) {
                 case SocketError.Success:
                     ClientInfo client;
@@ -68,6 +72,7 @@ namespace QinDevilCommon {
                             recvBuffer = new byte[255],
                             sendData = new List<byte>(),
                             recvData = new List<byte>(),
+                            userToken = convertUserToken?.IdToUserToken(connectNum),
                             state = 0,
                             sendEventArgs = new SocketAsyncEventArgs[2]
                         };
@@ -78,15 +83,17 @@ namespace QinDevilCommon {
                         }
                         socketHashtable.Add(connectNum++, client);
                     }
-                    client.userToken = OnAcceptSuccessEvent?.Invoke(client.id);
-                    receiveEventArgs = new SocketAsyncEventArgs();
+                    new Task(() => {
+                        OnAcceptSuccessEvent?.Invoke(client.id, client.userToken);
+                    }).Start();
+                    SocketAsyncEventArgs receiveEventArgs = new SocketAsyncEventArgs();
                     receiveEventArgs.Completed += ReceiveEventArgs_Completed;
                     receiveEventArgs.UserToken = client;
                     receiveEventArgs.SetBuffer(client.recvBuffer, 0, client.recvBuffer.Length);
                     if (!e.AcceptSocket.ReceiveAsync(receiveEventArgs)) {
                         ReceiveEventArgs_Completed(e.AcceptSocket, receiveEventArgs);
                     }
-                    acceptEventArgs = new SocketAsyncEventArgs();
+                    SocketAsyncEventArgs acceptEventArgs = new SocketAsyncEventArgs();
                     acceptEventArgs.Completed += AcceptEventArgs_Completed;
                     if (!socket.AcceptAsync(acceptEventArgs)) {
                         AcceptEventArgs_Completed(socket, acceptEventArgs);
@@ -101,7 +108,7 @@ namespace QinDevilCommon {
                     break;
             }
         }
-        internal void CloseClient(int id) {
+        public void CloseClient(int id) {
             ClientInfo client = null;
             lock (socketHashtable) {
                 if (socketHashtable.ContainsKey(id)) {
@@ -111,7 +118,9 @@ namespace QinDevilCommon {
             }
             if (client != null) {
                 client.s.Close();
-                OnLeaveEvent?.Invoke(client.id, client.userToken);
+                new Task(() => {
+                    OnLeaveEvent?.Invoke(client.id, client.userToken);
+                }).Start();
             }
         }
         private void ReceiveEventArgs_Completed(object sender, SocketAsyncEventArgs e) {
@@ -129,7 +138,9 @@ namespace QinDevilCommon {
                             int dataLen = client.recvData[0] | (client.recvData[1] << 8) | (client.recvData[2] << 16) | (client.recvData[3] << 24);
                             if (client.recvData.Count - 4 >= dataLen) {
                                 int signal = client.recvData[4] | (client.recvData[5] << 8) | (client.recvData[6] << 16) | (client.recvData[7] << 24);
-                                OnReceivePackageEvent?.Invoke(client.id, signal, client.recvData.GetRange(8, dataLen - 4).ToArray(), client.userToken);
+                                new Task(() => {
+                                    OnReceivePackageEvent?.Invoke(client.id, signal, client.recvData.GetRange(8, dataLen - 4).ToArray(), client.userToken);
+                                }).Start();
                                 client.recvData.RemoveRange(0, dataLen + 4);
                             } else {
                                 break;
@@ -155,7 +166,9 @@ namespace QinDevilCommon {
                     }
                     if (contains) {
                         client.s.Close();
-                        OnLeaveEvent?.Invoke(client.id, client.userToken);
+                        new Task(() => {
+                            OnLeaveEvent?.Invoke(client.id, client.userToken);
+                        }).Start();
                     }
                 }
             }
@@ -195,7 +208,9 @@ namespace QinDevilCommon {
                         }
                         if (contains) {
                             client.s.Close();
-                            OnLeaveEvent?.Invoke(client.id, client.userToken);
+                            new Task(() => {
+                                OnLeaveEvent?.Invoke(client.id, client.userToken);
+                            }).Start();
                         }
                     }
                 }
@@ -268,7 +283,9 @@ namespace QinDevilCommon {
                         }
                         if (contains) {
                             client.s.Close();
-                            OnLeaveEvent?.Invoke(client.id, client.userToken);
+                            new Task(() => {
+                                OnLeaveEvent?.Invoke(client.id, client.userToken);
+                            }).Start();
                         }
                     }
                 }
