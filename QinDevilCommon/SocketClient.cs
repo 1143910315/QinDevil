@@ -45,12 +45,13 @@ namespace QinDevilCommon {
                             lock (socketLock) {
                                 state &= 1;
                                 socket?.Close();
-                                socket?.Dispose();
                                 socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                                 SocketAsyncEventArgs connectEventArgs = new SocketAsyncEventArgs();
                                 connectEventArgs.Completed += ConnectEventArgs_Completed;
                                 connectEventArgs.RemoteEndPoint = new IPEndPoint(entry.AddressList[AddressListIndex], port);
-                                _ = socket.ConnectAsync(connectEventArgs);
+                                if (!socket.ConnectAsync(connectEventArgs)) {
+                                    ConnectEventArgs_Completed(socket, connectEventArgs);
+                                }
                             }
                             break;
                         }
@@ -97,7 +98,9 @@ namespace QinDevilCommon {
                         sendEventArgs[state & 1].SetBuffer(sendBuffer, 0, len);
                         lock (socketLock) {
                             if (socket != null) {
-                                _ = socket.SendAsync(sendEventArgs[state & 1]);
+                                if (!socket.SendAsync(sendEventArgs[state & 1])) {
+                                    SendEventArgs_Completed(socket, sendEventArgs[state & 1]);
+                                }
                             } else {
                                 state &= 1;
                                 sendData.Clear();
@@ -122,7 +125,6 @@ namespace QinDevilCommon {
                 } catch (SocketException se) {
                     lock (socketLock) {
                         socket?.Close();
-                        socket?.Dispose();
                         socket = null;
                     }
                     sendData.Clear();
@@ -139,11 +141,12 @@ namespace QinDevilCommon {
                         if (s.Equals(socket)) {
                             c = true;
                             if (s.Connected) {
-                                _ = socket.ReceiveAsync(receiveEventArgs);
+                                if (!socket.ReceiveAsync(receiveEventArgs)) {
+                                    ReceiveEventArgs_Completed(socket, receiveEventArgs);
+                                }
                             } else {
                                 socket = null;
                             }
-                            e.Dispose();
                         }
                     }
                     if (c) {
@@ -153,7 +156,6 @@ namespace QinDevilCommon {
                     lock (socketLock) {
                         if (s.Equals(socket)) {
                             socket?.Close();
-                            socket?.Dispose();
                             socket = null;
                         }
                     }
@@ -185,14 +187,15 @@ namespace QinDevilCommon {
                         }
                         lock (socketLock) {
                             if (s.Equals(socket)) {
-                                _ = s.ReceiveAsync(receiveEventArgs);
+                                if (!s.ReceiveAsync(receiveEventArgs)) {
+                                    ReceiveEventArgs_Completed(socket, receiveEventArgs);
+                                }
                             }
                         }
                     } else {
                         lock (socketLock) {
                             if (s.Equals(socket)) {
                                 socket?.Close();
-                                socket?.Dispose();
                                 socket = null;
                             }
                         }
@@ -202,7 +205,6 @@ namespace QinDevilCommon {
                     lock (socketLock) {
                         if (s.Equals(socket)) {
                             socket?.Close();
-                            socket?.Dispose();
                             socket = null;
                         }
                     }
@@ -229,7 +231,9 @@ namespace QinDevilCommon {
                                 sendEventArgs[state & 1].SetBuffer(sendBuffer, 0, count);
                                 lock (socketLock) {
                                     if (s.Equals(socket)) {
-                                        _ = socket.SendAsync(sendEventArgs[state & 1]);
+                                        if (!socket.SendAsync(sendEventArgs[state & 1])) {
+                                            SendEventArgs_Completed(socket, sendEventArgs[state & 1]);
+                                        }
                                     }
                                 }
                             } else {
@@ -239,7 +243,6 @@ namespace QinDevilCommon {
                             lock (socketLock) {
                                 if (s.Equals(socket)) {
                                     socket?.Close();
-                                    socket?.Dispose();
                                     socket = null;
                                 }
                             }
@@ -251,7 +254,6 @@ namespace QinDevilCommon {
                         lock (socketLock) {
                             if (s.Equals(socket)) {
                                 socket?.Close();
-                                socket?.Dispose();
                                 socket = null;
                             }
                         }
