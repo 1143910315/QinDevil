@@ -594,6 +594,12 @@ namespace QinDevilClient {
         private void Connect() {
             try {
                 log.Generate("13 进入");
+                timer.Stop();
+                connectTimer.Stop();
+                sendInfoSuccess = false;
+                startPing = false;
+                gameData.Ping = 9999;
+                discernTimer.Stop();
 #if DEBUG
                 //client.Connect("q1143910315.gicp.net", 28739);
                 client.Connect("127.0.0.1", 12148);

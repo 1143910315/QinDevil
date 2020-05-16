@@ -18,6 +18,7 @@ namespace QinDevilCommon {
         public event OnConnectionBreak OnConnectionBreakEvent;
         public event OnSocketException OnSocketExceptionEvent;
         private Socket socket;
+        private readonly object socketLock = new object();
         private readonly SocketAsyncEventArgs receiveEventArgs;
         private readonly SocketAsyncEventArgs[] sendEventArgs = new SocketAsyncEventArgs[] { new SocketAsyncEventArgs(), new SocketAsyncEventArgs() };
         private readonly byte[] recvBuffer = new byte[255];
@@ -41,14 +42,15 @@ namespace QinDevilCommon {
                 if (entry != null && entry.AddressList != null) {
                     for (int AddressListIndex = 0; AddressListIndex < entry.AddressList.Length; AddressListIndex++) {
                         if (entry.AddressList[AddressListIndex].AddressFamily == AddressFamily.InterNetwork) {
-                            socket?.Close(1000);
-                            socket?.Dispose();
-                            socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                            SocketAsyncEventArgs connectEventArgs = new SocketAsyncEventArgs();
-                            connectEventArgs.Completed += ConnectEventArgs_Completed;
-                            connectEventArgs.RemoteEndPoint = new IPEndPoint(entry.AddressList[AddressListIndex], port);
-                            if (!socket.ConnectAsync(connectEventArgs)) {
-                                ConnectEventArgs_Completed(socket, connectEventArgs);
+                            lock (socketLock) {
+                                state &= 1;
+                                socket?.Close();
+                                socket?.Dispose();
+                                socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                                SocketAsyncEventArgs connectEventArgs = new SocketAsyncEventArgs();
+                                connectEventArgs.Completed += ConnectEventArgs_Completed;
+                                connectEventArgs.RemoteEndPoint = new IPEndPoint(entry.AddressList[AddressListIndex], port);
+                                _ = socket.ConnectAsync(connectEventArgs);
                             }
                             break;
                         }
@@ -69,54 +71,60 @@ namespace QinDevilCommon {
         public void SendPackage(int signal, byte[] data, int offset, int count) {
             lock (sendData) {
                 try {
-                    if (socket?.Connected == true) {
-                        int len = count + 4;
-                        if ((state & 0b10) == 0) {
-                            state |= 0b10;
-                            sendBuffer[0] = (byte)len;
-                            sendBuffer[1] = (byte)(len >> 8);
-                            sendBuffer[2] = (byte)(len >> 16);
-                            sendBuffer[3] = (byte)(len >> 24);
-                            sendBuffer[4] = (byte)signal;
-                            sendBuffer[5] = (byte)(signal >> 8);
-                            sendBuffer[6] = (byte)(signal >> 16);
-                            sendBuffer[7] = (byte)(signal >> 24);
-                            if (sendData.Capacity < count - sendBuffer.Length + 8) {
-                                sendData.Capacity = count - sendBuffer.Length + 8;
-                            }
-                            len = 8;
-                            for (int i = 0; i < count; i++) {
-                                if (i + 8 < sendBuffer.Length) {
-                                    sendBuffer[i + 8] = data[i + offset];
-                                    len++;
-                                } else {
-                                    sendData.Add(data[i + offset]);
-                                }
-                            }
-                            sendEventArgs[state & 1].SetBuffer(sendBuffer, 0, len);
-                            if (!socket.SendAsync(sendEventArgs[state & 1])) {
-                                SendEventArgs_Completed(socket, sendEventArgs[state & 1]);
-                            }
-                        } else {
-                            if (sendData.Capacity < count - sendBuffer.Length + 8 + sendData.Count) {
-                                sendData.Capacity = count - sendBuffer.Length + 8 + sendData.Count;
-                            }
-                            sendData.Add((byte)len);
-                            sendData.Add((byte)(len >> 8));
-                            sendData.Add((byte)(len >> 16));
-                            sendData.Add((byte)(len >> 24));
-                            sendData.Add((byte)signal);
-                            sendData.Add((byte)(signal >> 8));
-                            sendData.Add((byte)(signal >> 16));
-                            sendData.Add((byte)(signal >> 24));
-                            for (int i = 0; i < count; i++) {
+                    int len = count + 4;
+                    if ((state & 0b10) == 0) {
+                        state |= 0b10;
+                        sendBuffer[0] = (byte)len;
+                        sendBuffer[1] = (byte)(len >> 8);
+                        sendBuffer[2] = (byte)(len >> 16);
+                        sendBuffer[3] = (byte)(len >> 24);
+                        sendBuffer[4] = (byte)signal;
+                        sendBuffer[5] = (byte)(signal >> 8);
+                        sendBuffer[6] = (byte)(signal >> 16);
+                        sendBuffer[7] = (byte)(signal >> 24);
+                        if (sendData.Capacity < count - sendBuffer.Length + 8) {
+                            sendData.Capacity = count - sendBuffer.Length + 8;
+                        }
+                        len = 8;
+                        for (int i = 0; i < count; i++) {
+                            if (i + 8 < sendBuffer.Length) {
+                                sendBuffer[i + 8] = data[i + offset];
+                                len++;
+                            } else {
                                 sendData.Add(data[i + offset]);
                             }
                         }
+                        sendEventArgs[state & 1].SetBuffer(sendBuffer, 0, len);
+                        lock (socketLock) {
+                            if (socket != null) {
+                                _ = socket.SendAsync(sendEventArgs[state & 1]);
+                            } else {
+                                state &= 1;
+                                sendData.Clear();
+                            }
+                        }
+                    } else {
+                        if (sendData.Capacity < count - sendBuffer.Length + 8 + sendData.Count) {
+                            sendData.Capacity = count - sendBuffer.Length + 8 + sendData.Count;
+                        }
+                        sendData.Add((byte)len);
+                        sendData.Add((byte)(len >> 8));
+                        sendData.Add((byte)(len >> 16));
+                        sendData.Add((byte)(len >> 24));
+                        sendData.Add((byte)signal);
+                        sendData.Add((byte)(signal >> 8));
+                        sendData.Add((byte)(signal >> 16));
+                        sendData.Add((byte)(signal >> 24));
+                        for (int i = 0; i < count; i++) {
+                            sendData.Add(data[i + offset]);
+                        }
                     }
                 } catch (SocketException se) {
-                    socket?.Close();
-                    socket = null;
+                    lock (socketLock) {
+                        socket?.Close();
+                        socket?.Dispose();
+                        socket = null;
+                    }
                     sendData.Clear();
                     OnConnectionBreakEvent?.Invoke();
                     OnSocketExceptionEvent?.Invoke(se);
@@ -126,14 +134,29 @@ namespace QinDevilCommon {
         private void ConnectEventArgs_Completed(object sender, SocketAsyncEventArgs e) {
             if (sender is Socket s) {
                 try {
-                    OnConnectedEvent?.Invoke(s.Connected);
-                    if (s.Connected && !socket.ReceiveAsync(receiveEventArgs)) {
-                        ReceiveEventArgs_Completed(socket, receiveEventArgs);
+                    bool c = false;
+                    lock (socketLock) {
+                        if (s.Equals(socket)) {
+                            c = true;
+                            if (s.Connected) {
+                                _ = socket.ReceiveAsync(receiveEventArgs);
+                            } else {
+                                socket = null;
+                            }
+                            e.Dispose();
+                        }
                     }
-                    e.Dispose();
+                    if (c) {
+                        OnConnectedEvent?.Invoke(s.Connected);
+                    }
                 } catch (SocketException se) {
-                    socket?.Close();
-                    socket = null;
+                    lock (socketLock) {
+                        if (s.Equals(socket)) {
+                            socket?.Close();
+                            socket?.Dispose();
+                            socket = null;
+                        }
+                    }
                     OnConnectionBreakEvent?.Invoke();
                     OnSocketExceptionEvent?.Invoke(se);
                 }
@@ -160,17 +183,29 @@ namespace QinDevilCommon {
                                 break;
                             }
                         }
-                        if (!s.ReceiveAsync(receiveEventArgs)) {
-                            ReceiveEventArgs_Completed(s, e);
+                        lock (socketLock) {
+                            if (s.Equals(socket)) {
+                                _ = s.ReceiveAsync(receiveEventArgs);
+                            }
                         }
                     } else {
-                        socket?.Close();
-                        socket = null;
+                        lock (socketLock) {
+                            if (s.Equals(socket)) {
+                                socket?.Close();
+                                socket?.Dispose();
+                                socket = null;
+                            }
+                        }
                         OnConnectionBreakEvent?.Invoke();
                     }
                 } catch (SocketException se) {
-                    socket?.Close();
-                    socket = null;
+                    lock (socketLock) {
+                        if (s.Equals(socket)) {
+                            socket?.Close();
+                            socket?.Dispose();
+                            socket = null;
+                        }
+                    }
                     OnConnectionBreakEvent?.Invoke();
                     OnSocketExceptionEvent?.Invoke(se);
                 }
@@ -192,21 +227,35 @@ namespace QinDevilCommon {
                                 sendData.CopyTo(0, sendBuffer, 0, count);
                                 sendData.RemoveRange(0, count);
                                 sendEventArgs[state & 1].SetBuffer(sendBuffer, 0, count);
-                                if (!socket.SendAsync(sendEventArgs[state & 1])) {
-                                    SendEventArgs_Completed(socket, sendEventArgs[state & 1]);
+                                lock (socketLock) {
+                                    if (s.Equals(socket)) {
+                                        _ = socket.SendAsync(sendEventArgs[state & 1]);
+                                    }
                                 }
                             } else {
                                 state &= 1;
                             }
                         } else {
-                            socket?.Close();
-                            socket = null;
+                            lock (socketLock) {
+                                if (s.Equals(socket)) {
+                                    socket?.Close();
+                                    socket?.Dispose();
+                                    socket = null;
+                                }
+                            }
+                            state &= 1;
                             sendData.Clear();
                             OnConnectionBreakEvent?.Invoke();
                         }
                     } catch (SocketException se) {
-                        socket?.Close();
-                        socket = null;
+                        lock (socketLock) {
+                            if (s.Equals(socket)) {
+                                socket?.Close();
+                                socket?.Dispose();
+                                socket = null;
+                            }
+                        }
+                        state &= 1;
                         sendData.Clear();
                         OnConnectionBreakEvent?.Invoke();
                         OnSocketExceptionEvent?.Invoke(se);
