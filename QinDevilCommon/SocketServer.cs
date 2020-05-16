@@ -9,7 +9,7 @@ using System.Threading;
 
 namespace QinDevilCommon {
     public class SocketServer {
-        private struct ClientStruct {
+        private class ClientInfo {
             public byte[] recvBuffer;
             public byte[] sendBuffer;
             public object userToken;
@@ -50,36 +50,35 @@ namespace QinDevilCommon {
             SocketAsyncEventArgs receiveEventArgs;
             switch (e.SocketError) {
                 case SocketError.Success:
-                    if (repeat) {
-                        lock (socketHashtable) {
+                    ClientInfo client;
+                    lock (socketHashtable) {
+                        if (repeat) {
                             while (socketHashtable.ContainsKey(connectNum)) {
                                 connectNum++;
                             }
+                        } else {
+                            if (connectNum < 0) {
+                                repeat = true;
+                            }
                         }
-                    } else {
-                        if (connectNum < 0) {
-                            repeat = true;
+                        client = new ClientInfo {
+                            id = connectNum,
+                            s = e.AcceptSocket,
+                            sendBuffer = new byte[255],
+                            recvBuffer = new byte[255],
+                            sendData = new List<byte>(),
+                            recvData = new List<byte>(),
+                            state = 0,
+                            sendEventArgs = new SocketAsyncEventArgs[2]
+                        };
+                        for (int i = 0; i < 2; i++) {
+                            SocketAsyncEventArgs sendEventArgs = new SocketAsyncEventArgs();
+                            sendEventArgs.Completed += SendEventArgs_Completed;
+                            client.sendEventArgs[i] = sendEventArgs;
                         }
-                    }
-                    ClientStruct client = new ClientStruct {
-                        id = connectNum,
-                        s = e.AcceptSocket,
-                        sendBuffer = new byte[255],
-                        recvBuffer = new byte[255],
-                        sendData = new List<byte>(),
-                        recvData = new List<byte>(),
-                        userToken = OnAcceptSuccessEvent?.Invoke(connectNum),
-                        state = 0,
-                        sendEventArgs = new SocketAsyncEventArgs[2]
-                    };
-                    for (int i = 0; i < 2; i++) {
-                        SocketAsyncEventArgs sendEventArgs = new SocketAsyncEventArgs();
-                        sendEventArgs.Completed += SendEventArgs_Completed;
-                        client.sendEventArgs[i] = sendEventArgs;
-                    }
-                    lock (socketHashtable) {
                         socketHashtable.Add(connectNum++, client);
                     }
+                    client.userToken = OnAcceptSuccessEvent?.Invoke(client.id);
                     receiveEventArgs = new SocketAsyncEventArgs();
                     receiveEventArgs.Completed += ReceiveEventArgs_Completed;
                     receiveEventArgs.UserToken = client;
@@ -103,17 +102,20 @@ namespace QinDevilCommon {
             }
         }
         internal void CloseClient(int id) {
+            ClientInfo client = null;
             lock (socketHashtable) {
                 if (socketHashtable.ContainsKey(id)) {
-                    ClientStruct client = (ClientStruct)socketHashtable[id];
+                    client = (ClientInfo)socketHashtable[id];
                     socketHashtable.Remove(id);
-                    client.s.Close();
-                    OnLeaveEvent?.Invoke(client.id, client.userToken);
                 }
+            }
+            if (client != null) {
+                client.s.Close();
+                OnLeaveEvent?.Invoke(client.id, client.userToken);
             }
         }
         private void ReceiveEventArgs_Completed(object sender, SocketAsyncEventArgs e) {
-            if (e.UserToken is ClientStruct client) {
+            if (e.UserToken is ClientInfo client) {
                 try {
                     int len = e.BytesTransferred;
                     if (e.SocketError == SocketError.Success && len > 0) {
@@ -144,18 +146,22 @@ namespace QinDevilCommon {
                         throw new Exception("套接字发生错误！");
                     }
                 } catch (Exception) {
+                    bool contains = false;
                     lock (socketHashtable) {
-                        if (socketHashtable.ContainsKey(client.id)) {
+                        contains = socketHashtable.ContainsKey(client.id);
+                        if (contains) {
                             socketHashtable.Remove(client.id);
-                            client.s.Close();
-                            OnLeaveEvent?.Invoke(client.id, client.userToken);
                         }
+                    }
+                    if (contains) {
+                        client.s.Close();
+                        OnLeaveEvent?.Invoke(client.id, client.userToken);
                     }
                 }
             }
         }
         private void SendEventArgs_Completed(object sender, SocketAsyncEventArgs e) {
-            if (e.UserToken is ClientStruct client) {
+            if (e.UserToken is ClientInfo client) {
                 lock (client.sendData) {
                     try {
                         if (e.SocketError == SocketError.Success) {
@@ -180,12 +186,16 @@ namespace QinDevilCommon {
                             throw new Exception("套接字发生错误！");
                         }
                     } catch (Exception) {
+                        bool contains = false;
                         lock (socketHashtable) {
-                            if (socketHashtable.ContainsKey(client.id)) {
+                            contains = socketHashtable.ContainsKey(client.id);
+                            if (contains) {
                                 socketHashtable.Remove(client.id);
-                                client.s.Close();
-                                OnLeaveEvent?.Invoke(client.id, client.userToken);
                             }
+                        }
+                        if (contains) {
+                            client.s.Close();
+                            OnLeaveEvent?.Invoke(client.id, client.userToken);
                         }
                     }
                 }
@@ -203,7 +213,7 @@ namespace QinDevilCommon {
             lock (socketHashtable) {
                 o = socketHashtable[id];
             }
-            if (o is ClientStruct client) {
+            if (o is ClientInfo client) {
                 lock (client.sendData) {
                     try {
                         int len = count + 4;
@@ -249,12 +259,16 @@ namespace QinDevilCommon {
                             }
                         }
                     } catch (Exception) {
+                        bool contains = false;
                         lock (socketHashtable) {
-                            if (socketHashtable.ContainsKey(client.id)) {
+                            contains = socketHashtable.ContainsKey(client.id);
+                            if (contains) {
                                 socketHashtable.Remove(client.id);
-                                client.s.Close();
-                                OnLeaveEvent?.Invoke(client.id, client.userToken);
                             }
+                        }
+                        if (contains) {
+                            client.s.Close();
+                            OnLeaveEvent?.Invoke(client.id, client.userToken);
                         }
                     }
                 }
