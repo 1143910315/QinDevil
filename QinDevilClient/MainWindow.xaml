@@ -359,7 +359,7 @@
                 <Label Content="{Binding HitQinKey,Converter={StaticResource HitQinKeyContent}}" Canvas.Left="108" Canvas.Top="124" Padding="0" FontSize="14" FontFamily="/琴魔副本工具;component/#FZZhengHeiS-EB-GB"/>
                 <Label Content="小&#x0a;怪&#x0a;音&#x0a;符" Canvas.Left="245" Canvas.Top="99" FontSize="11" Padding="0" FontFamily="/琴魔副本工具;component/#FZShangKuS-R-GB"/>
                 <Label Content="{Binding Time}" x:Name="timeLabel" Canvas.Left="296" Canvas.Top="7" Padding="0" Width="72" Height="18" HorizontalContentAlignment="Right" FontFamily="/琴魔副本工具;component/#FZShangKuS-R-GB"/>
-                <ComboBox Canvas.Left="296" x:Name="combo" Canvas.Top="7" Width="72" Height="18"  FontFamily="/琴魔副本工具;component/#FZShangKuS-R-GB" Visibility="Hidden" >
+                <ComboBox Canvas.Left="296" x:Name="combo" Canvas.Top="7" Width="72" Height="18" FontFamily="/琴魔副本工具;component/#FZShangKuS-R-GB" Visibility="Hidden" IsEnabled="False">
                     <ComboBoxItem Content="一号琴"></ComboBoxItem>
                     <ComboBoxItem Content="二号琴"></ComboBoxItem>
                     <ComboBoxItem Content="三号琴"></ComboBoxItem>

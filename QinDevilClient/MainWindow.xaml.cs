@@ -238,6 +238,9 @@ namespace QinDevilClient {
                                                         if (j == 0) {
                                                             gameData.FiveTone = tempFiveTone;
                                                             gameData.FiveToneReady = true;
+                                                            Dispatcher.Invoke(() => {
+                                                                combo.IsEnabled = true;
+                                                            });
                                                             lock (sendData) {
                                                                 sendData.Clear();
                                                                 SerializeTool.IntToByteList(gameData.FiveTone[0], sendData);
@@ -284,6 +287,11 @@ namespace QinDevilClient {
                         }
                     }
                     if (i > gameData.HitKeyIndex) {
+                        if (JudgeSitOn()) {
+                            client.SendPackage(19, SerializeTool.IntToByte(gameData.HitKeyIndex));
+                        } else {
+                            client.SendPackage(20, SerializeTool.IntToByte(gameData.HitKeyIndex));
+                        }
                         switch (gameData.HitQinKey[gameData.HitKeyIndex++]) {
                             case 1: {
                                     Keybd_event(49, MapVirtualKeyA(49, 0), 8, 0);
@@ -332,29 +340,58 @@ namespace QinDevilClient {
         private bool JudgeSitOn() {
             try {
                 log.Generate("8 进入");
-                int ready = 0;
-                for (int i = 0; i < 5; i++) {
-                    if (gameData.FiveTone[i] == 0) {
-                        ready += 1;
-                    }
-                }
-                /*if (ready > 2) {
-                    return true;
-                } else {
-                    ready = 0;
-                    AYUVColor[] qinKeyColor = new AYUVColor[5];
-                    qinKeyColor[0] = ARGBColor.FromRGB(192, 80, 78).ToAYUVColor();
-                    qinKeyColor[1] = ARGBColor.FromRGB(156, 188, 89).ToAYUVColor();
-                    qinKeyColor[2] = ARGBColor.FromRGB(131, 103, 164).ToAYUVColor();
-                    qinKeyColor[3] = ARGBColor.FromRGB(75, 172, 197).ToAYUVColor();
-                    qinKeyColor[4] = ARGBColor.FromRGB(246, 150, 71).ToAYUVColor();
-                    for (int i = 0; i < 5; i++) {
-                        if (gameData.FiveTone[i] != 0) {
-                            ready += 1;
+                if (sendInfoSuccess && gameData.FiveToneReady && gameData.KillingIntentionStrip != 0) {
+                    Process process = GetWuXiaProcess();
+                    if (process != null) {
+                        WindowInfo.Rect rect = WindowInfo.GetWindowClientRect(process.MainWindowHandle);
+                        if (rect.bottom > 100 && rect.right > 100) {
+                            WindowInfo.Point point = new WindowInfo.Point() {
+                                x = 0,
+                                y = 0
+                            };
+                            if (WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point)) {
+                                AYUVColor[] qinKeyColor = new AYUVColor[10];
+                                qinKeyColor[0] = ARGBColor.FromRGB(192, 80, 78).ToAYUVColor();
+                                qinKeyColor[1] = ARGBColor.FromRGB(156, 188, 89).ToAYUVColor();
+                                qinKeyColor[2] = ARGBColor.FromRGB(129, 101, 162).ToAYUVColor();
+                                qinKeyColor[3] = ARGBColor.FromRGB(75, 172, 197).ToAYUVColor();
+                                qinKeyColor[4] = ARGBColor.FromRGB(246, 150, 71).ToAYUVColor();
+                                qinKeyColor[5] = ARGBColor.FromRGB(48, 20, 19).ToAYUVColor();
+                                qinKeyColor[6] = ARGBColor.FromRGB(39, 47, 22).ToAYUVColor();
+                                qinKeyColor[7] = ARGBColor.FromRGB(32, 25, 40).ToAYUVColor();
+                                qinKeyColor[8] = ARGBColor.FromRGB(18, 43, 49).ToAYUVColor();
+                                qinKeyColor[9] = ARGBColor.FromRGB(62, 37, 18).ToAYUVColor();
+                                DeviceContext DC = new DeviceContext();
+                                if (DC.GetDeviceContext(IntPtr.Zero)) {
+                                    _ = DC.CacheRegion(new DeviceContext.Rect { left = point.x + gameData.FiveTone[0], right = point.x + gameData.FiveTone[4] + 1, top = point.y + rect.bottom - (gameData.KillingIntentionStrip / 2), bottom = point.y + rect.bottom - (gameData.KillingIntentionStrip / 2) + 1 });
+                                    int success = 0;
+                                    for (int i = 0; i < 5; i++) {
+                                        AYUVColor color = ARGBColor.FromInt(DC.GetPointColor(point.x + gameData.FiveTone[i], point.y + rect.bottom - (gameData.KillingIntentionStrip / 2))).ToAYUVColor();
+                                        if (color.GetVariance(qinKeyColor[i]) < 25) {
+                                            success++;
+                                        } else if (color.GetVariance(qinKeyColor[i + 5]) < 25) {
+                                            return false;
+                                        } else {
+                                            for (int m = 1; m < 5; m++) {
+                                                color = ARGBColor.FromInt(DC.GetPointColor(point.x + gameData.FiveTone[i] - m, point.y + rect.bottom - (gameData.KillingIntentionStrip / 2))).ToAYUVColor();
+                                                if (color.GetVariance(qinKeyColor[i]) < 25) {
+                                                    success++;
+                                                    break;
+                                                } else if (color.GetVariance(qinKeyColor[i + 5]) < 25) {
+                                                    return false;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (success == 5) {
+                                        return true;
+                                    }
+                                }
+                            }
                         }
                     }
-                }*/
-                return true;
+                }
+                return false;
             } catch (Exception e1) {
                 log.Generate("8 异常，异常信息：" + e1.Message);
                 log.Flush();
@@ -416,28 +453,30 @@ namespace QinDevilClient {
                                     }
                                     if (success + fail == 5) {
                                         if (fail > 0 && fail < 4) {
-                                            /*if (gameData.AutoLessKey) {
-                                                switch (combo.SelectedIndex) {
-                                                    case 0:
-                                                        gameData.No1Qin = lessKey;
-                                                        client.SendPackage(1, SerializeTool.RawSerializeForUTF8String(gameData.No1Qin));
-                                                        break;
-                                                    case 1:
-                                                        gameData.No2Qin = lessKey;
-                                                        client.SendPackage(2, SerializeTool.RawSerializeForUTF8String(gameData.No2Qin));
-                                                        break;
-                                                    case 2:
-                                                        gameData.No3Qin = lessKey;
-                                                        client.SendPackage(3, SerializeTool.RawSerializeForUTF8String(gameData.No3Qin));
-                                                        break;
-                                                    case 3:
-                                                        gameData.No4Qin = lessKey;
-                                                        client.SendPackage(4, SerializeTool.RawSerializeForUTF8String(gameData.No4Qin));
-                                                        break;
-                                                    default:
-                                                        break;
-                                                }
-                                            }*/
+                                            if (gameData.AutoLessKey) {
+                                                Dispatcher.Invoke(() => {
+                                                    switch (combo.SelectedIndex) {
+                                                        case 0:
+                                                            gameData.No1Qin = lessKey;
+                                                            client.SendPackage(1, SerializeTool.StringToByte(gameData.No1Qin));
+                                                            break;
+                                                        case 1:
+                                                            gameData.No2Qin = lessKey;
+                                                            client.SendPackage(2, SerializeTool.StringToByte(gameData.No2Qin));
+                                                            break;
+                                                        case 2:
+                                                            gameData.No3Qin = lessKey;
+                                                            client.SendPackage(3, SerializeTool.StringToByte(gameData.No3Qin));
+                                                            break;
+                                                        case 3:
+                                                            gameData.No4Qin = lessKey;
+                                                            client.SendPackage(4, SerializeTool.StringToByte(gameData.No4Qin));
+                                                            break;
+                                                        default:
+                                                            break;
+                                                    }
+                                                });
+                                            }
                                             client.SendPackage(13, SerializeTool.StringToByte(lessKey));
                                             return;
                                         }
@@ -906,9 +945,9 @@ namespace QinDevilClient {
                     case 14: {
                             byte b = buffer[startIndex++];
                             Dispatcher.Invoke(() => {
-                                //timeLabel.Visibility = b != 0 ? Visibility.Hidden : Visibility.Visible;
-                                //combo.Visibility = b == 0 ? Visibility.Hidden : Visibility.Visible;
-                                //gameData.AutoLessKey = b != 0;
+                                timeLabel.Visibility = b != 0 ? Visibility.Hidden : Visibility.Visible;
+                                combo.Visibility = b == 0 ? Visibility.Hidden : Visibility.Visible;
+                                gameData.AutoLessKey = b != 0;
                             });
                             break;
                         }
@@ -1154,17 +1193,8 @@ namespace QinDevilClient {
         private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e) {
             try {
                 log.Generate("17 进入");
-                //Debug.WriteLine(e.Text);
-                //Debug.WriteLine(QinKeyLessMatch.IsMatch(e.Text) ? "true" : "false");
                 TextBox sourceTextBox = e.Source as TextBox;
                 e.Handled = !QinKeyLessMatch.IsMatch(sourceTextBox.Text.Remove(sourceTextBox.SelectionStart, sourceTextBox.SelectionLength).Insert(sourceTextBox.SelectionStart, e.Text));
-                //bool v0 = new Regex("^(?![1-5]*?([1-5])[1-5]*?\\1)[1-5]{0,3}$").IsMatch("");//true
-                //bool v1 = new Regex("^(?![1-5]*?([1-5])[1-5]*?\\1)[1-5]{0,3}$").IsMatch("1");//true
-                //bool v2 = new Regex("^(?![1-5]*?([1-5])[1-5]*?\\1)[1-5]{0,3}$").IsMatch("12");//true
-                //bool v3 = new Regex("^(?![1-5]*?([1-5])[1-5]*?\\1)[1-5]{0,3}$").IsMatch("123");//true
-                //bool v4 = new Regex("^(?![1-5]*?([1-5])[1-5]*?\\1)[1-5]{0,3}$").IsMatch("11");//false
-                //bool v5 = new Regex("^(?![1-5]*?([1-5])[1-5]*?\\1)[1-5]{0,3}$").IsMatch("121");//false
-                //bool v6 = new Regex("^(?![1-5]*?([1-5])[1-5]*?\\1)[1-5]{0,3}$").IsMatch("6");//false
             } catch (Exception e1) {
                 log.Generate("17 异常，异常信息：" + e1.Message);
                 log.Flush();

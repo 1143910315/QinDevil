@@ -668,6 +668,12 @@ namespace QinDevilServer {
                     case 18:
                         userInfo.GamePath = SerializeTool.ByteToString(buffer, ref startIndex);
                         break;
+                    case 19:
+                        ExpandLog(userInfo.Line, userInfo.Remark + " 自动弹琴按下第 " + SerializeTool.ByteToInt(buffer, ref startIndex).ToString() + " 个音时判断为坐琴状态。");
+                        break;
+                    case 20:
+                        ExpandLog(userInfo.Line, userInfo.Remark + " 自动弹琴按下第 " + SerializeTool.ByteToInt(buffer, ref startIndex).ToString() + " 个音时判断为离开琴状态。");
+                        break;
                     default:
                         break;
 
