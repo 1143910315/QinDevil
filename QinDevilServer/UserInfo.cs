@@ -1,4 +1,5 @@
-﻿using QinDevilCommon.ViewModel;
+﻿using QinDevilCommon;
+using QinDevilCommon.ViewModel;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -72,6 +73,11 @@ namespace QinDevilServer {
         public bool Manager {
             get => _manager;
             set => Set(ref _manager, value);
+        }
+        private SocketServer.ClientInfo _clientInfo = null;
+        public SocketServer.ClientInfo ClientInfo {
+            get => _clientInfo;
+            set => Set(ref _clientInfo, value);
         }
     }
 }

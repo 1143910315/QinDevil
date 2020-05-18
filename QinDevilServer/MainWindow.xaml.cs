@@ -24,14 +24,6 @@ namespace QinDevilServer {
     /// MainWindow.xaml 的交互逻辑
     /// </summary>
     public partial class MainWindow : Window {
-        private class ConvertUserToken : IConvertUserToken {
-            public object IdToUserToken(int id) {
-                return new LinkedListNode<UserInfo>(new UserInfo() {
-                    Id = id,
-                    LastReceiveTime = DateTime.Now
-                });
-            }
-        }
         private readonly SocketServer server;
         private readonly List<GameData> gameData;
         private readonly List<byte> sendData = new List<byte>();
@@ -41,6 +33,7 @@ namespace QinDevilServer {
         private readonly ContextMenuStrip contextMenuStrip = new ContextMenuStrip();
         private UserInfo menuUser;
         private int current = 0;
+        private int connectNum = 1;
         public MainWindow() {
             gameData = new List<GameData> {
                 new GameData()
@@ -54,7 +47,7 @@ namespace QinDevilServer {
             contextMenuStrip.Items.Add("扫描当前玩家缺弦").Click += Scanning_Click;
             contextMenuStrip.Items.Add("判断当前玩家杀意条").Click += KillingIntentionStrip_Click;
             contextMenuStrip.Items.Add("断开当前玩家").Click += CloseClient_Click;
-            server = new SocketServer(new ConvertUserToken());
+            server = new SocketServer();
             server.OnAcceptSuccessEvent += OnAcceptSuccess;
             server.OnReceivePackageEvent += OnReceivePackage;
             server.OnLeaveEvent += OnLeave;
@@ -64,18 +57,18 @@ namespace QinDevilServer {
         }
         private void KillingIntentionStrip_Click(object sender, EventArgs e) {
             if (menuUser != null) {
-                server.SendPackage(menuUser.Id, 16, null);
+                server.SendPackage(menuUser.ClientInfo, 16, null);
             }
         }
         private void CloseClient_Click(object sender, EventArgs e) {
             if (menuUser != null) {
-                server.SendPackage(menuUser.Id, 13, null);
-                server.CloseClient(menuUser.Id);
+                server.SendPackage(menuUser.ClientInfo, 13, null);
+                server.CloseClient(menuUser.ClientInfo);
             }
         }
         private void Scanning_Click(object sender, EventArgs e) {
             if (menuUser != null) {
-                server.SendPackage(menuUser.Id, 14, null);
+                server.SendPackage(menuUser.ClientInfo, 14, null);
             }
         }
         private void ClearGamePath_Click(object sender, EventArgs e) {
@@ -92,7 +85,7 @@ namespace QinDevilServer {
             gameData[current].ClientInfoLock.EnterReadLock();
             try {
                 foreach (UserInfo userInfo in gameData[current].ClientInfo) {
-                    server.SendPackage(userInfo.Id, 9, null);
+                    server.SendPackage(userInfo.ClientInfo, 9, null);
                 }
             } finally {
                 gameData[current].ClientInfoLock.ExitReadLock();
@@ -105,7 +98,7 @@ namespace QinDevilServer {
                 gameData[current].ClientInfoLock.EnterReadLock();
                 try {
                     foreach (UserInfo userInfo in gameData[current].ClientInfo) {
-                        server.SendPackage(userInfo.Id, 15, sendData);
+                        server.SendPackage(userInfo.ClientInfo, 15, sendData);
                     }
                 } finally {
                     gameData[current].ClientInfoLock.ExitReadLock();
@@ -119,7 +112,7 @@ namespace QinDevilServer {
                 gameData[current].ClientInfoLock.EnterReadLock();
                 try {
                     foreach (UserInfo userInfo in gameData[current].ClientInfo) {
-                        server.SendPackage(userInfo.Id, 14, sendData);
+                        server.SendPackage(userInfo.ClientInfo, 14, sendData);
                     }
                 } finally {
                     gameData[current].ClientInfoLock.ExitReadLock();
@@ -130,7 +123,7 @@ namespace QinDevilServer {
             gameData[current].ClientInfoLock.EnterReadLock();
             try {
                 foreach (UserInfo userInfo in gameData[current].ClientInfo) {
-                    server.SendPackage(userInfo.Id, 9, null);
+                    server.SendPackage(userInfo.ClientInfo, 9, null);
                 }
             } finally {
                 gameData[current].ClientInfoLock.ExitReadLock();
@@ -138,12 +131,12 @@ namespace QinDevilServer {
         }
         private void PrintScreenHighQuality_Click(object sender, EventArgs e) {
             if (menuUser != null) {
-                server.SendPackage(menuUser.Id, 11, null);
+                server.SendPackage(menuUser.ClientInfo, 11, null);
             }
         }
         private void PrintScreen_Click(object sender, EventArgs e) {
             if (menuUser != null) {
-                server.SendPackage(menuUser.Id, 9, null);
+                server.SendPackage(menuUser.ClientInfo, 9, null);
             }
         }
         private void LogViewer_Click(object sender, RoutedEventArgs e) {
@@ -177,7 +170,7 @@ namespace QinDevilServer {
                         gameData[current].ClientInfoLock.EnterReadLock();
                         try {
                             foreach (UserInfo userInfo in gameData[current].ClientInfo) {
-                                server.SendPackage(userInfo.Id, 8, gameData[current].HitQinKey);
+                                server.SendPackage(userInfo.ClientInfo, 8, gameData[current].HitQinKey);
                             }
                         } finally {
                             gameData[current].ClientInfoLock.ExitReadLock();
@@ -202,7 +195,7 @@ namespace QinDevilServer {
                         gameData[current].ClientInfoLock.EnterReadLock();
                         try {
                             foreach (UserInfo userInfo in gameData[current].ClientInfo) {
-                                server.SendPackage(userInfo.Id, 8, gameData[current].HitQinKey);
+                                server.SendPackage(userInfo.ClientInfo, 8, gameData[current].HitQinKey);
                             }
                         } finally {
                             gameData[current].ClientInfoLock.ExitReadLock();
@@ -227,7 +220,7 @@ namespace QinDevilServer {
                         gameData[current].ClientInfoLock.EnterReadLock();
                         try {
                             foreach (UserInfo userInfo in gameData[current].ClientInfo) {
-                                server.SendPackage(userInfo.Id, 8, gameData[current].HitQinKey);
+                                server.SendPackage(userInfo.ClientInfo, 8, gameData[current].HitQinKey);
                             }
                         } finally {
                             gameData[current].ClientInfoLock.ExitReadLock();
@@ -252,7 +245,7 @@ namespace QinDevilServer {
                         gameData[current].ClientInfoLock.EnterReadLock();
                         try {
                             foreach (UserInfo userInfo in gameData[current].ClientInfo) {
-                                server.SendPackage(userInfo.Id, 8, gameData[current].HitQinKey);
+                                server.SendPackage(userInfo.ClientInfo, 8, gameData[current].HitQinKey);
                             }
                         } finally {
                             gameData[current].ClientInfoLock.ExitReadLock();
@@ -277,7 +270,7 @@ namespace QinDevilServer {
                         gameData[current].ClientInfoLock.EnterReadLock();
                         try {
                             foreach (UserInfo userInfo in gameData[current].ClientInfo) {
-                                server.SendPackage(userInfo.Id, 8, gameData[current].HitQinKey);
+                                server.SendPackage(userInfo.ClientInfo, 8, gameData[current].HitQinKey);
                             }
                         } finally {
                             gameData[current].ClientInfoLock.ExitReadLock();
@@ -297,7 +290,7 @@ namespace QinDevilServer {
                             byte[] intByte = new byte[4];
                             foreach (UserInfo userInfo in gameData[current].ClientInfo) {
                                 SerializeTool.IntToByte(userInfo.Id, intByte, 0);
-                                server.SendPackage(userInfo.Id, 5, intByte);
+                                server.SendPackage(userInfo.ClientInfo, 5, intByte);
                             }
                         } finally {
                             gameData[current].ClientInfoLock.ExitReadLock();
@@ -317,20 +310,26 @@ namespace QinDevilServer {
                     break;
             }
         }
-        private void OnAcceptSuccess(int id, object userToken) {
+        private void OnAcceptSuccess(SocketServer.ClientInfo client) {
+            LinkedListNode<UserInfo> userInfo = new LinkedListNode<UserInfo>(new UserInfo() {
+                Id = connectNum++,
+                LastReceiveTime = DateTime.Now,
+                ClientInfo = client
+            });
+            client.userToken = userInfo;
             Dispatcher.Invoke(() => {
-                PopLog(0, "客户 " + id.ToString() + "进入。");
+                PopLog(0, "客户 " + userInfo.Value.Id.ToString() + "进入。");
                 gameData[0].ClientInfoLock.EnterWriteLock();
                 try {
-                    gameData[0].ClientInfo.AddLast(userToken as LinkedListNode<UserInfo>);
+                    gameData[0].ClientInfo.AddLast(userInfo);
                 } finally {
                     gameData[0].ClientInfo.ChangeComplete();
                     gameData[0].ClientInfoLock.ExitWriteLock();
                 }
             });
         }
-        private void OnReceivePackage(int id, int signal, byte[] buffer, object userToken) {
-            if (userToken is LinkedListNode<UserInfo> userInfoNode) {
+        private void OnReceivePackage(SocketServer.ClientInfo client, int signal, byte[] buffer) {
+            if (client.userToken is LinkedListNode<UserInfo> userInfoNode) {
                 UserInfo userInfo = userInfoNode.Value;
                 userInfo.LastReceiveTime = DateTime.Now;
                 int startIndex = 0;
@@ -406,7 +405,7 @@ namespace QinDevilServer {
                             }
                             sendData.AddRange(gameData[userInfo.Line].HitQinKey);
                             SerializeTool.IntToByteList(ping, sendData);
-                            server.SendPackage(id, 0, sendData.ToArray());
+                            server.SendPackage(client, 0, sendData.ToArray());
                         }
                         break;
                     case 1:
@@ -414,8 +413,8 @@ namespace QinDevilServer {
                         gameData[userInfo.Line].ClientInfoLock.EnterReadLock();
                         try {
                             foreach (UserInfo tempUserInfo in gameData[userInfo.Line].ClientInfo) {
-                                if (tempUserInfo.Id != id) {
-                                    server.SendPackage(tempUserInfo.Id, 1, buffer);
+                                if (tempUserInfo.Id != userInfo.Id) {
+                                    server.SendPackage(tempUserInfo.ClientInfo, 1, buffer);
                                 }
                             }
                         } finally {
@@ -428,8 +427,8 @@ namespace QinDevilServer {
                         gameData[userInfo.Line].ClientInfoLock.EnterReadLock();
                         try {
                             foreach (UserInfo tempUserInfo in gameData[userInfo.Line].ClientInfo) {
-                                if (tempUserInfo.Id != id) {
-                                    server.SendPackage(tempUserInfo.Id, 2, buffer);
+                                if (tempUserInfo.Id != userInfo.Id) {
+                                    server.SendPackage(tempUserInfo.ClientInfo, 2, buffer);
                                 }
                             }
                         } finally {
@@ -442,8 +441,8 @@ namespace QinDevilServer {
                         gameData[userInfo.Line].ClientInfoLock.EnterReadLock();
                         try {
                             foreach (UserInfo tempUserInfo in gameData[userInfo.Line].ClientInfo) {
-                                if (tempUserInfo.Id != id) {
-                                    server.SendPackage(tempUserInfo.Id, 3, buffer);
+                                if (tempUserInfo.Id != userInfo.Id) {
+                                    server.SendPackage(tempUserInfo.ClientInfo, 3, buffer);
                                 }
                             }
                         } finally {
@@ -456,8 +455,8 @@ namespace QinDevilServer {
                         gameData[userInfo.Line].ClientInfoLock.EnterReadLock();
                         try {
                             foreach (UserInfo tempUserInfo in gameData[userInfo.Line].ClientInfo) {
-                                if (tempUserInfo.Id != id) {
-                                    server.SendPackage(tempUserInfo.Id, 4, buffer);
+                                if (tempUserInfo.Id != userInfo.Id) {
+                                    server.SendPackage(tempUserInfo.ClientInfo, 4, buffer);
                                 }
                             }
                         } finally {
@@ -494,10 +493,10 @@ namespace QinDevilServer {
                         gameData[userInfo.Line].ClientInfoLock.EnterReadLock();
                         try {
                             foreach (UserInfo tempUserInfo in gameData[userInfo.Line].ClientInfo) {
-                                if (tempUserInfo.Id != id) {
-                                    server.SendPackage(tempUserInfo.Id, 6, data, 0, 48);
+                                if (tempUserInfo.Id != userInfo.Id) {
+                                    server.SendPackage(tempUserInfo.ClientInfo, 6, data, 0, 48);
                                 } else {
-                                    server.SendPackage(tempUserInfo.Id, 7, data);
+                                    server.SendPackage(tempUserInfo.ClientInfo, 7, data);
                                 }
                             }
                         } finally {
@@ -514,7 +513,7 @@ namespace QinDevilServer {
                         lock (sendData) {
                             sendData.Clear();
                             SerializeTool.LongToByteList(userInfo.PicPathStream.Position, sendData);
-                            server.SendPackage(userInfo.Id, 10, sendData.ToArray());
+                            server.SendPackage(userInfo.ClientInfo, 10, sendData.ToArray());
                         }
                         break;
                     case 7:
@@ -523,7 +522,7 @@ namespace QinDevilServer {
                             lock (sendData) {
                                 sendData.Clear();
                                 SerializeTool.LongToByteList(userInfo.PicPathStream.Position + buffer.Length - startIndex, sendData);
-                                server.SendPackage(userInfo.Id, 10, sendData.ToArray());
+                                server.SendPackage(userInfo.ClientInfo, 10, sendData.ToArray());
                             }
                             userInfo.PicPathStream.Write(buffer, startIndex, buffer.Length - startIndex);
                             if (userInfo.PicPathStream.Position == userInfo.PicPathStream.Length) {
@@ -542,7 +541,7 @@ namespace QinDevilServer {
                         lock (sendData) {
                             sendData.Clear();
                             SerializeTool.LongToByteList(userInfo.PngPathStream.Position, sendData);
-                            server.SendPackage(userInfo.Id, 12, sendData.ToArray());
+                            server.SendPackage(userInfo.ClientInfo, 12, sendData.ToArray());
                         }
                         break;
                     case 9:
@@ -551,7 +550,7 @@ namespace QinDevilServer {
                             lock (sendData) {
                                 sendData.Clear();
                                 SerializeTool.LongToByteList(userInfo.PngPathStream.Position + buffer.Length - startIndex, sendData);
-                                server.SendPackage(userInfo.Id, 12, sendData.ToArray());
+                                server.SendPackage(userInfo.ClientInfo, 12, sendData.ToArray());
                             }
                             userInfo.PngPathStream.Write(buffer, startIndex, buffer.Length - startIndex);
                             if (userInfo.PngPathStream.Position == userInfo.PngPathStream.Length) {
@@ -562,9 +561,9 @@ namespace QinDevilServer {
                         break;
                     case 10:
                         if (userInfo.GamePath.Length == 0) {
-                            server.SendPackage(id, 18, buffer);
+                            server.SendPackage(client, 18, buffer);
                         } else {
-                            server.SendPackage(id, 17, buffer);
+                            server.SendPackage(client, 17, buffer);
                         }
                         break;
                     case 11:
@@ -595,8 +594,8 @@ namespace QinDevilServer {
                             gameData[userInfo.Line].ClientInfoLock.EnterReadLock();
                             try {
                                 foreach (UserInfo tempUserInfo in gameData[userInfo.Line].ClientInfo) {
-                                    if (tempUserInfo.Id != id) {
-                                        server.SendPackage(tempUserInfo.Id, 8, gameData[userInfo.Line].HitQinKey);
+                                    if (tempUserInfo.Id != userInfo.Id) {
+                                        server.SendPackage(tempUserInfo.ClientInfo, 8, gameData[userInfo.Line].HitQinKey);
                                     }
                                 }
                             } finally {
@@ -617,7 +616,7 @@ namespace QinDevilServer {
                                 byte[] intByte = new byte[4];
                                 foreach (UserInfo tempUserInfo in gameData[userInfo.Line].ClientInfo) {
                                     SerializeTool.IntToByte(tempUserInfo.Id, intByte, 0);
-                                    server.SendPackage(tempUserInfo.Id, 5, intByte);
+                                    server.SendPackage(tempUserInfo.ClientInfo, 5, intByte);
                                 }
                             } finally {
                                 gameData[userInfo.Line].ClientInfoLock.ExitReadLock();
@@ -656,10 +655,10 @@ namespace QinDevilServer {
                         gameData[userInfo.Line].ClientInfoLock.EnterReadLock();
                         try {
                             foreach (UserInfo tempUserInfo in gameData[userInfo.Line].ClientInfo) {
-                                if (tempUserInfo.Id != id) {
-                                    server.SendPackage(tempUserInfo.Id, 6, data, 0, 48);
+                                if (tempUserInfo.Id != userInfo.Id) {
+                                    server.SendPackage(tempUserInfo.ClientInfo, 6, data, 0, 48);
                                 } else {
-                                    server.SendPackage(tempUserInfo.Id, 7, data);
+                                    server.SendPackage(tempUserInfo.ClientInfo, 7, data);
                                 }
                             }
                         } finally {
@@ -675,10 +674,10 @@ namespace QinDevilServer {
                 }
             }
         }
-        private void OnLeave(int id, object userToken) {
-            if (userToken is LinkedListNode<UserInfo> user) {
+        private void OnLeave(SocketServer.ClientInfo client) {
+            if (client.userToken is LinkedListNode<UserInfo> user) {
                 Dispatcher.Invoke(() => {
-                    PopLog(0, "客户 " + id.ToString() + "离开。备注：" + user.Value.Remark);
+                    PopLog(0, "客户 " + user.Value.Id.ToString() + "离开。备注：" + user.Value.Remark);
                     gameData[user.Value.Line].ClientInfoLock.EnterWriteLock();
                     try {
                         gameData[user.Value.Line].ClientInfo.Remove(user);
@@ -713,7 +712,7 @@ namespace QinDevilServer {
                 gameData[i].ClientInfoLock.EnterReadLock();
                 try {
                     foreach (UserInfo tempUserInfo in gameData[i].ClientInfo) {
-                        server.SendPackage(tempUserInfo.Id, 13, null);
+                        server.SendPackage(tempUserInfo.ClientInfo, 13, null);
                     }
                 } finally {
                     gameData[i].ClientInfoLock.ExitReadLock();
@@ -759,14 +758,14 @@ namespace QinDevilServer {
                 line = int.Parse(sourceTextBox.Text);
             } catch (Exception) {
             }
-            server.SendPackage(userInfo.Id, 19, SerializeTool.IntToByte(line));
+            server.SendPackage(userInfo.ClientInfo, 19, SerializeTool.IntToByte(line));
         }
         private void CheckBox_SourceUpdated(object sender, DataTransferEventArgs e) {
             System.Windows.Controls.CheckBox sourceTextBox = (System.Windows.Controls.CheckBox)e.Source;
             UserInfo userInfo = ((ContentPresenter)sourceTextBox.TemplatedParent).Content as UserInfo;
             byte[] b = new byte[1];
             b[0] = userInfo.Manager ? (byte)1 : (byte)0;
-            server.SendPackage(userInfo.Id, 20, b);
+            server.SendPackage(userInfo.ClientInfo, 20, b);
         }
     }
 }
