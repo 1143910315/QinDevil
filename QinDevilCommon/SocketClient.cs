@@ -107,8 +107,8 @@ namespace QinDevilCommon {
                             }
                         }
                     } else {
-                        if (sendData.Capacity < count - sendBuffer.Length + 8 + sendData.Count) {
-                            sendData.Capacity = count - sendBuffer.Length + 8 + sendData.Count;
+                        if (sendData.Capacity < count + 8 + sendData.Count) {
+                            sendData.Capacity = count + 8 + sendData.Count;
                         }
                         sendData.Add((byte)len);
                         sendData.Add((byte)(len >> 8));
@@ -185,12 +185,8 @@ namespace QinDevilCommon {
                                 break;
                             }
                         }
-                        lock (socketLock) {
-                            if (s.Equals(socket)) {
-                                if (!s.ReceiveAsync(receiveEventArgs)) {
-                                    ReceiveEventArgs_Completed(socket, receiveEventArgs);
-                                }
-                            }
+                        if (!s.ReceiveAsync(receiveEventArgs)) {
+                            ReceiveEventArgs_Completed(s, receiveEventArgs);
                         }
                     } else {
                         lock (socketLock) {
@@ -229,12 +225,8 @@ namespace QinDevilCommon {
                                 sendData.CopyTo(0, sendBuffer, 0, count);
                                 sendData.RemoveRange(0, count);
                                 sendEventArgs[state & 1].SetBuffer(sendBuffer, 0, count);
-                                lock (socketLock) {
-                                    if (s.Equals(socket)) {
-                                        if (!socket.SendAsync(sendEventArgs[state & 1])) {
-                                            SendEventArgs_Completed(socket, sendEventArgs[state & 1]);
-                                        }
-                                    }
+                                if (!s.SendAsync(sendEventArgs[state & 1])) {
+                                    SendEventArgs_Completed(s, sendEventArgs[state & 1]);
                                 }
                             } else {
                                 state &= 1;

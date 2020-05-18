@@ -115,7 +115,7 @@ namespace QinDevilClient {
                 timer.AutoReset = false;
                 pingTimer.Interval = 150;
                 pingTimer.Elapsed += PingTimer_Elapsed;
-                pingTimer.AutoReset = true;
+                pingTimer.AutoReset = false;
                 pingTimer.Start();
                 discernTimer.Interval = 900;
                 discernTimer.Elapsed += DiscernTimer_Elapsed;
@@ -498,6 +498,7 @@ namespace QinDevilClient {
                         }
                     }
                 }
+                pingTimer.Start();
             } catch (Exception e1) {
                 log.Generate("10 异常，异常信息：" + e1.Message);
                 log.Flush();
