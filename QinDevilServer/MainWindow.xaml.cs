@@ -734,7 +734,7 @@ namespace QinDevilServer {
                 LinkedListNode<LogDetail> node = gameData[i].LogBack.Pop();
                 node.Value.Content = content;
                 node.Value.Time = Environment.TickCount;
-                gameData[i].Log.AddFirst(node);
+                gameData[i].Log.AddLast(node);
             } finally {
                 gameData[i].LogLock.ExitWriteLock();
             }
@@ -745,7 +745,7 @@ namespace QinDevilServer {
                 LinkedListNode<LogDetail> node = gameData[i].LogBack.Count > 0 ? gameData[i].LogBack.Pop() : new LinkedListNode<LogDetail>(new LogDetail());
                 node.Value.Content = content;
                 node.Value.Time = Environment.TickCount;
-                gameData[i].Log.AddFirst(node);
+                gameData[i].Log.AddLast(node);
             } finally {
                 gameData[i].LogLock.ExitWriteLock();
             }
