@@ -16,6 +16,13 @@
                             <Setter Property="HorizontalContentAlignment" Value="left"/>
                         </Style>
                     </GridView.ColumnHeaderContainerStyle>
+                    <GridViewColumn Header="时间" Width="100">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Time}"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
                     <GridViewColumn Header="详细事件" ctrl:RangeColumn.IsFillColumn="true">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
