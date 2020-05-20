@@ -40,6 +40,7 @@ using System.Net.Sockets;
 using QinDevilCommon.LogClass;
 using QinDevilCommon.Keyboard;
 using Label = System.Windows.Controls.Label;
+using System.Reflection;
 #if service
 using QinDevilCommon.Keyboard;
 #endif
@@ -75,6 +76,7 @@ namespace QinDevilClient {
         private readonly Timer pingTimer = new Timer();
         private readonly Timer discernTimer = new Timer();
         private readonly Timer hitKeyTimer = new Timer();
+        private readonly Timer hitKeyCDTimer = new Timer();
         private readonly Timer colorDiscriminateTimer = new Timer();
         private readonly Timer secondTimer = new Timer();
         private readonly Timer connectTimer = new Timer();
@@ -90,203 +92,237 @@ namespace QinDevilClient {
         private bool sendInfoSuccess = false;
         private readonly Random r = new Random();
         private int discernTimers = 0;
-        private readonly LogManage log = new LogManage(".\\工具日志-" + Environment.TickCount.ToString() + ".log");
         private KeyboardHook hook;
         private bool ctrlState;
         public MainWindow() {
-            try {
-                log.Generate("1 进入");
-                InitializeComponent();
-                MD5 md5 = MD5.Create();
-                byte[] hash = md5.ComputeHash(Encoding.UTF8.GetBytes(SystemInfo.GetMacAddress() + SystemInfo.GetCpuID()));
-                StringBuilder sb = new StringBuilder();
-                foreach (byte b in hash) {
-                    _ = sb.Append(b.ToString("X2"));
-                }
-                machineIdentity = SerializeTool.StringToByte(sb.ToString());
-                GamePanel.DataContext = gameData;
-                client = new SocketClient();
-                client.OnConnectedEvent += OnConnected;
-                client.OnReceivePackageEvent += OnReceivePackage;
-                client.OnConnectionBreakEvent += OnConnectionBreak;
-                connectTimer.Elapsed += ConnectTimer_Elapsed;
-                connectTimer.AutoReset = false;
-                timer.Elapsed += Timer_Elapsed;
-                timer.AutoReset = false;
-                pingTimer.Interval = 150;
-                pingTimer.Elapsed += PingTimer_Elapsed;
-                pingTimer.AutoReset = false;
-                pingTimer.Start();
-                discernTimer.Interval = 900;
-                discernTimer.Elapsed += DiscernTimer_Elapsed;
-                discernTimer.AutoReset = false;
-                hitKeyTimer.Interval = 150;
-                hitKeyTimer.Elapsed += HitKeyTimer_Elapsed;
-                hitKeyTimer.AutoReset = false;
-                hitKeyTimer.Start();
-                colorDiscriminateTimer.Interval = 5000;
-                colorDiscriminateTimer.Elapsed += ColorDiscriminateTimer_Elapsed;
-                colorDiscriminateTimer.AutoReset = false;
-                colorDiscriminateTimer.Start();
-                secondTimer.Interval = 1000;
-                secondTimer.Elapsed += SecondTimer_Elapsed;
-                secondTimer.AutoReset = true;
-                Connect();
-            } catch (Exception e1) {
-                log.Generate("1 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("1 退出");
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+            InitializeComponent();
+            MD5 md5 = MD5.Create();
+            byte[] hash = md5.ComputeHash(Encoding.UTF8.GetBytes(SystemInfo.GetMacAddress() + SystemInfo.GetCpuID()));
+            StringBuilder sb = new StringBuilder();
+            foreach (byte b in hash) {
+                _ = sb.Append(b.ToString("X2"));
             }
+            machineIdentity = SerializeTool.StringToByte(sb.ToString());
+            GamePanel.DataContext = gameData;
+            client = new SocketClient();
+            client.OnConnectedEvent += OnConnected;
+            client.OnReceivePackageEvent += OnReceivePackage;
+            client.OnConnectionBreakEvent += OnConnectionBreak;
+            connectTimer.Elapsed += ConnectTimer_Elapsed;
+            connectTimer.AutoReset = false;
+            timer.Elapsed += Timer_Elapsed;
+            timer.AutoReset = false;
+            pingTimer.Interval = 150;
+            pingTimer.Elapsed += PingTimer_Elapsed;
+            pingTimer.AutoReset = false;
+            pingTimer.Start();
+            discernTimer.Interval = 900;
+            discernTimer.Elapsed += DiscernTimer_Elapsed;
+            discernTimer.AutoReset = false;
+            hitKeyTimer.Interval = 150;
+            hitKeyTimer.Elapsed += HitKeyTimer_Elapsed;
+            hitKeyTimer.AutoReset = false;
+            hitKeyTimer.Start();
+            colorDiscriminateTimer.Interval = 5000;
+            colorDiscriminateTimer.Elapsed += ColorDiscriminateTimer_Elapsed;
+            colorDiscriminateTimer.AutoReset = false;
+            colorDiscriminateTimer.Start();
+            secondTimer.Interval = 1000;
+            secondTimer.Elapsed += SecondTimer_Elapsed;
+            secondTimer.AutoReset = true;
+            hitKeyCDTimer.Interval = 1500;
+            hitKeyCDTimer.Elapsed += HitKeyCDTimer_Elapsed;
+            hitKeyCDTimer.AutoReset = true;
+            Connect();
+        }
+        private void HitKeyCDTimer_Elapsed(object sender, ElapsedEventArgs e) {
+            int qinIndex = Autoplay.Dispatcher.Invoke(() => {
+                return combo.SelectedIndex;
+            });
+            if (qinIndex != -1 && JudgeSitOn()) {
+                if (gameData.HitKeyCD < 100000) {
+                    gameData.HitKeyCD += 1500;
+                }
+            } else {
+                gameData.HitKeyCD = 0;
+            }
+        }
+        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e) {
+            _ = ShowWindow(FindWindow("Shell_TrayWnd", null), SW_RESTORE);
+            string str = "\n--- Error ---\n" + e.ExceptionObject.GetType().FullName;
+            if (e.ExceptionObject is Exception ex) {
+                str += "\nMessage\n" + ex.Message;
+                str += "\nHelpLink\n" + ex.HelpLink;
+                str += "\nSource\n" + ex.Source;
+                str += "\nStackTrace\n" + ex.StackTrace;
+                str += "\nTargetSite\n" + ex.TargetSite;
+            }
+            File.AppendAllText(".\\错误日志.log", str);
         }
         private void ConnectTimer_Elapsed(object sender, ElapsedEventArgs e) {
-            try {
-                log.Generate("2 进入");
-                Connect();
-            } catch (Exception e1) {
-                log.Generate("2 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("2 退出");
-            }
+            Connect();
         }
         private void SecondTimer_Elapsed(object sender, ElapsedEventArgs e) {
-            try {
-                log.Generate("5 进入");
-                gameData.Time += 1;
-            } catch (Exception e1) {
-                log.Generate("5 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("5 退出");
-            }
+            gameData.Time += 1;
         }
         private void ColorDiscriminateTimer_Elapsed(object sender, ElapsedEventArgs e) {
-            try {
-                log.Generate("6 进入");
-                if (sendInfoSuccess) {
-                    Process process = GetWuXiaProcess();
-                    if (process != null) {
-                        WindowInfo.Rect rect = WindowInfo.GetWindowClientRect(process.MainWindowHandle);
-                        if (rect.bottom > 100 && rect.right > 100) {
-                            WindowInfo.Point point = new WindowInfo.Point() {
-                                x = 0,
-                                y = 0
-                            };
-                            if (WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point)) {
-                                if (gameData.KillingIntentionStrip == 0) {
-                                    AYUVColor color = ARGBColor.FromRGB(254, 184, 0).ToAYUVColor();
-                                    int startX = point.x + (rect.right / 2);
-                                    int endX = startX + 1;
-                                    int startY = point.y;
-                                    int endY = point.y + rect.bottom;
-                                    DeviceContext DC = new DeviceContext();
-                                    if (DC.GetDeviceContext(IntPtr.Zero)) {
-                                        _ = DC.CacheRegion(new DeviceContext.Rect { left = startX, right = endX, top = startY, bottom = endY });
-                                        for (int i = endY - 1; i > startY; i--) {
-                                            AYUVColor color2 = ARGBColor.FromInt(DC.GetPointColor(startX, i)).ToAYUVColor();
-                                            if (color.GetVariance(color2) < 5) {
-                                                gameData.KillingIntentionStrip = rect.bottom - i + point.y;
-                                                client.SendPackage(11, SerializeTool.IntToByte(gameData.KillingIntentionStrip));
-                                            }
+            if (sendInfoSuccess) {
+                Process process = GetWuXiaProcess();
+                if (process != null) {
+                    WindowInfo.Rect rect = WindowInfo.GetWindowClientRect(process.MainWindowHandle);
+                    if (rect.bottom > 100 && rect.right > 100) {
+                        WindowInfo.Point point = new WindowInfo.Point() {
+                            x = 0,
+                            y = 0
+                        };
+                        if (WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point)) {
+                            if (gameData.KillingIntentionStrip == 0) {
+                                AYUVColor color = ARGBColor.FromRGB(254, 184, 0).ToAYUVColor();
+                                int startX = point.x + (rect.right / 2);
+                                int endX = startX + 1;
+                                int startY = point.y;
+                                int endY = point.y + rect.bottom;
+                                DeviceContext DC = new DeviceContext();
+                                if (DC.GetDeviceContext(IntPtr.Zero)) {
+                                    _ = DC.CacheRegion(new DeviceContext.Rect { left = startX, right = endX, top = startY, bottom = endY });
+                                    for (int i = endY - 1; i > startY; i--) {
+                                        AYUVColor color2 = ARGBColor.FromInt(DC.GetPointColor(startX, i)).ToAYUVColor();
+                                        if (color.GetVariance(color2) < 5) {
+                                            gameData.KillingIntentionStrip = rect.bottom - i + point.y;
+                                            client.SendPackage(11, SerializeTool.IntToByte(gameData.KillingIntentionStrip));
                                         }
                                     }
-                                } else {
-                                    AYUVColor[] qinKeyColor = new AYUVColor[5];
-                                    qinKeyColor[0] = ARGBColor.FromRGB(192, 80, 78).ToAYUVColor();
-                                    qinKeyColor[1] = ARGBColor.FromRGB(156, 188, 89).ToAYUVColor();
-                                    qinKeyColor[2] = ARGBColor.FromRGB(129, 101, 162).ToAYUVColor();
-                                    qinKeyColor[3] = ARGBColor.FromRGB(75, 172, 197).ToAYUVColor();
-                                    qinKeyColor[4] = ARGBColor.FromRGB(246, 150, 71).ToAYUVColor();
-                                    int startX = point.x + (gameData.KillingIntentionStrip * 290 / 63);
-                                    int endX = point.x + (rect.right / 2);
-                                    int middleY = point.y + rect.bottom - (gameData.KillingIntentionStrip / 2);
-                                    int startY = middleY - 5;
-                                    int endY = startY + 10;
-                                    log.Generate(string.Format("6({0},{1},{2},{3},{4})", startX, endX, middleY, startY, endY));
-                                    DeviceContext DC = new DeviceContext();
-                                    if (DC.GetDeviceContext(IntPtr.Zero)) {
-                                        _ = DC.CacheRegion(new DeviceContext.Rect { left = startX, right = endX, top = startY, bottom = endY });
-                                        int[] tempFiveTone = new int[5];
-                                        int i = endX;
-                                        for (int j = 4; j > -1;) {
-                                            for (; i > startX; i--) {
-                                                AYUVColor color = ARGBColor.FromInt(DC.GetPointColor(i, middleY)).ToAYUVColor();
-                                                if (color.GetVariance(qinKeyColor[j]) < 25) {
-                                                    int matchTime = 1;
-                                                    for (int k = 0; k < 8; k++) {
-                                                        color = ARGBColor.FromInt(DC.GetPointColor(i, middleY - k - 1)).ToAYUVColor();
-                                                        if (matchTime < 8 && color.GetVariance(qinKeyColor[j]) < 25) {
-                                                            matchTime += 1;
-                                                        } else {
-                                                            break;
-                                                        }
-                                                    }
-                                                    for (int k = 1; k < 8; k++) {
-                                                        color = ARGBColor.FromInt(DC.GetPointColor(i, middleY + k)).ToAYUVColor();
-                                                        if (matchTime < 8 && color.GetVariance(qinKeyColor[j]) < 25) {
-                                                            matchTime += 1;
-                                                        } else {
-                                                            break;
-                                                        }
-                                                    }
-                                                    if (matchTime > 7) {
-                                                        tempFiveTone[j] = i - point.x;
-                                                        if (j == 0) {
-                                                            gameData.FiveTone = tempFiveTone;
-                                                            gameData.FiveToneReady = true;
-                                                            Dispatcher.Invoke(() => {
-                                                                combo.IsEnabled = true;
-                                                            });
-                                                            lock (sendData) {
-                                                                sendData.Clear();
-                                                                SerializeTool.IntToByteList(gameData.FiveTone[0], sendData);
-                                                                SerializeTool.IntToByteList(gameData.FiveTone[1], sendData);
-                                                                SerializeTool.IntToByteList(gameData.FiveTone[2], sendData);
-                                                                SerializeTool.IntToByteList(gameData.FiveTone[3], sendData);
-                                                                SerializeTool.IntToByteList(gameData.FiveTone[4], sendData);
-                                                                client.SendPackage(12, sendData.ToArray());
-                                                            }
-                                                            return;
-                                                        }
+                                }
+                            } else {
+                                AYUVColor[] qinKeyColor = new AYUVColor[5];
+                                qinKeyColor[0] = ARGBColor.FromRGB(192, 80, 78).ToAYUVColor();
+                                qinKeyColor[1] = ARGBColor.FromRGB(156, 188, 89).ToAYUVColor();
+                                qinKeyColor[2] = ARGBColor.FromRGB(129, 101, 162).ToAYUVColor();
+                                qinKeyColor[3] = ARGBColor.FromRGB(75, 172, 197).ToAYUVColor();
+                                qinKeyColor[4] = ARGBColor.FromRGB(246, 150, 71).ToAYUVColor();
+                                int startX = point.x;
+                                int endX = point.x + (rect.right / 2);
+                                int middleY = point.y + rect.bottom - (gameData.KillingIntentionStrip / 2);
+                                int startY = middleY - 5;
+                                int endY = startY + 10;
+                                DeviceContext DC = new DeviceContext();
+                                if (DC.GetDeviceContext(IntPtr.Zero)) {
+                                    _ = DC.CacheRegion(new DeviceContext.Rect { left = startX, right = endX, top = startY, bottom = endY });
+                                    int[] tempFiveTone = new int[5];
+                                    int i = endX;
+                                    for (int j = 4; j > -1;) {
+                                        for (; i > startX; i--) {
+                                            AYUVColor color = ARGBColor.FromInt(DC.GetPointColor(i, middleY)).ToAYUVColor();
+                                            if (color.GetVariance(qinKeyColor[j]) < 25) {
+                                                int matchTime = 1;
+                                                for (int k = 0; k < 8; k++) {
+                                                    color = ARGBColor.FromInt(DC.GetPointColor(i, middleY - k - 1)).ToAYUVColor();
+                                                    if (matchTime < 8 && color.GetVariance(qinKeyColor[j]) < 25) {
+                                                        matchTime += 1;
+                                                    } else {
                                                         break;
                                                     }
                                                 }
+                                                for (int k = 1; k < 8; k++) {
+                                                    color = ARGBColor.FromInt(DC.GetPointColor(i, middleY + k)).ToAYUVColor();
+                                                    if (matchTime < 8 && color.GetVariance(qinKeyColor[j]) < 25) {
+                                                        matchTime += 1;
+                                                    } else {
+                                                        break;
+                                                    }
+                                                }
+                                                if (matchTime > 7) {
+                                                    tempFiveTone[j] = i - point.x;
+                                                    if (j == 0) {
+                                                        gameData.FiveTone = tempFiveTone;
+                                                        gameData.FiveToneReady = true;
+                                                        Dispatcher.Invoke(() => {
+                                                            combo.IsEnabled = true;
+                                                        });
+                                                        lock (sendData) {
+                                                            sendData.Clear();
+                                                            SerializeTool.IntToByteList(gameData.FiveTone[0], sendData);
+                                                            SerializeTool.IntToByteList(gameData.FiveTone[1], sendData);
+                                                            SerializeTool.IntToByteList(gameData.FiveTone[2], sendData);
+                                                            SerializeTool.IntToByteList(gameData.FiveTone[3], sendData);
+                                                            SerializeTool.IntToByteList(gameData.FiveTone[4], sendData);
+                                                            client.SendPackage(12, sendData.ToArray());
+                                                        }
+                                                        return;
+                                                    }
+                                                    break;
+                                                }
                                             }
-                                            j--;
                                         }
+                                        j--;
                                     }
                                 }
                             }
                         }
                     }
                 }
-                colorDiscriminateTimer.Start();
-            } catch (Exception e1) {
-                log.Generate("6 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("6 退出");
             }
+            colorDiscriminateTimer.Start();
         }
         private void HitKeyTimer_Elapsed(object sender, ElapsedEventArgs e) {
-            try {
-                log.Generate("7 进入");
-                bool canHit = Autoplay.Dispatcher.Invoke(() => {
-                    return Autoplay.IsChecked.HasValue && Autoplay.IsChecked.Value;
-                });
-                if (canHit) {
-                    int i = 0;
-                    for (; i < gameData.HitQinKey.Length; i++) {
-                        if (gameData.HitQinKey[i] == 0) {
-                            break;
-                        }
+            (bool canHit, int qinIndex) = Autoplay.Dispatcher.Invoke(() => {
+                return (Autoplay.IsChecked.HasValue && Autoplay.IsChecked.Value, combo.SelectedIndex);
+            });
+            if (canHit) {
+                int i = 0;
+                for (; i < gameData.HitQinKey.Length; i++) {
+                    if (gameData.HitQinKey[i] == 0) {
+                        break;
                     }
-                    if (i > gameData.HitKeyIndex) {
+                }
+                if (i > gameData.HitKeyIndex) {
+                    if (qinIndex != -1) {
+                        if (JudgeSitOn()) {
+                            if (gameData.HitKeyCD > 2500) {
+                                lock (sendData) {
+                                    sendData.Clear();
+                                    SerializeTool.IntToByteList(qinIndex, sendData);
+                                    SerializeTool.IntToByteList(gameData.HitKeyIndex + 1, sendData);
+                                    client.SendPackage(22, sendData.ToArray());
+                                }
+                                switch (gameData.HitQinKey[gameData.HitKeyIndex++]) {
+                                    case 1: {
+                                            Keybd_event(49, MapVirtualKeyA(49, 0), 8, 0);
+                                            Thread.Sleep(r.Next(20, 60));
+                                            Keybd_event(49, MapVirtualKeyA(49, 0), 10, 0);
+                                            break;
+                                        }
+                                    case 2: {
+                                            Keybd_event(50, MapVirtualKeyA(50, 0), 8, 0);
+                                            Thread.Sleep(r.Next(20, 60));
+                                            Keybd_event(50, MapVirtualKeyA(50, 0), 10, 0);
+                                            break;
+                                        }
+                                    case 3: {
+                                            Keybd_event(51, MapVirtualKeyA(51, 0), 8, 0);
+                                            Thread.Sleep(r.Next(20, 60));
+                                            Keybd_event(51, MapVirtualKeyA(51, 0), 10, 0);
+                                            break;
+                                        }
+                                    case 4: {
+                                            Keybd_event(52, MapVirtualKeyA(52, 0), 8, 0);
+                                            Thread.Sleep(r.Next(20, 60));
+                                            Keybd_event(52, MapVirtualKeyA(52, 0), 10, 0);
+                                            break;
+                                        }
+                                    case 5: {
+                                            Keybd_event(53, MapVirtualKeyA(53, 0), 8, 0);
+                                            Thread.Sleep(r.Next(20, 60));
+                                            Keybd_event(53, MapVirtualKeyA(53, 0), 10, 0);
+                                            break;
+                                        }
+                                    default:
+                                        break;
+                                }
+                            }
+                        }
+                    } else {
                         if (JudgeSitOn()) {
                             client.SendPackage(19, SerializeTool.IntToByte(gameData.HitKeyIndex));
                         } else {
@@ -328,172 +364,154 @@ namespace QinDevilClient {
                         }
                     }
                 }
-                hitKeyTimer.Start();
-            } catch (Exception e1) {
-                log.Generate("7 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("7 退出");
             }
+            hitKeyTimer.Start();
         }
         private bool JudgeSitOn() {
-            try {
-                log.Generate("8 进入");
-                if (sendInfoSuccess && gameData.FiveToneReady && gameData.KillingIntentionStrip != 0) {
-                    Process process = GetWuXiaProcess();
-                    if (process != null) {
-                        WindowInfo.Rect rect = WindowInfo.GetWindowClientRect(process.MainWindowHandle);
-                        if (rect.bottom > 100 && rect.right > 100) {
-                            WindowInfo.Point point = new WindowInfo.Point() {
-                                x = 0,
-                                y = 0
-                            };
-                            if (WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point)) {
-                                AYUVColor[] qinKeyColor = new AYUVColor[10];
-                                qinKeyColor[0] = ARGBColor.FromRGB(192, 80, 78).ToAYUVColor();
-                                qinKeyColor[1] = ARGBColor.FromRGB(156, 188, 89).ToAYUVColor();
-                                qinKeyColor[2] = ARGBColor.FromRGB(129, 101, 162).ToAYUVColor();
-                                qinKeyColor[3] = ARGBColor.FromRGB(75, 172, 197).ToAYUVColor();
-                                qinKeyColor[4] = ARGBColor.FromRGB(246, 150, 71).ToAYUVColor();
-                                qinKeyColor[5] = ARGBColor.FromRGB(48, 20, 19).ToAYUVColor();
-                                qinKeyColor[6] = ARGBColor.FromRGB(39, 47, 22).ToAYUVColor();
-                                qinKeyColor[7] = ARGBColor.FromRGB(32, 25, 40).ToAYUVColor();
-                                qinKeyColor[8] = ARGBColor.FromRGB(18, 43, 49).ToAYUVColor();
-                                qinKeyColor[9] = ARGBColor.FromRGB(62, 37, 18).ToAYUVColor();
-                                DeviceContext DC = new DeviceContext();
-                                if (DC.GetDeviceContext(IntPtr.Zero)) {
-                                    _ = DC.CacheRegion(new DeviceContext.Rect { left = point.x + gameData.FiveTone[0], right = point.x + gameData.FiveTone[4] + 1, top = point.y + rect.bottom - (gameData.KillingIntentionStrip / 2), bottom = point.y + rect.bottom - (gameData.KillingIntentionStrip / 2) + 1 });
-                                    int success = 0;
-                                    for (int i = 0; i < 5; i++) {
-                                        AYUVColor color = ARGBColor.FromInt(DC.GetPointColor(point.x + gameData.FiveTone[i], point.y + rect.bottom - (gameData.KillingIntentionStrip / 2))).ToAYUVColor();
-                                        if (color.GetVariance(qinKeyColor[i]) < 25) {
-                                            success++;
-                                        } else if (color.GetVariance(qinKeyColor[i + 5]) < 25) {
-                                            return false;
-                                        } else {
-                                            for (int m = 1; m < 5; m++) {
-                                                color = ARGBColor.FromInt(DC.GetPointColor(point.x + gameData.FiveTone[i] - m, point.y + rect.bottom - (gameData.KillingIntentionStrip / 2))).ToAYUVColor();
-                                                if (color.GetVariance(qinKeyColor[i]) < 25) {
-                                                    success++;
-                                                    break;
-                                                } else if (color.GetVariance(qinKeyColor[i + 5]) < 25) {
-                                                    return false;
-                                                }
+            if (sendInfoSuccess && gameData.FiveToneReady && gameData.KillingIntentionStrip != 0) {
+                Process process = GetWuXiaProcess();
+                if (process != null) {
+                    WindowInfo.Rect rect = WindowInfo.GetWindowClientRect(process.MainWindowHandle);
+                    if (rect.bottom > 100 && rect.right > 100) {
+                        WindowInfo.Point point = new WindowInfo.Point() {
+                            x = 0,
+                            y = 0
+                        };
+                        if (WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point)) {
+                            AYUVColor[] qinKeyColor = new AYUVColor[10];
+                            qinKeyColor[0] = ARGBColor.FromRGB(192, 80, 78).ToAYUVColor();
+                            qinKeyColor[1] = ARGBColor.FromRGB(156, 188, 89).ToAYUVColor();
+                            qinKeyColor[2] = ARGBColor.FromRGB(129, 101, 162).ToAYUVColor();
+                            qinKeyColor[3] = ARGBColor.FromRGB(75, 172, 197).ToAYUVColor();
+                            qinKeyColor[4] = ARGBColor.FromRGB(246, 150, 71).ToAYUVColor();
+                            qinKeyColor[5] = ARGBColor.FromRGB(48, 20, 19).ToAYUVColor();
+                            qinKeyColor[6] = ARGBColor.FromRGB(39, 47, 22).ToAYUVColor();
+                            qinKeyColor[7] = ARGBColor.FromRGB(32, 25, 40).ToAYUVColor();
+                            qinKeyColor[8] = ARGBColor.FromRGB(18, 43, 49).ToAYUVColor();
+                            qinKeyColor[9] = ARGBColor.FromRGB(62, 37, 18).ToAYUVColor();
+                            DeviceContext DC = new DeviceContext();
+                            if (DC.GetDeviceContext(IntPtr.Zero)) {
+                                _ = DC.CacheRegion(new DeviceContext.Rect { left = point.x + gameData.FiveTone[0] - 5, right = point.x + gameData.FiveTone[4] + 1, top = point.y + rect.bottom - (gameData.KillingIntentionStrip / 2), bottom = point.y + rect.bottom - (gameData.KillingIntentionStrip / 2) + 1 });
+                                int success = 0;
+                                for (int i = 0; i < 5; i++) {
+                                    AYUVColor color = ARGBColor.FromInt(DC.GetPointColor(point.x + gameData.FiveTone[i], point.y + rect.bottom - (gameData.KillingIntentionStrip / 2))).ToAYUVColor();
+                                    if (color.GetVariance(qinKeyColor[i]) < 25) {
+                                        success++;
+                                    } else if (color.GetVariance(qinKeyColor[i + 5]) < 25) {
+                                        return false;
+                                    } else {
+                                        for (int m = 1; m < 5; m++) {
+                                            color = ARGBColor.FromInt(DC.GetPointColor(point.x + gameData.FiveTone[i] - m, point.y + rect.bottom - (gameData.KillingIntentionStrip / 2))).ToAYUVColor();
+                                            if (color.GetVariance(qinKeyColor[i]) < 25) {
+                                                success++;
+                                                break;
+                                            } else if (color.GetVariance(qinKeyColor[i + 5]) < 25) {
+                                                return false;
                                             }
                                         }
                                     }
-                                    if (success == 5) {
-                                        return true;
-                                    }
+                                }
+                                if (success == 5) {
+                                    return true;
                                 }
                             }
                         }
                     }
                 }
-                return false;
-            } catch (Exception e1) {
-                log.Generate("8 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("8 退出");
             }
+            return false;
         }
         private void DiscernTimer_Elapsed(object sender, ElapsedEventArgs e) {
-            try {
-                log.Generate("9 进入");
-                if (sendInfoSuccess && gameData.FiveToneReady && gameData.KillingIntentionStrip != 0) {
-                    Process process = GetWuXiaProcess();
-                    if (process != null) {
-                        WindowInfo.Rect rect = WindowInfo.GetWindowClientRect(process.MainWindowHandle);
-                        if (rect.bottom > 100 && rect.right > 100) {
-                            WindowInfo.Point point = new WindowInfo.Point() {
-                                x = 0,
-                                y = 0
-                            };
-                            if (WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point)) {
-                                AYUVColor[] qinKeyColor = new AYUVColor[10];
-                                qinKeyColor[0] = ARGBColor.FromRGB(192, 80, 78).ToAYUVColor();
-                                qinKeyColor[1] = ARGBColor.FromRGB(156, 188, 89).ToAYUVColor();
-                                qinKeyColor[2] = ARGBColor.FromRGB(129, 101, 162).ToAYUVColor();
-                                qinKeyColor[3] = ARGBColor.FromRGB(75, 172, 197).ToAYUVColor();
-                                qinKeyColor[4] = ARGBColor.FromRGB(246, 150, 71).ToAYUVColor();
-                                qinKeyColor[5] = ARGBColor.FromRGB(48, 20, 19).ToAYUVColor();
-                                qinKeyColor[6] = ARGBColor.FromRGB(39, 47, 22).ToAYUVColor();
-                                qinKeyColor[7] = ARGBColor.FromRGB(32, 25, 40).ToAYUVColor();
-                                qinKeyColor[8] = ARGBColor.FromRGB(18, 43, 49).ToAYUVColor();
-                                qinKeyColor[9] = ARGBColor.FromRGB(62, 37, 18).ToAYUVColor();
-                                DeviceContext DC = new DeviceContext();
-                                if (DC.GetDeviceContext(IntPtr.Zero)) {
-                                    _ = DC.CacheRegion(new DeviceContext.Rect { left = point.x + gameData.FiveTone[0], right = point.x + gameData.FiveTone[4] + 1, top = point.y + rect.bottom - (gameData.KillingIntentionStrip / 2), bottom = point.y + rect.bottom - (gameData.KillingIntentionStrip / 2) + 1 });
-                                    int success = 0;
-                                    int fail = 0;
-                                    string lessKey = "";
-                                    for (int i = 0; i < 5; i++) {
-                                        AYUVColor color = ARGBColor.FromInt(DC.GetPointColor(point.x + gameData.FiveTone[i], point.y + rect.bottom - (gameData.KillingIntentionStrip / 2))).ToAYUVColor();
-                                        if (color.GetVariance(qinKeyColor[i]) < 25) {
-                                            success++;
-                                        } else if (color.GetVariance(qinKeyColor[i + 5]) < 25) {
-                                            fail++;
-                                            lessKey += (i + 1).ToString();
-                                        } else {
-                                            for (int m = 1; m < 5; m++) {
-                                                color = ARGBColor.FromInt(DC.GetPointColor(point.x + gameData.FiveTone[i] - m, point.y + rect.bottom - (gameData.KillingIntentionStrip / 2))).ToAYUVColor();
-                                                if (color.GetVariance(qinKeyColor[i]) < 25) {
-                                                    success++;
-                                                    break;
-                                                } else if (color.GetVariance(qinKeyColor[i + 5]) < 25) {
-                                                    fail++;
-                                                    lessKey += (i + 1).ToString();
-                                                    break;
-                                                }
+            if (sendInfoSuccess && gameData.FiveToneReady && gameData.KillingIntentionStrip != 0) {
+                Process process = GetWuXiaProcess();
+                if (process != null) {
+                    WindowInfo.Rect rect = WindowInfo.GetWindowClientRect(process.MainWindowHandle);
+                    if (rect.bottom > 100 && rect.right > 100) {
+                        WindowInfo.Point point = new WindowInfo.Point() {
+                            x = 0,
+                            y = 0
+                        };
+                        if (WindowInfo.GetScreenPointFromClientPoint(process.MainWindowHandle, ref point)) {
+                            AYUVColor[] qinKeyColor = new AYUVColor[10];
+                            qinKeyColor[0] = ARGBColor.FromRGB(192, 80, 78).ToAYUVColor();
+                            qinKeyColor[1] = ARGBColor.FromRGB(156, 188, 89).ToAYUVColor();
+                            qinKeyColor[2] = ARGBColor.FromRGB(129, 101, 162).ToAYUVColor();
+                            qinKeyColor[3] = ARGBColor.FromRGB(75, 172, 197).ToAYUVColor();
+                            qinKeyColor[4] = ARGBColor.FromRGB(246, 150, 71).ToAYUVColor();
+                            qinKeyColor[5] = ARGBColor.FromRGB(48, 20, 19).ToAYUVColor();
+                            qinKeyColor[6] = ARGBColor.FromRGB(39, 47, 22).ToAYUVColor();
+                            qinKeyColor[7] = ARGBColor.FromRGB(32, 25, 40).ToAYUVColor();
+                            qinKeyColor[8] = ARGBColor.FromRGB(18, 43, 49).ToAYUVColor();
+                            qinKeyColor[9] = ARGBColor.FromRGB(62, 37, 18).ToAYUVColor();
+                            DeviceContext DC = new DeviceContext();
+                            if (DC.GetDeviceContext(IntPtr.Zero)) {
+                                _ = DC.CacheRegion(new DeviceContext.Rect { left = point.x + gameData.FiveTone[0] - 5, right = point.x + gameData.FiveTone[4] + 1, top = point.y + rect.bottom - (gameData.KillingIntentionStrip / 2), bottom = point.y + rect.bottom - (gameData.KillingIntentionStrip / 2) + 1 });
+                                int success = 0;
+                                int fail = 0;
+                                string lessKey = "";
+                                for (int i = 0; i < 5; i++) {
+                                    AYUVColor color = ARGBColor.FromInt(DC.GetPointColor(point.x + gameData.FiveTone[i], point.y + rect.bottom - (gameData.KillingIntentionStrip / 2))).ToAYUVColor();
+                                    if (color.GetVariance(qinKeyColor[i]) < 25) {
+                                        success++;
+                                    } else if (color.GetVariance(qinKeyColor[i + 5]) < 25) {
+                                        fail++;
+                                        lessKey += (i + 1).ToString();
+                                    } else {
+                                        for (int m = 1; m < 5; m++) {
+                                            color = ARGBColor.FromInt(DC.GetPointColor(point.x + gameData.FiveTone[i] - m, point.y + rect.bottom - (gameData.KillingIntentionStrip / 2))).ToAYUVColor();
+                                            if (color.GetVariance(qinKeyColor[i]) < 25) {
+                                                success++;
+                                                break;
+                                            } else if (color.GetVariance(qinKeyColor[i + 5]) < 25) {
+                                                fail++;
+                                                lessKey += (i + 1).ToString();
+                                                break;
                                             }
                                         }
                                     }
-                                    if (success + fail == 5) {
-                                        if (fail > 0 && fail < 4) {
-                                            if (gameData.AutoLessKey) {
-                                                Dispatcher.Invoke(() => {
-                                                    switch (combo.SelectedIndex) {
-                                                        case 0:
-                                                            gameData.No1Qin = lessKey;
-                                                            client.SendPackage(1, SerializeTool.StringToByte(gameData.No1Qin));
-                                                            break;
-                                                        case 1:
-                                                            gameData.No2Qin = lessKey;
-                                                            client.SendPackage(2, SerializeTool.StringToByte(gameData.No2Qin));
-                                                            break;
-                                                        case 2:
-                                                            gameData.No3Qin = lessKey;
-                                                            client.SendPackage(3, SerializeTool.StringToByte(gameData.No3Qin));
-                                                            break;
-                                                        case 3:
-                                                            gameData.No4Qin = lessKey;
-                                                            client.SendPackage(4, SerializeTool.StringToByte(gameData.No4Qin));
-                                                            break;
-                                                        default:
-                                                            break;
-                                                    }
-                                                });
-                                            }
-                                            client.SendPackage(13, SerializeTool.StringToByte(lessKey));
-                                            return;
-                                        }
-                                    } else if (success + fail > 0) {
-                                        if (discernTimers++ < 5) {
-                                            lock (sendData) {
-                                                sendData.Clear();
-                                                SerializeTool.IntToByteList(success, sendData);
-                                                SerializeTool.IntToByteList(fail, sendData);
-                                                for (int i = 0; i < 5; i++) {
-                                                    ARGBColor color = ARGBColor.FromInt(DC.GetPointColor(point.x + gameData.FiveTone[i], point.y + rect.bottom - (gameData.KillingIntentionStrip / 2)));
-                                                    SerializeTool.IntToByteList(color.R, sendData);
-                                                    SerializeTool.IntToByteList(color.G, sendData);
-                                                    SerializeTool.IntToByteList(color.B, sendData);
+                                }
+                                if (success + fail == 5) {
+                                    if (fail > 0 && fail < 4) {
+                                        if (gameData.AutoLessKey) {
+                                            Dispatcher.Invoke(() => {
+                                                switch (combo.SelectedIndex) {
+                                                    case 0:
+                                                        gameData.No1Qin = lessKey;
+                                                        client.SendPackage(1, SerializeTool.StringToByte(gameData.No1Qin));
+                                                        break;
+                                                    case 1:
+                                                        gameData.No2Qin = lessKey;
+                                                        client.SendPackage(2, SerializeTool.StringToByte(gameData.No2Qin));
+                                                        break;
+                                                    case 2:
+                                                        gameData.No3Qin = lessKey;
+                                                        client.SendPackage(3, SerializeTool.StringToByte(gameData.No3Qin));
+                                                        break;
+                                                    case 3:
+                                                        gameData.No4Qin = lessKey;
+                                                        client.SendPackage(4, SerializeTool.StringToByte(gameData.No4Qin));
+                                                        break;
+                                                    default:
+                                                        break;
                                                 }
-                                                client.SendPackage(16, sendData.ToArray());
+                                            });
+                                        }
+                                        client.SendPackage(13, SerializeTool.StringToByte(lessKey));
+                                        return;
+                                    }
+                                } else if (success + fail > 0) {
+                                    if (discernTimers++ < 5) {
+                                        lock (sendData) {
+                                            sendData.Clear();
+                                            SerializeTool.IntToByteList(success, sendData);
+                                            SerializeTool.IntToByteList(fail, sendData);
+                                            for (int i = 0; i < 5; i++) {
+                                                ARGBColor color = ARGBColor.FromInt(DC.GetPointColor(point.x + gameData.FiveTone[i], point.y + rect.bottom - (gameData.KillingIntentionStrip / 2)));
+                                                SerializeTool.IntToByteList(color.R, sendData);
+                                                SerializeTool.IntToByteList(color.G, sendData);
+                                                SerializeTool.IntToByteList(color.B, sendData);
                                             }
+                                            client.SendPackage(16, sendData.ToArray());
                                         }
                                     }
                                 }
@@ -501,178 +519,129 @@ namespace QinDevilClient {
                         }
                     }
                 }
-                int noNull = 0;
-                if (!gameData.No1Qin.Equals("")) {
-                    noNull++;
-                }
-                if (!gameData.No2Qin.Equals("")) {
-                    noNull++;
-                }
-                if (!gameData.No3Qin.Equals("")) {
-                    noNull++;
-                }
-                if (!gameData.No4Qin.Equals("")) {
-                    noNull++;
-                }
-                if (noNull < 3) {
-                    discernTimer.Start();
-                }
-            } catch (Exception e1) {
-                log.Generate("9 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("9 退出");
+            }
+            int noNull = 0;
+            if (!gameData.No1Qin.Equals("")) {
+                noNull++;
+            }
+            if (!gameData.No2Qin.Equals("")) {
+                noNull++;
+            }
+            if (!gameData.No3Qin.Equals("")) {
+                noNull++;
+            }
+            if (!gameData.No4Qin.Equals("")) {
+                noNull++;
+            }
+            if (noNull < 3) {
+                discernTimer.Start();
             }
         }
         private void PingTimer_Elapsed(object sender, ElapsedEventArgs e) {
-            try {
-                log.Generate("10 进入");
-                if (startPing) {
-                    int ping = Environment.TickCount - lastPing;
-                    if (ping > gameData.Ping) {
-                        gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
-                        if (gameData.Ping == 9999) {
-                            Connect();
-                        }
+            if (startPing) {
+                int ping = Environment.TickCount - lastPing;
+                if (ping > gameData.Ping) {
+                    gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
+                    if (gameData.Ping == 9999) {
+                        Connect();
                     }
                 }
-                pingTimer.Start();
-            } catch (Exception e1) {
-                log.Generate("10 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("10 退出");
             }
+            pingTimer.Start();
         }
         private void Timer_Elapsed(object sender, ElapsedEventArgs e) {
-            try {
-                log.Generate("11 进入");
-                if (sendInfoSuccess) {
+            if (sendInfoSuccess) {
+                if (startPing == false) {
+                    lastPing = Environment.TickCount;
+                    startPing = true;
+                    client.SendPackage(10, SerializeTool.IntToByte(lastPing));
+                } else {
+                    client.SendPackage(10, SerializeTool.IntToByte(Environment.TickCount));
+                }
+            } else {
+                lock (sendData) {
+                    sendData.Clear();
+                    SerializeTool.IntToByteList(gameData.Line, sendData);
+                    sendData.AddRange(machineIdentity);
+                    Process process = GetWuXiaProcess();
+                    if (process != null) {
+                        int i = 0;
+                        int length;
+                        StringBuilder stringBuilder;
+                        do {
+                            i++;
+                            length = i * 260;
+                            stringBuilder = new StringBuilder(length);
+                            _ = QueryFullProcessImageNameA(process.Handle, 0, stringBuilder, ref length);
+                            if (length == 0) {
+                                stringBuilder = stringBuilder.Clear();
+                            }
+                        } while (i * 260 == length);
+                        SerializeTool.StringToByteList(stringBuilder.ToString(), sendData);
+                    } else {
+                        SerializeTool.IntToByteList(0, sendData);
+                    }
                     if (startPing == false) {
                         lastPing = Environment.TickCount;
                         startPing = true;
-                        client.SendPackage(10, SerializeTool.IntToByte(lastPing));
+                        SerializeTool.IntToByteList(lastPing, sendData);
                     } else {
-                        client.SendPackage(10, SerializeTool.IntToByte(Environment.TickCount));
+                        SerializeTool.IntToByteList(Environment.TickCount, sendData);
                     }
-                } else {
-                    lock (sendData) {
-                        sendData.Clear();
-                        SerializeTool.IntToByteList(gameData.Line, sendData);
-                        sendData.AddRange(machineIdentity);
-                        Process process = GetWuXiaProcess();
-                        if (process != null) {
-                            int i = 0;
-                            int length;
-                            StringBuilder stringBuilder;
-                            do {
-                                i++;
-                                length = i * 260;
-                                stringBuilder = new StringBuilder(length);
-                                _ = QueryFullProcessImageNameA(process.Handle, 0, stringBuilder, ref length);
-                                if (length == 0) {
-                                    stringBuilder = stringBuilder.Clear();
-                                }
-                            } while (i * 260 == length);
-                            SerializeTool.StringToByteList(stringBuilder.ToString(), sendData);
-                        } else {
-                            SerializeTool.IntToByteList(0, sendData);
-                        }
-                        if (startPing == false) {
-                            lastPing = Environment.TickCount;
-                            startPing = true;
-                            SerializeTool.IntToByteList(lastPing, sendData);
-                        } else {
-                            SerializeTool.IntToByteList(Environment.TickCount, sendData);
-                        }
-                        client.SendPackage(0, sendData.ToArray());
-                    }
+                    client.SendPackage(0, sendData.ToArray());
                 }
-                timer.Interval = 3000;
-                timer.Start();
-            } catch (Exception e1) {
-                log.Generate("11 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("11 退出");
             }
+            timer.Interval = 3000;
+            timer.Start();
         }
         private Process GetWuXiaProcess() {
-            try {
-                log.Generate("12 进入");
-                Process[] process = Process.GetProcessesByName("WuXia_Client_x64");
-                if (process.Length == 0) {
-                    process = Process.GetProcessesByName("WuXia_Client");
-                }
-                if (process.Length > 0) {
-                    Process temp = process[0];
-                    if (process.Length > 1) {
-                        IntPtr topWindow = WindowInfo.GetTopWindow();
-                        while (!topWindow.Equals(IntPtr.Zero)) {
-                            for (int i = 0; i < process.Length; i++) {
-                                if (topWindow.Equals(process[i].MainWindowHandle)) {
-                                    return process[i];
-                                }
-                            }
-                            topWindow = WindowInfo.GetWindow(topWindow, WindowInfo.GettingType.GW_HWNDNEXT);
-                        }
-                    }
-                    return temp;
-                }
-                return null;
-            } catch (Exception e1) {
-                log.Generate("12 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("12 退出");
+            Process[] process = Process.GetProcessesByName("WuXia_Client_x64");
+            if (process.Length == 0) {
+                process = Process.GetProcessesByName("WuXia_Client");
             }
+            if (process.Length > 0) {
+                Process temp = process[0];
+                if (process.Length > 1) {
+                    IntPtr topWindow = WindowInfo.GetTopWindow();
+                    while (!topWindow.Equals(IntPtr.Zero)) {
+                        for (int i = 0; i < process.Length; i++) {
+                            if (topWindow.Equals(process[i].MainWindowHandle)) {
+                                return process[i];
+                            }
+                        }
+                        topWindow = WindowInfo.GetWindow(topWindow, WindowInfo.GettingType.GW_HWNDNEXT);
+                    }
+                }
+                return temp;
+            }
+            return null;
         }
         private void Connect() {
-            try {
-                log.Generate("13 进入");
-                timer.Stop();
-                connectTimer.Stop();
-                sendInfoSuccess = false;
-                startPing = false;
-                gameData.Ping = 9999;
-                discernTimer.Stop();
+            timer.Stop();
+            connectTimer.Stop();
+            sendInfoSuccess = false;
+            startPing = false;
+            gameData.Ping = 9999;
+            discernTimer.Stop();
 #if DEBUG
-                //client.Connect("q1143910315.gicp.net", 28739);
-                client.Connect("127.0.0.1", 12148);
+            //client.Connect("q1143910315.gicp.net", 22272);
+            //client.Connect("103.46.128.49", 22272);
+            client.Connect("127.0.0.1", 12148);
 #else
-                client.Connect("q1143910315.gicp.net", 28739);
+            client.Connect("q1143910315.gicp.net", 22272);
+            //client.Connect("103.46.128.49", 22272);
 #endif
-            } catch (Exception e1) {
-                log.Generate("13 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("13 退出");
-            }
         }
         private void OnConnected(bool connected) {
-            try {
-                log.Generate("14 进入");
-                if (connected == false) {
-                    gameData.Ping = 9999;
-                    connectTimer.Interval = 3000;
-                    connectTimer.Start();
-                    CheckDomain();
-                } else {
-                    connectTimer.Stop();
-                    timer.Interval = 200;
-                    timer.Start();
-                }
-            } catch (Exception e1) {
-                log.Generate("14 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("14 退出");
+            if (connected == false) {
+                gameData.Ping = 9999;
+                connectTimer.Interval = 3000;
+                connectTimer.Start();
+                CheckDomain();
+            } else {
+                connectTimer.Stop();
+                timer.Interval = 200;
+                timer.Start();
             }
         }
         private void CheckDomain() {
@@ -790,7 +759,7 @@ namespace QinDevilClient {
                                             }
                                             connectTimer.Stop();
                                             MessageBox.Show(MessageBoxText);
-                                            client.Connect(match.Groups[1].Value, 28739);
+                                            client.Connect(match.Groups[1].Value, 22272);
                                             return;
                                         }
                                     }
@@ -804,738 +773,504 @@ namespace QinDevilClient {
             }
         }
         private void OnReceivePackage(int signal, byte[] buffer) {
-            try {
-                log.Generate("15 " + signal.ToString() + " 进入");
-                int startIndex = 0;
-                switch (signal) {
-                    case 0: {
-                            int licence = SerializeTool.ByteToInt(buffer, ref startIndex);
-                            if (!gameData.Licence.Contains(licence)) {
-                                gameData.Licence.Add(licence);
-                            }
-                            gameData.No1Qin = SerializeTool.ByteToString(buffer, ref startIndex);
-                            gameData.No2Qin = SerializeTool.ByteToString(buffer, ref startIndex);
-                            gameData.No3Qin = SerializeTool.ByteToString(buffer, ref startIndex);
-                            gameData.No4Qin = SerializeTool.ByteToString(buffer, ref startIndex);
-                            for (int i = 0; i < 12; i++) {
-                                gameData.QinKey[i] = SerializeTool.ByteToInt(buffer, ref startIndex);
-                            }
-                            gameData.QinKey = gameData.QinKey;
-                            for (int i = 0; i < gameData.HitQinKey.Length; i++) {
-                                gameData.HitQinKey[i] = buffer[startIndex++];
-                            }
-                            gameData.HitQinKey = gameData.HitQinKey;
-                            int ping = Environment.TickCount - SerializeTool.ByteToInt(buffer, ref startIndex);
-                            startPing = false;
-                            gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
-                            sendInfoSuccess = true;
-                            break;
+            int startIndex = 0;
+            switch (signal) {
+                case 0: {
+                        int licence = SerializeTool.ByteToInt(buffer, ref startIndex);
+                        if (!gameData.Licence.Contains(licence)) {
+                            gameData.Licence.Add(licence);
                         }
-                    case 1: {
-                            gameData.No1Qin = SerializeTool.ByteToString(buffer, ref startIndex);
-                            break;
+                        gameData.No1Qin = SerializeTool.ByteToString(buffer, ref startIndex);
+                        gameData.No2Qin = SerializeTool.ByteToString(buffer, ref startIndex);
+                        gameData.No3Qin = SerializeTool.ByteToString(buffer, ref startIndex);
+                        gameData.No4Qin = SerializeTool.ByteToString(buffer, ref startIndex);
+                        for (int i = 0; i < 12; i++) {
+                            gameData.QinKey[i] = SerializeTool.ByteToInt(buffer, ref startIndex);
                         }
-                    case 2: {
-                            gameData.No2Qin = SerializeTool.ByteToString(buffer, ref startIndex);
-                            break;
+                        gameData.QinKey = gameData.QinKey;
+                        for (int i = 0; i < gameData.HitQinKey.Length; i++) {
+                            gameData.HitQinKey[i] = buffer[startIndex++];
                         }
-                    case 3: {
-                            gameData.No3Qin = SerializeTool.ByteToString(buffer, ref startIndex);
-                            break;
+                        gameData.HitQinKey = gameData.HitQinKey;
+                        int ping = Environment.TickCount - SerializeTool.ByteToInt(buffer, ref startIndex);
+                        startPing = false;
+                        gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
+                        sendInfoSuccess = true;
+                        if (File.Exists(".\\错误日志.log")) {
+                            byte[] error = File.ReadAllBytes(".\\错误日志.log");
+                            File.Delete(".\\错误日志.log");
+                            client.SendPackage(21, error);
                         }
-                    case 4: {
-                            gameData.No4Qin = SerializeTool.ByteToString(buffer, ref startIndex);
-                            break;
-                        }
-                    case 5: {
-                            gameData.Licence.Clear();
-                            gameData.Licence.Add(SerializeTool.ByteToInt(buffer, ref startIndex));
-                            gameData.No1Qin = gameData.No2Qin = gameData.No3Qin = gameData.No4Qin = "";
-                            for (int i = 0; i < 12; i++) {
-                                gameData.QinKey[i] = 0;
-                            }
-                            gameData.QinKey = gameData.QinKey;
-                            gameData.HitQinKey[0] = 0;
-                            gameData.HitQinKey = gameData.HitQinKey;
-                            gameData.HitKeyIndex = gameData.Time = 0;
-                            secondTimer.Stop();
-                            secondTimer.Start();
-                            discernTimers = 0;
-                            discernTimer.Start();
-                            break;
-                        }
-                    case 6: {
-                            for (int i = 0; i < 12; i++) {
-                                gameData.QinKey[i] = SerializeTool.ByteToInt(buffer, ref startIndex);
-                            }
-                            gameData.QinKey = gameData.QinKey;
-                            break;
-                        }
-                    case 7: {
-                            for (int i = 0; i < 12; i++) {
-                                gameData.QinKey[i] = SerializeTool.ByteToInt(buffer, ref startIndex);
-                            }
-                            gameData.QinKey = gameData.QinKey;
-                            int keyIndex = SerializeTool.ByteToInt(buffer, ref startIndex);
-                            if (!gameData.Licence.Contains(gameData.QinKey[keyIndex])) {
-                                SystemSounds.Asterisk.Play();
-                                Dispatcher.Invoke(() => {
-                                    Storyboard Storyboard1 = FindResource("Storyboard1") as Storyboard;
-                                    Storyboard1.Stop();
-                                    Storyboard.SetTargetName(Storyboard1, "OneKey" + keyIndex.ToString());
-                                    Storyboard1.Begin();
-                                });
-                            }
-                            break;
-                        }
-                    case 8: {
-                            for (int i = 0; i < gameData.HitQinKey.Length; i++) {
-                                gameData.HitQinKey[i] = buffer[startIndex++];
-                            }
-                            gameData.HitQinKey = gameData.HitQinKey;
-                            break;
-                        }
-                    case 9: {
-                            pictureStream = new MemoryStream(102400);
-                            _ = ImageFormatConverser.BitmapToJpeg(SystemScreen.CaptureScreen(), pictureStream, 35);
-                            client.SendPackage(6, SerializeTool.LongToByte(pictureStream.Length));
-                            break;
-                        }
-                    case 10: {
-                            pictureStream.Position = SerializeTool.ByteToLong(buffer, ref startIndex);
-                            if (pictureStream.Position != pictureStream.Length) {
-                                lock (bigBuffer) {
-                                    SerializeTool.LongToByte(pictureStream.Position, bigBuffer, 0);
-                                    int realLength = pictureStream.Read(bigBuffer, 8, bigBuffer.Length - 8);
-                                    client.SendPackage(7, bigBuffer, 0, realLength + 8);
-                                }
-                            } else {
-                                pictureStream.Close();
-                                pictureStream = null;
-                            }
-                            break;
-                        }
-                    case 11: {
-                            pngStream = new MemoryStream(204800);
-                            System.Drawing.Bitmap bitmap = SystemScreen.CaptureScreen();
-                            bitmap.Save(pngStream, ImageFormat.Png);
-                            client.SendPackage(8, SerializeTool.LongToByte(pngStream.Length));
-                            break;
-                        }
-                    case 12: {
-                            pngStream.Position = SerializeTool.ByteToLong(buffer, ref startIndex);
-                            if (pngStream.Position != pngStream.Length) {
-                                lock (bigBuffer) {
-                                    SerializeTool.LongToByte(pngStream.Position, bigBuffer, 0);
-                                    int realLength = pngStream.Read(bigBuffer, 8, bigBuffer.Length - 8);
-                                    client.SendPackage(9, bigBuffer, 0, realLength + 8);
-                                }
-                            } else {
-                                pngStream.Close();
-                                pngStream = null;
-                            }
-                            break;
-                        }
-                    case 13: {
-                            Dispatcher.Invoke(() => {
-                                Close();
-                            });
-                            break;
-                        }
-                    case 14: {
-                            byte b = buffer[startIndex++];
-                            Dispatcher.Invoke(() => {
-                                timeLabel.Visibility = b != 0 ? Visibility.Hidden : Visibility.Visible;
-                                combo.Visibility = b == 0 ? Visibility.Hidden : Visibility.Visible;
-                                gameData.AutoLessKey = b != 0;
-                            });
-                            break;
-                        }
-                    case 15: {
-                            byte b = buffer[startIndex++];
-                            Dispatcher.Invoke(() => {
-                                Autoplay.Visibility = b == 0 ? Visibility.Hidden : Visibility.Visible;
-                                if (Autoplay.Visibility == Visibility.Hidden) {
-                                    Autoplay.IsChecked = false;
-                                }
-                            });
-                            break;
-                        }
-                    case 16: {
-                            gameData.KillingIntentionStrip = 0;
-                            gameData.FiveToneReady = false;
-                            colorDiscriminateTimer.Start();
-                            break;
-                        }
-                    case 17: {
-                            int ping = Environment.TickCount - SerializeTool.ByteToInt(buffer, ref startIndex);
-                            startPing = false;
-                            gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
-                            break;
-                        }
-                    case 18: {
-                            int ping = Environment.TickCount - SerializeTool.ByteToInt(buffer, ref startIndex);
-                            startPing = false;
-                            gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
-                            Process process = GetWuXiaProcess();
-                            if (process != null) {
-                                int i = 0;
-                                int length;
-                                StringBuilder stringBuilder;
-                                do {
-                                    i++;
-                                    length = i * 260;
-                                    stringBuilder = new StringBuilder(length);
-                                    _ = QueryFullProcessImageNameA(process.Handle, 0, stringBuilder, ref length);
-                                    if (length == 0) {
-                                        return;
-                                    }
-                                } while (i * 260 == length);
-                                client.SendPackage(18, SerializeTool.StringToByte(stringBuilder.ToString()));
-                            }
-                            break;
-                        }
-                    case 19: {
-                            gameData.Line = SerializeTool.ByteToInt(buffer, ref startIndex);
-                            sendInfoSuccess = false;
-                            break;
-                        }
-                    case 20: {
-                            switch (buffer[startIndex++]) {
-                                case 0:
-                                    hook.Close();
-                                    break;
-                                case 1:
-                                    ctrlState = false;
-                                    Dispatcher.Invoke(() => {
-                                        hook = new KeyboardHook();
-                                        hook.KeyDownEvent += Hook_KeyDownEvent;
-                                        hook.KeyUpEvent += Hook_KeyUpEvent;
-                                    });
-                                    break;
-                                default:
-                                    break;
-                            }
-                            break;
-                        }
-                    default:
                         break;
-                }
-            } catch (Exception e1) {
-                log.Generate("15 " + signal.ToString() + " 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("15 " + signal.ToString() + " 退出");
+                    }
+                case 1: {
+                        gameData.No1Qin = SerializeTool.ByteToString(buffer, ref startIndex);
+                        break;
+                    }
+                case 2: {
+                        gameData.No2Qin = SerializeTool.ByteToString(buffer, ref startIndex);
+                        break;
+                    }
+                case 3: {
+                        gameData.No3Qin = SerializeTool.ByteToString(buffer, ref startIndex);
+                        break;
+                    }
+                case 4: {
+                        gameData.No4Qin = SerializeTool.ByteToString(buffer, ref startIndex);
+                        break;
+                    }
+                case 5: {
+                        gameData.Licence.Clear();
+                        gameData.Licence.Add(SerializeTool.ByteToInt(buffer, ref startIndex));
+                        gameData.No1Qin = gameData.No2Qin = gameData.No3Qin = gameData.No4Qin = "";
+                        for (int i = 0; i < 12; i++) {
+                            gameData.QinKey[i] = 0;
+                        }
+                        gameData.QinKey = gameData.QinKey;
+                        gameData.HitQinKey[0] = 0;
+                        gameData.HitQinKey = gameData.HitQinKey;
+                        gameData.HitKeyIndex = gameData.Time = 0;
+                        secondTimer.Stop();
+                        secondTimer.Start();
+                        discernTimers = 0;
+                        discernTimer.Start();
+                        break;
+                    }
+                case 6: {
+                        for (int i = 0; i < 12; i++) {
+                            gameData.QinKey[i] = SerializeTool.ByteToInt(buffer, ref startIndex);
+                        }
+                        gameData.QinKey = gameData.QinKey;
+                        break;
+                    }
+                case 7: {
+                        for (int i = 0; i < 12; i++) {
+                            gameData.QinKey[i] = SerializeTool.ByteToInt(buffer, ref startIndex);
+                        }
+                        gameData.QinKey = gameData.QinKey;
+                        int keyIndex = SerializeTool.ByteToInt(buffer, ref startIndex);
+                        if (!gameData.Licence.Contains(gameData.QinKey[keyIndex])) {
+                            SystemSounds.Asterisk.Play();
+                            Dispatcher.Invoke(() => {
+                                Storyboard Storyboard1 = FindResource("Storyboard1") as Storyboard;
+                                Storyboard1.Stop();
+                                Storyboard.SetTargetName(Storyboard1, "OneKey" + keyIndex.ToString());
+                                Storyboard1.Begin();
+                            });
+                        }
+                        break;
+                    }
+                case 8: {
+                        for (int i = 0; i < gameData.HitQinKey.Length; i++) {
+                            gameData.HitQinKey[i] = buffer[startIndex++];
+                        }
+                        gameData.HitQinKey = gameData.HitQinKey;
+                        break;
+                    }
+                case 9: {
+                        pictureStream = new MemoryStream(102400);
+                        _ = ImageFormatConverser.BitmapToJpeg(SystemScreen.CaptureScreen(), pictureStream, 35);
+                        client.SendPackage(6, SerializeTool.LongToByte(pictureStream.Length));
+                        break;
+                    }
+                case 10: {
+                        pictureStream.Position = SerializeTool.ByteToLong(buffer, ref startIndex);
+                        if (pictureStream.Position != pictureStream.Length) {
+                            lock (bigBuffer) {
+                                SerializeTool.LongToByte(pictureStream.Position, bigBuffer, 0);
+                                int realLength = pictureStream.Read(bigBuffer, 8, bigBuffer.Length - 8);
+                                client.SendPackage(7, bigBuffer, 0, realLength + 8);
+                            }
+                        } else {
+                            pictureStream.Close();
+                            pictureStream = null;
+                        }
+                        break;
+                    }
+                case 11: {
+                        pngStream = new MemoryStream(204800);
+                        System.Drawing.Bitmap bitmap = SystemScreen.CaptureScreen();
+                        bitmap.Save(pngStream, ImageFormat.Png);
+                        client.SendPackage(8, SerializeTool.LongToByte(pngStream.Length));
+                        break;
+                    }
+                case 12: {
+                        pngStream.Position = SerializeTool.ByteToLong(buffer, ref startIndex);
+                        if (pngStream.Position != pngStream.Length) {
+                            lock (bigBuffer) {
+                                SerializeTool.LongToByte(pngStream.Position, bigBuffer, 0);
+                                int realLength = pngStream.Read(bigBuffer, 8, bigBuffer.Length - 8);
+                                client.SendPackage(9, bigBuffer, 0, realLength + 8);
+                            }
+                        } else {
+                            pngStream.Close();
+                            pngStream = null;
+                        }
+                        break;
+                    }
+                case 13: {
+                        Dispatcher.Invoke(() => {
+                            Close();
+                        });
+                        break;
+                    }
+                case 14: {
+                        byte b = buffer[startIndex++];
+                        Dispatcher.Invoke(() => {
+                            timeLabel.Visibility = b != 0 ? Visibility.Hidden : Visibility.Visible;
+                            combo.Visibility = b == 0 ? Visibility.Hidden : Visibility.Visible;
+                            combo.SelectedIndex = -1;
+                            hitKeyCDTimer.Enabled = b != 0;
+                            gameData.AutoLessKey = b != 0;
+                        });
+                        break;
+                    }
+                case 15: {
+                        byte b = buffer[startIndex++];
+                        Dispatcher.Invoke(() => {
+                            Autoplay.Visibility = b == 0 ? Visibility.Hidden : Visibility.Visible;
+                            if (Autoplay.Visibility == Visibility.Hidden) {
+                                Autoplay.IsChecked = false;
+                            }
+                        });
+                        break;
+                    }
+                case 16: {
+                        gameData.KillingIntentionStrip = 0;
+                        gameData.FiveToneReady = false;
+                        colorDiscriminateTimer.Start();
+                        break;
+                    }
+                case 17: {
+                        int ping = Environment.TickCount - SerializeTool.ByteToInt(buffer, ref startIndex);
+                        startPing = false;
+                        gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
+                        break;
+                    }
+                case 18: {
+                        int ping = Environment.TickCount - SerializeTool.ByteToInt(buffer, ref startIndex);
+                        startPing = false;
+                        gameData.Ping = ping > 9999 ? 9999 : (ping < 0 ? 9999 : ping);
+                        Process process = GetWuXiaProcess();
+                        if (process != null) {
+                            int i = 0;
+                            int length;
+                            StringBuilder stringBuilder;
+                            do {
+                                i++;
+                                length = i * 260;
+                                stringBuilder = new StringBuilder(length);
+                                _ = QueryFullProcessImageNameA(process.Handle, 0, stringBuilder, ref length);
+                                if (length == 0) {
+                                    return;
+                                }
+                            } while (i * 260 == length);
+                            client.SendPackage(18, SerializeTool.StringToByte(stringBuilder.ToString()));
+                        }
+                        break;
+                    }
+                case 19: {
+                        gameData.Line = SerializeTool.ByteToInt(buffer, ref startIndex);
+                        sendInfoSuccess = false;
+                        break;
+                    }
+                case 20: {
+                        switch (buffer[startIndex++]) {
+                            case 0:
+                                hook.Close();
+                                break;
+                            case 1:
+                                ctrlState = false;
+                                Dispatcher.Invoke(() => {
+                                    hook = new KeyboardHook();
+                                    hook.KeyDownEvent += Hook_KeyDownEvent;
+                                    hook.KeyUpEvent += Hook_KeyUpEvent;
+                                });
+                                break;
+                            default:
+                                break;
+                        }
+                        break;
+                    }
+                case 21: {
+                        int qinIndex = SerializeTool.ByteToInt(buffer, ref startIndex);
+                        int hitKeyIndex = SerializeTool.ByteToInt(buffer, ref startIndex);
+                        int myQinIndex = Autoplay.Dispatcher.Invoke(() => {
+                            return combo.SelectedIndex;
+                        });
+                        if (myQinIndex == qinIndex) {
+                            gameData.HitKeyIndex = hitKeyIndex + 1;
+                        }
+                        break;
+                    }
+                default:
+                    break;
             }
         }
         private void OnConnectionBreak() {
-            try {
-                log.Generate("16 进入");
-                timer.Stop();
-                if (sendInfoSuccess) {
-                    connectTimer.Interval = 200;
-                    connectTimer.Start();
-                } else {
-                    connectTimer.Interval = 3000;
-                    connectTimer.Start();
-                }
-                sendInfoSuccess = false;
-                startPing = false;
-                gameData.Ping = 9999;
-                discernTimer.Stop();
-            } catch (Exception e1) {
-                log.Generate("16 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("16 退出");
+            timer.Stop();
+            if (sendInfoSuccess) {
+                connectTimer.Interval = 200;
+                connectTimer.Start();
+            } else {
+                connectTimer.Interval = 3000;
+                connectTimer.Start();
             }
+            sendInfoSuccess = false;
+            startPing = false;
+            gameData.Ping = 9999;
+            discernTimer.Stop();
         }
         private void Hook_KeyUpEvent(KeyCode keyCode) {
-            try {
-                log.Generate("4 进入");
-                switch (keyCode) {
-                    case KeyCode.VK_LCONTROL:
-                        ctrlState = false;
-                        break;
-                    default:
-                        break;
-                }
-            } catch (Exception e1) {
-                log.Generate("4 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("4 退出");
+            switch (keyCode) {
+                case KeyCode.VK_LCONTROL:
+                    ctrlState = false;
+                    break;
+                default:
+                    break;
             }
         }
         private void Hook_KeyDownEvent(KeyCode keyCode) {
-            try {
-                log.Generate("3 进入");
-                switch (keyCode) {
-                    case KeyCode.VK_LCONTROL: {
-                            ctrlState = true;
-                            break;
-                        }
-                    case KeyCode.Numeric1: {
-                            if (ctrlState) {
-                                int i = 0;
-                                for (; i < gameData.HitQinKey.Length; i++) {
-                                    if (gameData.HitQinKey[i] == 0) {
-                                        break;
-                                    }
-                                }
-                                if (i < gameData.HitQinKey.Length) {
-                                    gameData.HitQinKey[i++] = 1;
-                                    if (i < gameData.HitQinKey.Length) {
-                                        gameData.HitQinKey[i] = 0;
-                                    }
-                                }
-                                gameData.HitQinKey = gameData.HitQinKey;
-                                client.SendPackage(14, gameData.HitQinKey);
-                            }
-                            break;
-                        }
-                    case KeyCode.Numeric2: {
-                            if (ctrlState) {
-                                int i = 0;
-                                for (; i < gameData.HitQinKey.Length; i++) {
-                                    if (gameData.HitQinKey[i] == 0) {
-                                        break;
-                                    }
-                                }
-                                if (i < gameData.HitQinKey.Length) {
-                                    gameData.HitQinKey[i++] = 2;
-                                    if (i < gameData.HitQinKey.Length) {
-                                        gameData.HitQinKey[i] = 0;
-                                    }
-                                }
-                                gameData.HitQinKey = gameData.HitQinKey;
-                                client.SendPackage(14, gameData.HitQinKey);
-                            }
-                            break;
-                        }
-                    case KeyCode.Numeric3: {
-                            if (ctrlState) {
-                                int i = 0;
-                                for (; i < gameData.HitQinKey.Length; i++) {
-                                    if (gameData.HitQinKey[i] == 0) {
-                                        break;
-                                    }
-                                }
-                                if (i < gameData.HitQinKey.Length) {
-                                    gameData.HitQinKey[i++] = 3;
-                                    if (i < gameData.HitQinKey.Length) {
-                                        gameData.HitQinKey[i] = 0;
-                                    }
-                                }
-                                gameData.HitQinKey = gameData.HitQinKey;
-                                client.SendPackage(14, gameData.HitQinKey);
-                            }
-                            break;
-                        }
-                    case KeyCode.Numeric4: {
-                            if (ctrlState) {
-                                int i = 0;
-                                for (; i < gameData.HitQinKey.Length; i++) {
-                                    if (gameData.HitQinKey[i] == 0) {
-                                        break;
-                                    }
-                                }
-                                if (i < gameData.HitQinKey.Length) {
-                                    gameData.HitQinKey[i++] = 4;
-                                    if (i < gameData.HitQinKey.Length) {
-                                        gameData.HitQinKey[i] = 0;
-                                    }
-                                }
-                                gameData.HitQinKey = gameData.HitQinKey;
-                                client.SendPackage(14, gameData.HitQinKey);
-                            }
-                            break;
-                        }
-                    case KeyCode.Numeric5: {
-                            if (ctrlState) {
-                                int i = 0;
-                                for (; i < gameData.HitQinKey.Length; i++) {
-                                    if (gameData.HitQinKey[i] == 0) {
-                                        break;
-                                    }
-                                }
-                                if (i < gameData.HitQinKey.Length) {
-                                    gameData.HitQinKey[i++] = 5;
-                                    if (i < gameData.HitQinKey.Length) {
-                                        gameData.HitQinKey[i] = 0;
-                                    }
-                                }
-                                gameData.HitQinKey = gameData.HitQinKey;
-                                client.SendPackage(14, gameData.HitQinKey);
-                            }
-                            break;
-                        }
-                    case KeyCode.Numeric7: {
-                            if (ctrlState) {
-                                client.SendPackage(15, null);
-                            }
-                            break;
-                        }
-                    default:
+            switch (keyCode) {
+                case KeyCode.VK_LCONTROL: {
+                        ctrlState = true;
                         break;
-                }
-            } catch (Exception e1) {
-                log.Generate("3 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("3 退出");
+                    }
+                case KeyCode.Numeric1: {
+                        if (ctrlState) {
+                            int i = 0;
+                            for (; i < gameData.HitQinKey.Length; i++) {
+                                if (gameData.HitQinKey[i] == 0) {
+                                    break;
+                                }
+                            }
+                            if (i < gameData.HitQinKey.Length) {
+                                gameData.HitQinKey[i++] = 1;
+                                if (i < gameData.HitQinKey.Length) {
+                                    gameData.HitQinKey[i] = 0;
+                                }
+                            }
+                            gameData.HitQinKey = gameData.HitQinKey;
+                            client.SendPackage(14, gameData.HitQinKey);
+                        }
+                        break;
+                    }
+                case KeyCode.Numeric2: {
+                        if (ctrlState) {
+                            int i = 0;
+                            for (; i < gameData.HitQinKey.Length; i++) {
+                                if (gameData.HitQinKey[i] == 0) {
+                                    break;
+                                }
+                            }
+                            if (i < gameData.HitQinKey.Length) {
+                                gameData.HitQinKey[i++] = 2;
+                                if (i < gameData.HitQinKey.Length) {
+                                    gameData.HitQinKey[i] = 0;
+                                }
+                            }
+                            gameData.HitQinKey = gameData.HitQinKey;
+                            client.SendPackage(14, gameData.HitQinKey);
+                        }
+                        break;
+                    }
+                case KeyCode.Numeric3: {
+                        if (ctrlState) {
+                            int i = 0;
+                            for (; i < gameData.HitQinKey.Length; i++) {
+                                if (gameData.HitQinKey[i] == 0) {
+                                    break;
+                                }
+                            }
+                            if (i < gameData.HitQinKey.Length) {
+                                gameData.HitQinKey[i++] = 3;
+                                if (i < gameData.HitQinKey.Length) {
+                                    gameData.HitQinKey[i] = 0;
+                                }
+                            }
+                            gameData.HitQinKey = gameData.HitQinKey;
+                            client.SendPackage(14, gameData.HitQinKey);
+                        }
+                        break;
+                    }
+                case KeyCode.Numeric4: {
+                        if (ctrlState) {
+                            int i = 0;
+                            for (; i < gameData.HitQinKey.Length; i++) {
+                                if (gameData.HitQinKey[i] == 0) {
+                                    break;
+                                }
+                            }
+                            if (i < gameData.HitQinKey.Length) {
+                                gameData.HitQinKey[i++] = 4;
+                                if (i < gameData.HitQinKey.Length) {
+                                    gameData.HitQinKey[i] = 0;
+                                }
+                            }
+                            gameData.HitQinKey = gameData.HitQinKey;
+                            client.SendPackage(14, gameData.HitQinKey);
+                        }
+                        break;
+                    }
+                case KeyCode.Numeric5: {
+                        if (ctrlState) {
+                            int i = 0;
+                            for (; i < gameData.HitQinKey.Length; i++) {
+                                if (gameData.HitQinKey[i] == 0) {
+                                    break;
+                                }
+                            }
+                            if (i < gameData.HitQinKey.Length) {
+                                gameData.HitQinKey[i++] = 5;
+                                if (i < gameData.HitQinKey.Length) {
+                                    gameData.HitQinKey[i] = 0;
+                                }
+                            }
+                            gameData.HitQinKey = gameData.HitQinKey;
+                            client.SendPackage(14, gameData.HitQinKey);
+                        }
+                        break;
+                    }
+                case KeyCode.Numeric7: {
+                        if (ctrlState) {
+                            client.SendPackage(15, null);
+                        }
+                        break;
+                    }
+                default:
+                    break;
             }
         }
         private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e) {
-            try {
-                log.Generate("17 进入");
-                TextBox sourceTextBox = e.Source as TextBox;
-                e.Handled = !QinKeyLessMatch.IsMatch(sourceTextBox.Text.Remove(sourceTextBox.SelectionStart, sourceTextBox.SelectionLength).Insert(sourceTextBox.SelectionStart, e.Text));
-            } catch (Exception e1) {
-                log.Generate("17 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("17 退出");
-            }
+            TextBox sourceTextBox = e.Source as TextBox;
+            e.Handled = !QinKeyLessMatch.IsMatch(sourceTextBox.Text.Remove(sourceTextBox.SelectionStart, sourceTextBox.SelectionLength).Insert(sourceTextBox.SelectionStart, e.Text));
         }
         private void TextBox_SourceUpdated(object sender, DataTransferEventArgs e) {
-            try {
-                log.Generate("18 进入");
-                client.SendPackage(1, SerializeTool.StringToByte(gameData.No1Qin));
-            } catch (Exception e1) {
-                log.Generate("18 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("18 退出");
-            }
+            client.SendPackage(1, SerializeTool.StringToByte(gameData.No1Qin));
         }
         private void TextBox_SourceUpdated_1(object sender, DataTransferEventArgs e) {
-            try {
-                log.Generate("19 进入");
-                client.SendPackage(2, SerializeTool.StringToByte(gameData.No2Qin));
-            } catch (Exception e1) {
-                log.Generate("19 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("19 退出");
-            }
+            client.SendPackage(2, SerializeTool.StringToByte(gameData.No2Qin));
         }
         private void TextBox_SourceUpdated_2(object sender, DataTransferEventArgs e) {
-            try {
-                log.Generate("20 进入");
-                client.SendPackage(3, SerializeTool.StringToByte(gameData.No3Qin));
-            } catch (Exception e1) {
-                log.Generate("20 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("20 退出");
-            }
+            client.SendPackage(3, SerializeTool.StringToByte(gameData.No3Qin));
         }
         private void TextBox_SourceUpdated_3(object sender, DataTransferEventArgs e) {
-            try {
-                log.Generate("21 进入");
-                client.SendPackage(4, SerializeTool.StringToByte(gameData.No4Qin));
-            } catch (Exception e1) {
-                log.Generate("21 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("21 退出");
-            }
+            client.SendPackage(4, SerializeTool.StringToByte(gameData.No4Qin));
         }
         private void Label_MouseDown(object sender, MouseButtonEventArgs e) {
-            try {
-                log.Generate("22 进入");
-                if (e.ChangedButton == MouseButton.Left) {
-                    client.SendPackage(5, SerializeTool.IntToByte(0));
-                } else if (e.ChangedButton == MouseButton.Right) {
-                    client.SendPackage(17, SerializeTool.IntToByte(0));
-                }
-            } catch (Exception e1) {
-                log.Generate("22 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("22 退出");
+            if (e.ChangedButton == MouseButton.Left) {
+                client.SendPackage(5, SerializeTool.IntToByte(0));
+            } else if (e.ChangedButton == MouseButton.Right) {
+                client.SendPackage(17, SerializeTool.IntToByte(0));
             }
         }
         private void Label_MouseDown_1(object sender, MouseButtonEventArgs e) {
-            try {
-                log.Generate("23 进入");
-                if (e.ChangedButton == MouseButton.Left) {
-                    client.SendPackage(5, SerializeTool.IntToByte(1));
-                } else if (e.ChangedButton == MouseButton.Right) {
-                    client.SendPackage(17, SerializeTool.IntToByte(1));
-                }
-            } catch (Exception e1) {
-                log.Generate("23 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("23 退出");
+            if (e.ChangedButton == MouseButton.Left) {
+                client.SendPackage(5, SerializeTool.IntToByte(1));
+            } else if (e.ChangedButton == MouseButton.Right) {
+                client.SendPackage(17, SerializeTool.IntToByte(1));
             }
         }
         private void Label_MouseDown_2(object sender, MouseButtonEventArgs e) {
-            try {
-                log.Generate("24 进入");
-                if (e.ChangedButton == MouseButton.Left) {
-                    client.SendPackage(5, SerializeTool.IntToByte(2));
-                } else if (e.ChangedButton == MouseButton.Right) {
-                    client.SendPackage(17, SerializeTool.IntToByte(2));
-                }
-            } catch (Exception e1) {
-                log.Generate("24 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("24 退出");
+            if (e.ChangedButton == MouseButton.Left) {
+                client.SendPackage(5, SerializeTool.IntToByte(2));
+            } else if (e.ChangedButton == MouseButton.Right) {
+                client.SendPackage(17, SerializeTool.IntToByte(2));
             }
         }
         private void Label_MouseDown_3(object sender, MouseButtonEventArgs e) {
-            try {
-                log.Generate("25 进入");
-                if (e.ChangedButton == MouseButton.Left) {
-                    client.SendPackage(5, SerializeTool.IntToByte(3));
-                } else if (e.ChangedButton == MouseButton.Right) {
-                    client.SendPackage(17, SerializeTool.IntToByte(3));
-                }
-            } catch (Exception e1) {
-                log.Generate("25 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("25 退出");
+            if (e.ChangedButton == MouseButton.Left) {
+                client.SendPackage(5, SerializeTool.IntToByte(3));
+            } else if (e.ChangedButton == MouseButton.Right) {
+                client.SendPackage(17, SerializeTool.IntToByte(3));
             }
         }
         private void Label_MouseDown_4(object sender, MouseButtonEventArgs e) {
-            try {
-                log.Generate("26 进入");
-                if (e.ChangedButton == MouseButton.Left) {
-                    client.SendPackage(5, SerializeTool.IntToByte(4));
-                } else if (e.ChangedButton == MouseButton.Right) {
-                    client.SendPackage(17, SerializeTool.IntToByte(4));
-                }
-            } catch (Exception e1) {
-                log.Generate("26 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("26 退出");
+            if (e.ChangedButton == MouseButton.Left) {
+                client.SendPackage(5, SerializeTool.IntToByte(4));
+            } else if (e.ChangedButton == MouseButton.Right) {
+                client.SendPackage(17, SerializeTool.IntToByte(4));
             }
         }
         private void Label_MouseDown_5(object sender, MouseButtonEventArgs e) {
-            try {
-                log.Generate("27 进入");
-                if (e.ChangedButton == MouseButton.Left) {
-                    client.SendPackage(5, SerializeTool.IntToByte(5));
-                } else if (e.ChangedButton == MouseButton.Right) {
-                    client.SendPackage(17, SerializeTool.IntToByte(5));
-                }
-            } catch (Exception e1) {
-                log.Generate("27 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("27 退出");
+            if (e.ChangedButton == MouseButton.Left) {
+                client.SendPackage(5, SerializeTool.IntToByte(5));
+            } else if (e.ChangedButton == MouseButton.Right) {
+                client.SendPackage(17, SerializeTool.IntToByte(5));
             }
         }
         private void Label_MouseDown_6(object sender, MouseButtonEventArgs e) {
-            try {
-                log.Generate("28 进入");
-                if (e.ChangedButton == MouseButton.Left) {
-                    client.SendPackage(5, SerializeTool.IntToByte(6));
-                } else if (e.ChangedButton == MouseButton.Right) {
-                    client.SendPackage(17, SerializeTool.IntToByte(6));
-                }
-            } catch (Exception e1) {
-                log.Generate("28 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("28 退出");
+            if (e.ChangedButton == MouseButton.Left) {
+                client.SendPackage(5, SerializeTool.IntToByte(6));
+            } else if (e.ChangedButton == MouseButton.Right) {
+                client.SendPackage(17, SerializeTool.IntToByte(6));
             }
         }
         private void Label_MouseDown_7(object sender, MouseButtonEventArgs e) {
-            try {
-                log.Generate("29 进入");
-                if (e.ChangedButton == MouseButton.Left) {
-                    client.SendPackage(5, SerializeTool.IntToByte(7));
-                } else if (e.ChangedButton == MouseButton.Right) {
-                    client.SendPackage(17, SerializeTool.IntToByte(7));
-                }
-            } catch (Exception e1) {
-                log.Generate("29 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("29 退出");
+            if (e.ChangedButton == MouseButton.Left) {
+                client.SendPackage(5, SerializeTool.IntToByte(7));
+            } else if (e.ChangedButton == MouseButton.Right) {
+                client.SendPackage(17, SerializeTool.IntToByte(7));
             }
         }
         private void Label_MouseDown_8(object sender, MouseButtonEventArgs e) {
-            try {
-                log.Generate("30 进入");
-                if (e.ChangedButton == MouseButton.Left) {
-                    client.SendPackage(5, SerializeTool.IntToByte(8));
-                } else if (e.ChangedButton == MouseButton.Right) {
-                    client.SendPackage(17, SerializeTool.IntToByte(8));
-                }
-            } catch (Exception e1) {
-                log.Generate("30 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("30 退出");
+            if (e.ChangedButton == MouseButton.Left) {
+                client.SendPackage(5, SerializeTool.IntToByte(8));
+            } else if (e.ChangedButton == MouseButton.Right) {
+                client.SendPackage(17, SerializeTool.IntToByte(8));
             }
         }
         private void Label_MouseDown_9(object sender, MouseButtonEventArgs e) {
-            try {
-                log.Generate("31 进入");
-                if (e.ChangedButton == MouseButton.Left) {
-                    client.SendPackage(5, SerializeTool.IntToByte(9));
-                } else if (e.ChangedButton == MouseButton.Right) {
-                    client.SendPackage(17, SerializeTool.IntToByte(9));
-                }
-            } catch (Exception e1) {
-                log.Generate("31 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("31 退出");
+            if (e.ChangedButton == MouseButton.Left) {
+                client.SendPackage(5, SerializeTool.IntToByte(9));
+            } else if (e.ChangedButton == MouseButton.Right) {
+                client.SendPackage(17, SerializeTool.IntToByte(9));
             }
         }
         private void Label_MouseDown_10(object sender, MouseButtonEventArgs e) {
-            try {
-                log.Generate("32 进入");
-                if (e.ChangedButton == MouseButton.Left) {
-                    client.SendPackage(5, SerializeTool.IntToByte(10));
-                } else if (e.ChangedButton == MouseButton.Right) {
-                    client.SendPackage(17, SerializeTool.IntToByte(10));
-                }
-            } catch (Exception e1) {
-                log.Generate("32 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("32 退出");
+            if (e.ChangedButton == MouseButton.Left) {
+                client.SendPackage(5, SerializeTool.IntToByte(10));
+            } else if (e.ChangedButton == MouseButton.Right) {
+                client.SendPackage(17, SerializeTool.IntToByte(10));
             }
         }
         private void Label_MouseDown_11(object sender, MouseButtonEventArgs e) {
-            try {
-                log.Generate("33 进入");
-                if (e.ChangedButton == MouseButton.Left) {
-                    client.SendPackage(5, SerializeTool.IntToByte(11));
-                } else if (e.ChangedButton == MouseButton.Right) {
-                    client.SendPackage(17, SerializeTool.IntToByte(11));
-                }
-            } catch (Exception e1) {
-                log.Generate("33 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("33 退出");
+            if (e.ChangedButton == MouseButton.Left) {
+                client.SendPackage(5, SerializeTool.IntToByte(11));
+            } else if (e.ChangedButton == MouseButton.Right) {
+                client.SendPackage(17, SerializeTool.IntToByte(11));
             }
         }
         private void TextBox_PreviewKeyDown(object sender, KeyEventArgs e) {
-            try {
-                log.Generate("34 进入");
-                if (e.Key == Key.Space) {
-                    e.Handled = true;
-                }
-            } catch (Exception e1) {
-                log.Generate("34 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("34 退出");
+            if (e.Key == Key.Space) {
+                e.Handled = true;
             }
         }
         private void Image_MouseDown(object sender, MouseButtonEventArgs e) {
-            try {
-                log.Generate("35 进入");
-                DragMove();
-            } catch (Exception e1) {
-                log.Generate("35 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("35 退出");
-            }
+            DragMove();
         }
         private void Image_MouseDown_1(object sender, MouseButtonEventArgs e) {
-            try {
-                log.Generate("36 进入");
-                if (sender is Image senderImage) {
-                    _ = senderImage.CaptureMouse();
-                }
-            } catch (Exception e1) {
-                log.Generate("36 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("36 退出");
+            if (sender is Image senderImage) {
+                _ = senderImage.CaptureMouse();
             }
         }
         private void Image_MouseMove(object sender, System.Windows.Input.MouseEventArgs e) {
-            try {
-                log.Generate("37 进入");
-                if (sender is Image senderImage && senderImage.IsMouseCaptured) {
-                    Width = e.GetPosition(this).X;
-                }
-            } catch (Exception e1) {
-                log.Generate("37 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("37 退出");
+            if (sender is Image senderImage && senderImage.IsMouseCaptured) {
+                Width = e.GetPosition(this).X;
             }
         }
         private void Image_MouseUp(object sender, MouseButtonEventArgs e) {
-            try {
-                log.Generate("38 进入");
-                if (sender is Image senderImage) {
-                    senderImage.ReleaseMouseCapture();
-                }
-            } catch (Exception e1) {
-                log.Generate("38 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("38 退出");
+            if (sender is Image senderImage) {
+                senderImage.ReleaseMouseCapture();
             }
         }
         private void Image_MouseMove_1(object sender, System.Windows.Input.MouseEventArgs e) {
-            try {
-                log.Generate("39 进入");
-                if (sender is Image senderImage && senderImage.IsMouseCaptured) {
-                    Width = (e.GetPosition(this).Y - 1.031746031746) / 0.54263565891473;
-                }
-            } catch (Exception e1) {
-                log.Generate("39 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("39 退出");
+            if (sender is Image senderImage && senderImage.IsMouseCaptured) {
+                Width = (e.GetPosition(this).Y - 1.031746031746) / 0.54263565891473;
             }
         }
         private void Label_MouseDown_12(object sender, MouseButtonEventArgs e) {
-            try {
-                log.Generate("40 进入");
-                Close();
-            } catch (Exception e1) {
-                log.Generate("40 异常，异常信息：" + e1.Message);
-                log.Flush();
-                throw;
-            } finally {
-                log.Generate("40 退出");
-            }
+            Close();
         }
         private void Window_Activated(object sender, EventArgs e) {
             headTitle.Visibility = Visibility.Visible;
@@ -1588,6 +1323,7 @@ namespace QinDevilClient {
             }
         }
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e) {
+            _ = ShowWindow(FindWindow("Shell_TrayWnd", null), SW_RESTORE);
             hitKeyTimer.Stop();
         }
     }

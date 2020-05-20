@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="琴魔副本工具服务器" Height="450" Width="800" Closing="Window_Closing">
     <Grid x:Name="GamePanel" d:DataContext="{d:DesignInstance local:GameData}">
-        <ListView x:Name="clientListView" Height="348" Margin="10,10,0,0" Width="772" ItemsSource="{Binding ClientInfo}" HorizontalAlignment="Left" VerticalAlignment="Top">
+        <ListView x:Name="clientListView" Height="348" Margin="10,10,0,0" Width="772" ItemsSource="{Binding ClientInfo}" HorizontalAlignment="Left" VerticalAlignment="Top" ContextMenuOpening="ClientListView_ContextMenuOpening">
             <ListView.ItemContainerStyle>
                 <Style TargetType="{x:Type ListViewItem}">
                     <EventSetter Event="MouseRightButtonUp" Handler="ListViewItem_MouseRightButtonUp"/>
@@ -16,10 +16,10 @@
             </ListView.ItemContainerStyle>
             <ListView.ContextMenu>
                 <ContextMenu>
-                    <MenuItem Header="请求所有玩家屏幕截图（JPG）" Click="PrintScreenAll_Click"></MenuItem>
-                    <MenuItem Header="允许自动弹琴" Click="AllowAutoPlay_Click" IsCheckable="True"></MenuItem>
-                    <MenuItem Header="允许自动报缺" Click="AllowAutoLessKey_Click" IsCheckable="True"></MenuItem>
-                    <MenuItem Header="查看日志" Click="LogViewer_Click"></MenuItem>
+                    <MenuItem Header="请求所有玩家屏幕截图（JPG）" Click="PrintScreenAll_Click"/>
+                    <MenuItem Header="允许自动弹琴" Click="AllowAutoPlay_Click" IsCheckable="True" x:Name="AllowAutoPlayMenuItem"/>
+                    <MenuItem Header="允许自动报缺" Click="AllowAutoLessKey_Click" IsCheckable="True" x:Name="AllowAutoLessKeyMenuItem"/>
+                    <MenuItem Header="查看日志" Click="LogViewer_Click"/>
                 </ContextMenu>
             </ListView.ContextMenu>
             <ListView.View>
@@ -48,7 +48,7 @@
                     <GridViewColumn Header="用户线路" Width="60">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBox Text="{Binding Line,Mode=OneWay}" TextChanged="TextBox_TextChanged"></TextBox>
+                                <TextBox Text="{Binding LineName,Mode=OneWay}" TextChanged="TextBox_TextChanged"></TextBox>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>

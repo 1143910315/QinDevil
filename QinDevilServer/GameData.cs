@@ -61,5 +61,15 @@ namespace QinDevilServer {
             get => _line;
             set => Set(ref _line, value);
         }
+        private bool _allowAutoPlay = false;
+        public bool AllowAutoPlay {
+            get => _allowAutoPlay;
+            set => Set(ref _allowAutoPlay, value);
+        }
+        private bool _allowAutoLessKey = false;
+        public bool AllowAutoLessKey {
+            get => _allowAutoLessKey;
+            set => Set(ref _allowAutoLessKey, value);
+        }
     }
 }

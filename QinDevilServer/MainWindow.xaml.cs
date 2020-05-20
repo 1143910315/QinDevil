@@ -18,6 +18,7 @@ using ListViewItem = System.Windows.Controls.ListViewItem;
 using QinDevilCommon.ColorClass;
 using MenuItem = System.Windows.Controls.MenuItem;
 using System.Linq;
+using System.Media;
 
 namespace QinDevilServer {
     /// <summary>
@@ -44,7 +45,7 @@ namespace QinDevilServer {
             contextMenuStrip.Items.Add("请求当前玩家截图（PNG）").Click += PrintScreenHighQuality_Click;
             contextMenuStrip.Items.Add("查看当前玩家截图").Click += PictureViewer_Click;
             contextMenuStrip.Items.Add("清除当前玩家游戏路径").Click += ClearGamePath_Click;
-            contextMenuStrip.Items.Add("扫描当前玩家缺弦").Click += Scanning_Click;
+            //contextMenuStrip.Items.Add("扫描当前玩家缺弦").Click += Scanning_Click;
             contextMenuStrip.Items.Add("判断当前玩家杀意条").Click += KillingIntentionStrip_Click;
             contextMenuStrip.Items.Add("断开当前玩家").Click += CloseClient_Click;
             server = new SocketServer();
@@ -66,11 +67,11 @@ namespace QinDevilServer {
                 server.CloseClient(menuUser.ClientInfo);
             }
         }
-        private void Scanning_Click(object sender, EventArgs e) {
-            if (menuUser != null) {
-                server.SendPackage(menuUser.ClientInfo, 14, null);
-            }
-        }
+        //private void Scanning_Click(object sender, EventArgs e) {
+        //    if (menuUser != null) {
+        //        server.SendPackage(menuUser.ClientInfo, 14, null);
+        //    }
+        //}
         private void ClearGamePath_Click(object sender, EventArgs e) {
             if (menuUser != null) {
                 menuUser.GamePath = "";
@@ -93,8 +94,9 @@ namespace QinDevilServer {
         }
         private void AllowAutoPlay_Click(object sender, RoutedEventArgs e) {
             if (sender is MenuItem menuItem) {
+                gameData[current].AllowAutoPlay = menuItem.IsChecked;
                 byte[] sendData = new byte[1];
-                sendData[0] = menuItem.IsChecked ? (byte)1 : (byte)0;
+                sendData[0] = gameData[current].AllowAutoPlay ? (byte)1 : (byte)0;
                 gameData[current].ClientInfoLock.EnterReadLock();
                 try {
                     foreach (UserInfo userInfo in gameData[current].ClientInfo) {
@@ -107,8 +109,9 @@ namespace QinDevilServer {
         }
         private void AllowAutoLessKey_Click(object sender, RoutedEventArgs e) {
             if (sender is MenuItem menuItem) {
+                gameData[current].AllowAutoLessKey = menuItem.IsChecked;
                 byte[] sendData = new byte[1];
-                sendData[0] = menuItem.IsChecked ? (byte)1 : (byte)0;
+                sendData[0] = gameData[current].AllowAutoLessKey ? (byte)1 : (byte)0;
                 gameData[current].ClientInfoLock.EnterReadLock();
                 try {
                     foreach (UserInfo userInfo in gameData[current].ClientInfo) {
@@ -317,6 +320,7 @@ namespace QinDevilServer {
                 ClientInfo = client
             });
             client.userToken = userInfo;
+            SystemSounds.Asterisk.Play();
             Dispatcher.Invoke(() => {
                 PopLog(0, "客户 " + userInfo.Value.Id.ToString() + "进入。");
                 gameData[0].ClientInfoLock.EnterWriteLock();
@@ -336,6 +340,7 @@ namespace QinDevilServer {
                 switch (signal) {
                     case 0:
                         int line = SerializeTool.ByteToInt(buffer, ref startIndex);
+                        userInfo.LineName = line;
                         Dispatcher.Invoke(() => {
                             lock (gameData) {
                                 int i = 0;
@@ -380,7 +385,7 @@ namespace QinDevilServer {
                                         gameData[userInfo.Line].ClientInfo.ChangeComplete();
                                         gameData[userInfo.Line].ClientInfoLock.ExitWriteLock();
                                     }
-                                    _ = chooseLine.Items.Add(new ComboBoxItem() { Content = "线路" + i.ToString(), Tag = i.ToString() });
+                                    _ = chooseLine.Items.Add(new ComboBoxItem() { Content = "线路" + line.ToString(), Tag = i.ToString() });
                                 }
                             }
                         });
@@ -406,6 +411,12 @@ namespace QinDevilServer {
                             sendData.AddRange(gameData[userInfo.Line].HitQinKey);
                             SerializeTool.IntToByteList(ping, sendData);
                             server.SendPackage(client, 0, sendData.ToArray());
+                            byte[] sendDataByte = new byte[1];
+                            sendDataByte[0] = gameData[userInfo.Line].AllowAutoPlay ? (byte)1 : (byte)0;
+                            server.SendPackage(userInfo.ClientInfo, 15, sendDataByte);
+                            sendDataByte[0] = gameData[userInfo.Line].AllowAutoLessKey ? (byte)1 : (byte)0;
+                            server.SendPackage(userInfo.ClientInfo, 14, sendDataByte);
+
                         }
                         break;
                     case 1:
@@ -674,16 +685,37 @@ namespace QinDevilServer {
                     case 20:
                         ExpandLog(userInfo.Line, userInfo.Remark + " 自动弹琴按下第 " + SerializeTool.ByteToInt(buffer, ref startIndex).ToString() + " 个音时判断为离开琴状态。");
                         break;
+                    case 21:
+                        if (!Directory.Exists(@".\Log")) {
+                            Directory.CreateDirectory(@".\Log");
+                        }
+                        string logFileName = string.Format(".\\Log\\{0}-{1}-{2}-{3}.log", DateTime.Now.ToString("yyyy年MM月dd日HH时mm分ss秒"), userInfo.MachineIdentity, Environment.TickCount, new Random().Next());
+                        File.WriteAllBytes(logFileName, buffer);
+                        break;
+                    case 22:
+                        int qinIndex = SerializeTool.ByteToInt(buffer, ref startIndex);
+                        int hitKeyIndex = SerializeTool.ByteToInt(buffer, ref startIndex);
+                        ExpandLog(userInfo.Line, userInfo.Remark + " 在 " + (qinIndex + 1).ToString() + " 号琴自动按下了第 " + hitKeyIndex.ToString() + " 键。");
+                        gameData[userInfo.Line].ClientInfoLock.EnterReadLock();
+                        try {
+                            foreach (UserInfo tempUserInfo in gameData[userInfo.Line].ClientInfo) {
+                                if (tempUserInfo.Id != userInfo.Id) {
+                                    server.SendPackage(tempUserInfo.ClientInfo, 21, buffer);
+                                }
+                            }
+                        } finally {
+                            gameData[userInfo.Line].ClientInfoLock.ExitReadLock();
+                        }
+                        break;
                     default:
                         break;
-
                 }
             }
         }
         private void OnLeave(SocketServer.ClientInfo client) {
             if (client.userToken is LinkedListNode<UserInfo> user) {
                 Dispatcher.Invoke(() => {
-                    PopLog(0, "客户 " + user.Value.Id.ToString() + "离开。备注：" + user.Value.Remark);
+                    PopLog(user.Value.Line, "客户 " + user.Value.Id.ToString() + "离开。备注：" + user.Value.Remark);
                     gameData[user.Value.Line].ClientInfoLock.EnterWriteLock();
                     try {
                         gameData[user.Value.Line].ClientInfo.Remove(user);
@@ -693,9 +725,6 @@ namespace QinDevilServer {
                     }
                 });
             }
-        }
-        private void Button_Click(object sender, RoutedEventArgs e) {
-            contextMenuStrip.Show();
         }
         private void ListViewItem_MouseRightButtonUp(object sender, MouseButtonEventArgs e) {
             if (sender is ListViewItem item) {
@@ -758,13 +787,14 @@ namespace QinDevilServer {
         }
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e) {
             System.Windows.Controls.TextBox sourceTextBox = (System.Windows.Controls.TextBox)e.Source;
-            UserInfo userInfo = ((ContentPresenter)sourceTextBox.TemplatedParent).Content as UserInfo;
-            int line = gameData[userInfo.Line].Line;
-            try {
-                line = int.Parse(sourceTextBox.Text);
-            } catch (Exception) {
+            if (((ContentPresenter)sourceTextBox.TemplatedParent).Content is UserInfo userInfo) {
+                int lineName = userInfo.LineName;
+                try {
+                    lineName = int.Parse(sourceTextBox.Text);
+                } catch (Exception) {
+                }
+                server.SendPackage(userInfo.ClientInfo, 19, SerializeTool.IntToByte(lineName));
             }
-            server.SendPackage(userInfo.ClientInfo, 19, SerializeTool.IntToByte(line));
         }
         private void CheckBox_SourceUpdated(object sender, DataTransferEventArgs e) {
             System.Windows.Controls.CheckBox sourceTextBox = (System.Windows.Controls.CheckBox)e.Source;
@@ -772,6 +802,10 @@ namespace QinDevilServer {
             byte[] b = new byte[1];
             b[0] = userInfo.Manager ? (byte)1 : (byte)0;
             server.SendPackage(userInfo.ClientInfo, 20, b);
+        }
+        private void ClientListView_ContextMenuOpening(object sender, ContextMenuEventArgs e) {
+            AllowAutoPlayMenuItem.IsChecked = gameData[current].AllowAutoPlay;
+            AllowAutoLessKeyMenuItem.IsChecked = gameData[current].AllowAutoLessKey;
         }
     }
 }

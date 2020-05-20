@@ -19,6 +19,11 @@ namespace QinDevilServer {
             get => _line;
             set => Set(ref _line, value);
         }
+        private int _lineName;
+        public int LineName {
+            get => _lineName;
+            set => Set(ref _lineName, value);
+        }
         private DateTime _lastReceiveTime;
         public DateTime LastReceiveTime {
             get => _lastReceiveTime;

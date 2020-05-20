@@ -88,5 +88,10 @@ namespace QinDevilClient {
             get => _autoLessKey;
             set => Set(ref _autoLessKey, value);
         }
+        private int _hitKeyCD = 0;
+        public int HitKeyCD {
+            get => _hitKeyCD;
+            set => Set(ref _hitKeyCD, value);
+        }
     }
 }

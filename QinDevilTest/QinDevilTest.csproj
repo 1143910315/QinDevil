@@ -44,6 +44,21 @@
     <Reference Include="AForge.Math, Version=2.2.5.0, Culture=neutral, PublicKeyToken=abba2e25397ee8c9, processorArchitecture=MSIL">
       <HintPath>..\packages\AForge.Math.2.2.5\lib\AForge.Math.dll</HintPath>
     </Reference>
+    <Reference Include="Iridium-Core, Version=1.5.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\iridium.core.1.5.1.222\lib\netstandard1.0\Iridium-Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Iridium.DB, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\iridium.2.2.4.8171\lib\netstandard1.0\Iridium.DB.dll</HintPath>
+    </Reference>
+    <Reference Include="Iridium.Geo, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\iridium.geo.2.0.2.7261\lib\netstandard1.0\Iridium.Geo.dll</HintPath>
+    </Reference>
+    <Reference Include="Iridium.Reflection, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\iridium.reflection.2.0.1.7071\lib\netstandard1.0\Iridium.Reflection.dll</HintPath>
+    </Reference>
+    <Reference Include="Iridium.Units, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\iridium.units.2.0.1.7071\lib\netstandard1.0\Iridium.Units.dll</HintPath>
+    </Reference>
     <Reference Include="NAudio, Version=1.10.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\NAudio.1.10.0\lib\net35\NAudio.dll</HintPath>
     </Reference>
@@ -54,6 +69,9 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Management" />
+    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
+    </Reference>
     <Reference Include="System.Windows" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />

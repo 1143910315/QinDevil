@@ -99,6 +99,12 @@ namespace QinDevilCommon {
                             if (!s.ReceiveAsync(e)) {
                                 ReceiveEventArgs_Completed(s, e);
                             }
+                        } else {
+                            s.Close();
+                            lock (socketAsyncEventArgs) {
+                                socketAsyncEventArgs.Push(e);
+                            }
+                            OnLeaveEvent?.Invoke(client);
                         }
                         break;
                     default:

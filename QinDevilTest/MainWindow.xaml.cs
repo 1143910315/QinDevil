@@ -122,8 +122,8 @@ namespace QinDevilTest {
             timer5.AutoReset = false;
             timer5.Elapsed += Timer5_Elapsed;
             timer5.Start();
-            /*Complex[] complexs = new Complex[10];
-            FourierTransform.FFT(complexs, FourierTransform.Direction.Forward);*/
+            Complex[] complexs = new Complex[10];
+            FourierTransform.FFT(complexs, FourierTransform.Direction.Forward);
         }
         private void CheckDomain() {
             try {

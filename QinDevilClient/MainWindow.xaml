@@ -53,7 +53,7 @@
         <Viewbox Grid.ColumnSpan="3" MouseDown="Image_MouseDown" x:Name="headTitle">
             <Canvas Width="600" Height="93">
                 <Image Source="head.png"/>
-                <Label Content="琴魔副本工具" Canvas.Left="25" Canvas.Top="15" FontFamily="/琴魔副本工具;component/#HYShangWeiShouShuJ" FontSize="45" Padding="0" Foreground="White"></Label>
+                <Label Content="琴魔副本工具" Canvas.Left="25" Canvas.Top="15" FontFamily="/琴魔副本工具;component/#HYShangWeiShouShuJ" FontSize="45" Padding="0" Foreground="White"/>
                 <Label Content="QQ群：665973374" Foreground="White" Padding="0" FontSize="12" Canvas.Left="479" Canvas.Top="36"></Label>
                 <Label Content="作者：琴魔一梦之队" Foreground="White" Padding="0" FontSize="12" Canvas.Left="479" Canvas.Top="57"></Label>
                 <Label Width="30" Height="30" Canvas.Left="553" Canvas.Top="3" MouseDown="Label_MouseDown_12">
@@ -359,13 +359,13 @@
                 <Label Content="{Binding HitQinKey,Converter={StaticResource HitQinKeyContent}}" Canvas.Left="108" Canvas.Top="124" Padding="0" FontSize="14" FontFamily="/琴魔副本工具;component/#FZZhengHeiS-EB-GB"/>
                 <Label Content="小&#x0a;怪&#x0a;音&#x0a;符" Canvas.Left="245" Canvas.Top="99" FontSize="11" Padding="0" FontFamily="/琴魔副本工具;component/#FZShangKuS-R-GB"/>
                 <Label Content="{Binding Time}" x:Name="timeLabel" Canvas.Left="296" Canvas.Top="7" Padding="0" Width="72" Height="18" HorizontalContentAlignment="Right" FontFamily="/琴魔副本工具;component/#FZShangKuS-R-GB"/>
-                <ComboBox Canvas.Left="296" x:Name="combo" Canvas.Top="7" Width="72" Height="18" FontFamily="/琴魔副本工具;component/#FZShangKuS-R-GB" Visibility="Hidden" IsEnabled="False">
+                <ComboBox Canvas.Left="296" x:Name="combo" Canvas.Top="5" Width="72" Height="19" FontFamily="/琴魔副本工具;component/#FZShangKuS-R-GB" Visibility="Hidden" IsEnabled="False">
                     <ComboBoxItem Content="一号琴"></ComboBoxItem>
                     <ComboBoxItem Content="二号琴"></ComboBoxItem>
                     <ComboBoxItem Content="三号琴"></ComboBoxItem>
                     <ComboBoxItem Content="四号琴"></ComboBoxItem>
                 </ComboBox>
-                <CheckBox x:Name="Autoplay" Content="自动弹琴" Canvas.Left="223" Canvas.Top="7" FontFamily="/琴魔副本工具;component/#FZShangKuS-R-GB" FontSize="14" UseLayoutRounding="True" Visibility="Hidden"/>
+                <CheckBox x:Name="Autoplay" Content="自动弹琴" Canvas.Left="215" Canvas.Top="7" FontFamily="/琴魔副本工具;component/#FZShangKuS-R-GB" FontSize="14" UseLayoutRounding="True" Visibility="Hidden"/>
                 <Label Content="一下：" Padding="0" FontFamily="/琴魔副本工具;component/#FZShangKuS-R-GB" Canvas.Left="263" Canvas.Top="106" FontSize="14"/>
                 <Label Content="徵" Padding="0" FontFamily="/琴魔副本工具;component/#FZShangKuS-R-GB" Canvas.Left="301" Canvas.Top="106" Foreground="#FFE84653" FontSize="14"/>
                 <Label Content="两下：" Padding="0" FontFamily="/琴魔副本工具;component/#FZShangKuS-R-GB" Canvas.Left="319" Canvas.Top="106" FontSize="14"/>
