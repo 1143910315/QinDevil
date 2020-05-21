@@ -24,6 +24,26 @@ namespace QinDevilCommon {
             }
 
         }
+        public void Connect(string host, int port, bool i) {
+            Socket tempSocket;
+            lock (socketLock) {
+                socket?.Close();
+                socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                tempSocket = socket;
+            }
+            SocketAsyncEventArgs receiveEventArgs;
+            receiveEventArgs = new SocketAsyncEventArgs();
+            byte[] recvBuffer = new byte[255];
+            receiveEventArgs.SetBuffer(recvBuffer, 0, recvBuffer.Length);
+            receiveEventArgs.Completed += ReceiveEventArgs_Completed;
+            SocketAsyncEventArgs connectEventArgs = new SocketAsyncEventArgs();
+            connectEventArgs.Completed += ConnectEventArgs_Completed;
+            connectEventArgs.UserToken = receiveEventArgs;
+            connectEventArgs.RemoteEndPoint = new IPEndPoint(IPAddress.Parse(host), port);
+            if (!tempSocket.ConnectAsync(connectEventArgs)) {
+                ConnectEventArgs_Completed(tempSocket, connectEventArgs);
+            }
+        }
         public void Connect(string host, int port) {
             IPHostEntry entry = Dns.GetHostEntry(host);
             if (entry != null && entry.AddressList != null) {

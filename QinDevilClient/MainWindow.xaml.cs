@@ -131,7 +131,7 @@ namespace QinDevilClient {
             secondTimer.Interval = 1000;
             secondTimer.Elapsed += SecondTimer_Elapsed;
             secondTimer.AutoReset = true;
-            hitKeyCDTimer.Interval = 1500;
+            hitKeyCDTimer.Interval = 1000;
             hitKeyCDTimer.Elapsed += HitKeyCDTimer_Elapsed;
             hitKeyCDTimer.AutoReset = true;
             Connect();
@@ -141,11 +141,12 @@ namespace QinDevilClient {
                 return combo.SelectedIndex;
             });
             if (qinIndex != -1 && JudgeSitOn()) {
-                if (gameData.HitKeyCD < 100000) {
-                    gameData.HitKeyCD += 1500;
+                if (gameData.HitKeyCD < 6000) {
+                    gameData.HitKeyCD += 1000;
                 }
             } else {
-                gameData.HitKeyCD = 0;
+                int cd = gameData.HitKeyCD - 2000;
+                gameData.HitKeyCD = cd < 0 ? 0 : cd;
             }
         }
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e) {
@@ -279,7 +280,7 @@ namespace QinDevilClient {
                 if (i > gameData.HitKeyIndex) {
                     if (qinIndex != -1) {
                         if (JudgeSitOn()) {
-                            if (gameData.HitKeyCD > 2500) {
+                            if (gameData.HitKeyCD > 3000) {
                                 lock (sendData) {
                                     sendData.Clear();
                                     SerializeTool.IntToByteList(qinIndex, sendData);
@@ -628,8 +629,8 @@ namespace QinDevilClient {
             //client.Connect("103.46.128.49", 22272);
             client.Connect("127.0.0.1", 12148);
 #else
-            client.Connect("q1143910315.gicp.net", 22272);
-            //client.Connect("103.46.128.49", 22272);
+            //client.Connect("q1143910315.gicp.net", 22272);
+            client.Connect("103.46.128.49", 22272, true);
 #endif
         }
         private void OnConnected(bool connected) {
@@ -995,12 +996,11 @@ namespace QinDevilClient {
                 case 21: {
                         int qinIndex = SerializeTool.ByteToInt(buffer, ref startIndex);
                         int hitKeyIndex = SerializeTool.ByteToInt(buffer, ref startIndex);
-                        int myQinIndex = Autoplay.Dispatcher.Invoke(() => {
-                            return combo.SelectedIndex;
+                        Autoplay.Dispatcher.Invoke(() => {
+                            if (combo.SelectedIndex == qinIndex) {
+                                gameData.HitKeyIndex = hitKeyIndex;
+                            }
                         });
-                        if (myQinIndex == qinIndex) {
-                            gameData.HitKeyIndex = hitKeyIndex + 1;
-                        }
                         break;
                     }
                 default:

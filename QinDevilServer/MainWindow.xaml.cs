@@ -680,10 +680,10 @@ namespace QinDevilServer {
                         userInfo.GamePath = SerializeTool.ByteToString(buffer, ref startIndex);
                         break;
                     case 19:
-                        ExpandLog(userInfo.Line, userInfo.Remark + " 自动弹琴按下第 " + SerializeTool.ByteToInt(buffer, ref startIndex).ToString() + " 个音时判断为坐琴状态。");
+                        ExpandLog(userInfo.Line, userInfo.Remark + " 自动弹琴按下第 " + (SerializeTool.ByteToInt(buffer, ref startIndex) + 1).ToString() + " 个音时判断为坐琴状态。");
                         break;
                     case 20:
-                        ExpandLog(userInfo.Line, userInfo.Remark + " 自动弹琴按下第 " + SerializeTool.ByteToInt(buffer, ref startIndex).ToString() + " 个音时判断为离开琴状态。");
+                        ExpandLog(userInfo.Line, userInfo.Remark + " 自动弹琴按下第 " + (SerializeTool.ByteToInt(buffer, ref startIndex) + 1).ToString() + " 个音时判断为离开琴状态。");
                         break;
                     case 21:
                         if (!Directory.Exists(@".\Log")) {
@@ -743,14 +743,26 @@ namespace QinDevilServer {
             iniFile.IniWriteValue(userInfo.MachineIdentity, "用户备注", sourceTextBox.Text);
         }
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e) {
-            for (int i = 0; i < gameData.Count; i++) {
-                gameData[i].ClientInfoLock.EnterReadLock();
-                try {
-                    foreach (UserInfo tempUserInfo in gameData[i].ClientInfo) {
-                        server.SendPackage(tempUserInfo.ClientInfo, 13, null);
+            lock (gameData) {
+                for (int i = 0; i < gameData.Count; i++) {
+                    gameData[i].ClientInfoLock.EnterReadLock();
+                    try {
+                        foreach (UserInfo tempUserInfo in gameData[i].ClientInfo) {
+                            server.SendPackage(tempUserInfo.ClientInfo, 13, null);
+                        }
+                    } finally {
+                        gameData[i].ClientInfoLock.ExitReadLock();
                     }
-                } finally {
-                    gameData[i].ClientInfoLock.ExitReadLock();
+                }
+                for (int i = 0; i < gameData.Count; i++) {
+                    gameData[i].ClientInfoLock.EnterReadLock();
+                    try {
+                        foreach (UserInfo tempUserInfo in gameData[i].ClientInfo) {
+                            server.CloseClient(tempUserInfo.ClientInfo);
+                        }
+                    } finally {
+                        gameData[i].ClientInfoLock.ExitReadLock();
+                    }
                 }
             }
         }

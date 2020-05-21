@@ -6,7 +6,105 @@
         xmlns:local="clr-namespace:QinDevilClient"
         mc:Ignorable="d"
         Title="ChatWindow" Height="450" Width="800">
+    <Window.Resources>
+        <local:ChatBubbleSelector x:Key="chatBubbleSelector"/>
+        <Color x:Key="background">#F5F5F5</Color>
+        <SolidColorBrush x:Key="background_brush" Color="{StaticResource background}"/>
+        <Color x:Key="icon_btn_normal">#F7F7F7</Color>
+        <SolidColorBrush x:Key="icon_btn_normal_brush" Color="{StaticResource icon_btn_normal}"/>
+        <Color x:Key="message_send_bg">#98E165</Color>
+        <SolidColorBrush x:Key="message_send_bg_brush" Color="{StaticResource message_send_bg}"/>
+        <Color x:Key="message_recv_bg">#F6F6F6</Color>
+        <SolidColorBrush x:Key="message_recv_bg_brush" Color="{StaticResource message_recv_bg}"/>
+        <Color x:Key="green_normal">#07C160</Color>
+        <SolidColorBrush x:Key="green_normal_brush" Color="{StaticResource green_normal}"/>
+        <Style TargetType="Label" x:Key="chatRecv">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Label}">
+                        <Grid Margin="0,5,0,5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="40" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Image Width="35" Height="35" Source="" />
+                            <Border x:Name="border1" Grid.Column="1" CornerRadius="1" BorderBrush="#EDEDED" BorderThickness="1" VerticalAlignment="Top" Margin="10,2,0,2" Background="#FFFFFF" HorizontalAlignment="Left" Padding="5" MinHeight="35" MinWidth="50">
+                                <ContentPresenter VerticalAlignment="Center" />
+                            </Border>
+                            <Canvas Grid.Column="1" Width="10" Height="16" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="3,14,0,0" Background="Transparent">
+                                <Path x:Name="path1" Stroke="#EDEDED" StrokeThickness="1" Fill="#FFFFFF">
+                                    <Path.Data>
+                                        <PathGeometry Figures="M 8,0 L 0,6,8,12"/>
+                                    </Path.Data>
+                                </Path>
+                            </Canvas>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="path1" Property="Fill" Value="#F6F6F6" />
+                                <Setter TargetName="border1" Property="Background" Value="#F6F6F6" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="Label" x:Key="chatSend">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Label}">
+                        <Grid Margin="0,5,0,5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="40" />
+                            </Grid.ColumnDefinitions>
+                            <Image Grid.Column="1" Width="35" Height="35" Source="" />
+                            <Border x:Name="border1" CornerRadius="1" BorderBrush="#9EEA6A" BorderThickness="1" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0,2,10,2" Background="#9EEA6A" Padding="5" MinHeight="35" MinWidth="50">
+                                <ContentPresenter VerticalAlignment="Center" />
+                            </Border>
+                            <Canvas Width="10" Height="16" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="5,14,0,0" Background="Transparent">
+                                <Path x:Name="path1" Stroke="#9EEA6A" StrokeThickness="0.5" Fill="#9EEA6A">
+                                    <Path.Data>
+                                        <PathGeometry Figures="M 0,12 L 0,0,8,6"/>
+                                    </Path.Data>
+                                </Path>
+                            </Canvas>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="path1" Property="Fill" Value="#98E165" />
+                                <Setter TargetName="border1" Property="Background" Value="#98E165" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
     <Grid>
-        
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="80"/>
+            <RowDefinition Height="auto"/>
+        </Grid.RowDefinitions>
+        <ListBox ItemTemplateSelector="{StaticResource chatBubbleSelector}" ItemsSource="{Binding Messages}" Background="{DynamicResource background_brush}" SelectedIndex="{Binding SelectedMessage}" BorderThickness="0,1,0,1" BorderBrush="#D3D3D3" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="{x:Type ListBoxItem}">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                <Border Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="true">
+                                    <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                </Style>
+            </ListBox.ItemContainerStyle>
+        </ListBox>
+        <TextBox Grid.Row="1" Grid.Column="0" Margin="10,10,10,10" TextWrapping="Wrap" Text=""/>
+        <Button Grid.Row="2" Grid.Column="0" HorizontalAlignment="Right" Width="100" Margin="0,0,10,10" Content="发送 / send"/>
     </Grid>
 </Window>
