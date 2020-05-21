@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:QinDevilClient"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
-        Title="琴魔副本工具" Width="388" Topmost="True" Background="{x:Null}" WindowStartupLocation="CenterScreen" WindowStyle="None" AllowsTransparency="True" SizeToContent="Height" Activated="Window_Activated" Deactivated="Window_Deactivated" InputMethod.IsInputMethodEnabled="False" Closing="Window_Closing">
+        Title="琴魔副本工具" Width="388" Topmost="True" Background="{x:Null}" WindowStartupLocation="CenterScreen" WindowStyle="None" AllowsTransparency="True" SizeToContent="Height" Activated="Window_Activated" Deactivated="Window_Deactivated" InputMethod.IsInputMethodEnabled="False" Closing="Window_Closing" ResizeMode="NoResize">
     <Window.Resources>
         <local:QinKeyConverter x:Key="QinKey"/>
         <local:HitQinKeyContentConverter x:Key="HitQinKeyContent"/>

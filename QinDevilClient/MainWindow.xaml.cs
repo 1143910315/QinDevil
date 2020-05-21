@@ -134,6 +134,9 @@ namespace QinDevilClient {
             hitKeyCDTimer.Interval = 1000;
             hitKeyCDTimer.Elapsed += HitKeyCDTimer_Elapsed;
             hitKeyCDTimer.AutoReset = true;
+#if Line9420
+            gameData.Line = 9420;
+#endif
             Connect();
         }
         private void HitKeyCDTimer_Elapsed(object sender, ElapsedEventArgs e) {
@@ -141,7 +144,7 @@ namespace QinDevilClient {
                 return combo.SelectedIndex;
             });
             if (qinIndex != -1 && JudgeSitOn()) {
-                if (gameData.HitKeyCD < 6000) {
+                if (gameData.HitKeyCD < 2000) {
                     gameData.HitKeyCD += 1000;
                 }
             } else {
@@ -280,7 +283,7 @@ namespace QinDevilClient {
                 if (i > gameData.HitKeyIndex) {
                     if (qinIndex != -1) {
                         if (JudgeSitOn()) {
-                            if (gameData.HitKeyCD > 3000) {
+                            if (gameData.HitKeyCD > 1500) {
                                 lock (sendData) {
                                     sendData.Clear();
                                     SerializeTool.IntToByteList(qinIndex, sendData);
@@ -1007,7 +1010,10 @@ namespace QinDevilClient {
                     break;
             }
         }
-        private void OnConnectionBreak() {
+        private void OnConnectionBreak(string reason) {
+            if (sendInfoSuccess) {
+                File.AppendAllText(".\\错误日志.log", "\nOnConnectionBreak\n" + reason + "\n");
+            }
             timer.Stop();
             if (sendInfoSuccess) {
                 connectTimer.Interval = 200;
@@ -1247,7 +1253,9 @@ namespace QinDevilClient {
             }
         }
         private void Image_MouseDown(object sender, MouseButtonEventArgs e) {
-            DragMove();
+            if (e.ChangedButton == MouseButton.Left) {
+                DragMove();
+            }
         }
         private void Image_MouseDown_1(object sender, MouseButtonEventArgs e) {
             if (sender is Image senderImage) {
@@ -1256,7 +1264,8 @@ namespace QinDevilClient {
         }
         private void Image_MouseMove(object sender, System.Windows.Input.MouseEventArgs e) {
             if (sender is Image senderImage && senderImage.IsMouseCaptured) {
-                Width = e.GetPosition(this).X;
+                double newWidth = e.GetPosition(this).X;
+                Width = newWidth > 50 ? newWidth : 50;
             }
         }
         private void Image_MouseUp(object sender, MouseButtonEventArgs e) {
@@ -1266,7 +1275,8 @@ namespace QinDevilClient {
         }
         private void Image_MouseMove_1(object sender, System.Windows.Input.MouseEventArgs e) {
             if (sender is Image senderImage && senderImage.IsMouseCaptured) {
-                Width = (e.GetPosition(this).Y - 1.031746031746) / 0.54263565891473;
+                double newWidth = (e.GetPosition(this).Y - 1.031746031746) / 0.54263565891473;
+                Width = newWidth > 50 ? newWidth : 50;
             }
         }
         private void Label_MouseDown_12(object sender, MouseButtonEventArgs e) {

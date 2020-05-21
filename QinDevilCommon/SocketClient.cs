@@ -11,7 +11,7 @@ namespace QinDevilCommon {
     public class SocketClient {
         public delegate void OnConnected(bool connected);
         public delegate void OnReceivePackage(int signal, byte[] buffer);
-        public delegate void OnConnectionBreak();
+        public delegate void OnConnectionBreak(string reason);
         public event OnConnected OnConnectedEvent;
         public event OnReceivePackage OnReceivePackageEvent;
         public event OnConnectionBreak OnConnectionBreakEvent;
@@ -147,11 +147,11 @@ namespace QinDevilCommon {
                                 ReceiveEventArgs_Completed(s, e);
                             }
                         } else {
-                            OnConnectionBreakEvent?.Invoke();
+                            OnConnectionBreakEvent?.Invoke("len==0");
                         }
                         break;
                     default:
-                        OnConnectionBreakEvent?.Invoke();
+                        OnConnectionBreakEvent?.Invoke(e.SocketError.ToString());
                         break;
                 }
             }

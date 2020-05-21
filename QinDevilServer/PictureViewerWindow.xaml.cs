@@ -17,13 +17,8 @@ namespace QinDevilServer {
     /// PictureViewerWindow.xaml 的交互逻辑
     /// </summary>
     public partial class PictureViewerWindow : Window {
-        private readonly GameData gameData;
         private bool mouseDown;
         private Point mouseXY;
-        public PictureViewerWindow(GameData gameData) {
-            InitializeComponent();
-            this.gameData = gameData;
-        }
         public PictureViewerWindow(UserInfo userInfo) {
             InitializeComponent();
             try {
